@@ -295,8 +295,8 @@ func GetSampleData(dpconn, itemdesc string) (sample string) {
 		log.Printf("sample filename %d: %+v\n", i, fi.Name())
 		filename = strings.ToLower(fi.Name())
 		if filename != "sample.md" && filename != "meta.md" {
-			f, err := os.Open(dirname + "/" + filename)
-			log.Println("filename:", dirname+"/"+filename)
+			f, err := os.Open(dirname + "/" + fi.Name())
+			log.Println("filename:", dirname+"/"+fi.Name())
 			if err != nil {
 				continue
 			}
