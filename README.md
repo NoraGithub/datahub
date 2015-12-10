@@ -38,6 +38,8 @@ Datahub CLI是datahub-client的命令行客户端，用来执行datahub相关命
     - 下载数据
 - pub
     - 发布数据
+- job
+    - 显示任务列表
 - help
     - 帮助命令
 
@@ -271,11 +273,30 @@ Internet_stats
 Base_station_location
 ```
 
-#### 7. help命令
+#### 7. job命令
+
+##### 7.1. job查看所有任务列表，包括数据下载和发送的任务
+
+```
+datahub job
+```
+##### 7.2. job查看某个任务Id对应的信息
+
+```
+datahub job &JOBID
+```
+
+##### 7.3. job rm删除某个job
+
+```
+datahub job rm &JOBID
+```
+
+#### 8. help命令
 
 - help提供datahub所有命令的帮助信息。
 
-##### 7.1. 列出帮助
+##### 8.1. 列出帮助
 
 ```
 datahub help [$CMD] [$SUBCMD]
