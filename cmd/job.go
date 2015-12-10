@@ -89,10 +89,10 @@ func jobResp(resp *http.Response) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		n, _ := fmt.Printf("%-8s\t%-10s\t%s\n", "JOBID", "STATUS", "TAG")
-		printDash(n + 11)
+		n, _ := fmt.Printf("%-8s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n", "JOBID", "STATUS", "DOWN", "TOTAL", "PERCENT", "TAG")
+		printDash(n + 24)
 		for _, job := range d {
-			fmt.Printf("%-8s\t%-10s\t%s\n", job.ID, job.Stat, job.Tag)
+			fmt.Printf("%-8s\t%-10s\t%-10d\t%-10d\t%.1f%%\t%s\n", job.ID, job.Stat, job.Dlsize, job.Srcsize, 100*float64(job.Dlsize)/float64(job.Srcsize), job.Tag)
 		}
 	}
 }

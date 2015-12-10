@@ -207,6 +207,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
 
 	srcsize, err := strconv.ParseInt(resp.Header.Get("Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
+	log.Info("pull tag:", jobtag, destfilename, "downloading", srcsize)
 	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
 
 	n, err := io.Copy(out, resp.Body)
@@ -291,6 +292,7 @@ func updateJobQueue(jobid, stat string) {
 	for k, j := range DatahubJob {
 		if j.ID == jobid {
 			DatahubJob[k].Stat = stat
+			DatahubJob[k].Dlsize = DatahubJob[k].Srcsize
 			updateJobStatus()
 		}
 	}

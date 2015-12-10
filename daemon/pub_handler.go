@@ -109,7 +109,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		err = json.Unmarshal(rbody, &result)
 		if err != nil {
 			s := "pub dataitem error while unmarshal server response"
-			log.Println(s)
+			log.Println(s, err)
 			HttpNoData(w, resp.StatusCode, cmd.ErrorUnmarshal, s)
 			return
 		}

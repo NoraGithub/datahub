@@ -61,7 +61,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("test body", string(body))
+		//fmt.Println("test body", string(body))
 		log.Println(string(body))
 		type tk struct {
 			Token string `json:"token"`

@@ -97,7 +97,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 		row.Scan(&idpid, &irpdmid, &itemdesc)*/
 
-	idpid, irpdmid, itemdesc = GetRpdmidDpidItemdesc(sRepoName, sDataItem)
+	irpdmid, idpid, itemdesc = GetRpdmidDpidItemdesc(sRepoName, sDataItem)
 	if len(itemdesc) == 0 {
 		itemdesc = sRepoName + "_" + sDataItem
 	}

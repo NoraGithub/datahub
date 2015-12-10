@@ -14,12 +14,13 @@ var DatahubJob = []ds.JobInfo{} //job[id]=JobInfo
 
 func jobHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	log.Trace("from", req.RemoteAddr, req.Method, req.URL.RequestURI(), req.Proto)
-	/*
-		var joblist []ds.JobInfo
-		for _, job := range DatahubJob {
-			joblist = append(joblist, job)
+
+	for _, v := range DatahubJob {
+		if v.Stat == "downloading" {
+			v.Dlsize, _ = GetFileSize(v.Path)
 		}
-	*/
+	}
+
 	//r, _ := buildResp(0, "ok", joblist)
 	r, _ := buildResp(0, "ok", DatahubJob)
 	w.WriteHeader(http.StatusOK)
@@ -38,6 +39,9 @@ func jobDetailHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	var job []ds.JobInfo
 	for _, v := range DatahubJob {
 		if v.ID == jobid {
+			if v.Stat == "downloading" {
+				v.Dlsize, _ = GetFileSize(v.Path)
+			}
 			job = append(job, v)
 		}
 	}
