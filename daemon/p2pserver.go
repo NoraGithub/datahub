@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 func startP2PServer() {
@@ -132,7 +133,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if exists := isFileExists(filepathname); !exists {
 		l := log.Error(filepathname, "not found")
 		logq.LogPutqueue(l)
-		putToJobQueue(jobtag, filepathname, "N/A")
+		putToJobQueue(jobtag, filepathname, "N/A", -1)
 		msg.Msg = fmt.Sprintf("tag:%s not found", sTag)
 		resp, _ := json.Marshal(msg)
 		respStr := string(resp)
@@ -140,12 +141,18 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		fmt.Fprintln(rw, respStr)
 		return
 	}
-	log.Println("Tag file full path name :", filepathname)
+	size, err := GetFileSize(filepathname)
+	if err != nil {
+		l := log.Errorf("Get %s size error, %v", filepathname, err)
+		logq.LogPutqueue(l)
+	}
+	log.Printf("Tag file full path name :%v, size:%v", filepathname, size)
 	//rw.Header().Set("Source-FileName", stagdetail)
+	rw.Header().Set("Source-FileSize", strconv.FormatInt(size, 10))
 	l = log.Info("transfering", filepathname)
 	logq.LogPutqueue(l)
 
-	jobid := putToJobQueue(jobtag, filepathname, "transfering")
+	jobid := putToJobQueue(jobtag, filepathname, "transfering", size)
 	http.ServeFile(rw, r, filepathname)
 	updateJobQueue(jobid, "transfered")
 

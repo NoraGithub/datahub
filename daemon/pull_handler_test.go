@@ -73,7 +73,8 @@ func mockServerFor_getAccessToken(rcase int, ep string) *httptest.Server {
 }
 
 func Test_putToJobQueue(t *testing.T) {
-	jobid := putToJobQueue("tagTest", "/var/lib/datahub/datahub-Unit-Test/testfile.txt", "downloaded")
+
+	jobid := putToJobQueue("tagTest", "/var/lib/datahub/datahub-Unit-Test/testfile.txt", "downloaded", 100)
 	t.Log("putToJobQueue job id:", jobid)
 }
 

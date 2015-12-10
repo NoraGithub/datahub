@@ -7,7 +7,6 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
-	"os"
 )
 
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
@@ -430,10 +429,6 @@ func saveDaemonID(id string) {
 			logq.LogPutqueue(l)
 		}
 	}
-}
-
-func init() {
-	EntryPoint = os.Getenv("DAEMON_ENTRYPOINT")
 }
 
 func getEntryPoint() (ep string) {

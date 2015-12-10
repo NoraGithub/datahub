@@ -9,7 +9,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
+
+func init() {
+	EntryPoint = os.Getenv("DAEMON_ENTRYPOINT")
+}
 
 func epGetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	msg := ds.MsgResp{}

@@ -16,6 +16,9 @@ import (
 	"strconv"
 )
 
+const DECIMAL_BASE = 10
+const INT_SIZE_64 = 64
+
 type AccessToken struct {
 	Accesstoken   string `json:"accesstoken,omitempty"`
 	Remainingtime string `json:"remainingtime,omitempty"`
@@ -202,7 +205,9 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	w.Write(r)
 	c <- 1
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
-	jobid := putToJobQueue(jobtag, destfilename, "downloading")
+
+	srcsize, err := strconv.ParseInt(resp.Header.Get("Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
+	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
 
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
@@ -258,7 +263,7 @@ func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string
 	return "", "", errors.New("get access token error.")
 }
 
-func putToJobQueue(tag, destfilename, stat string /*, stat os.FileInfo*/) string {
+func putToJobQueue(tag, destfilename, stat string, srcsize int64 /*, stat os.FileInfo*/) string {
 
 	var jobid string
 	var err error
@@ -273,6 +278,7 @@ func putToJobQueue(tag, destfilename, stat string /*, stat os.FileInfo*/) string
 	//job.Dlsize = stat.Size()
 	job.Stat = stat
 	job.Tag = tag
+	job.Srcsize = srcsize
 	//DatahubJob[jobid] = job
 	DatahubJob = append(DatahubJob, job)
 
