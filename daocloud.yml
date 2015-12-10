@@ -1,0 +1,9 @@
+image: golang:1.5-wheezy
+before_script:
+  - cd /daocloud/builder/src && ls -ll
+script:
+  - mkdir -p /daocloud/builder/src/thirdparty
+  - export GOPATH=/daocloud/builder/src/thirdparty
+  - cd /daocloud/builder/src
+  - curl -s https://raw.githubusercontent.com/pote/gpm/v1.3.2/bin/gpm | bash
+  - go test -v -cover
