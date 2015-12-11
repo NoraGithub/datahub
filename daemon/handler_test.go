@@ -13,7 +13,7 @@ import (
 
 func init() {
 	DefaultServer = "http://localhost:35888"
-	go testserver()
+	//go testserver()
 }
 
 func testserver() {

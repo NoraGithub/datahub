@@ -148,7 +148,12 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	log.Printf("Tag file full path name :%v, size:%v", filepathname, size)
 	//rw.Header().Set("Source-FileName", stagdetail)
+	bmd5, err := ComputeMd5(filepathname)
+	if err != nil {
+		log.Error(filepathname, err, fmt.Sprintf("%x", bmd5))
+	}
 	rw.Header().Set("Source-FileSize", strconv.FormatInt(size, 10))
+	rw.Header().Set("Source-MD5", fmt.Sprintf("%x", bmd5))
 	l = log.Info("transfering", filepathname)
 	logq.LogPutqueue(l)
 

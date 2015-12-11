@@ -207,6 +207,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
 
 	srcsize, err := strconv.ParseInt(resp.Header.Get("Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
+	md5str := resp.Header.Get("Source-MD5")
 	log.Info("pull tag:", jobtag, destfilename, "downloading", srcsize)
 	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
 
@@ -216,11 +217,24 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		return 0, err
 	}
 	out.Close()
+
+	status := "downloaded"
+
+	if len(md5str) > 0 {
+		bmd5, err := ComputeMd5(destfilename)
+		log.Debug("md5", fmt.Sprintf("%x", bmd5), destfilename, md5str)
+		if err != nil {
+			log.Error(destfilename, err, bmd5)
+		} else if md5str != fmt.Sprintf("%x", bmd5) {
+			log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5)
+			status = "md5 error"
+		}
+	}
 	log.Printf("%d bytes downloaded.", n)
 	//job.Dlsize = stat.Size()
 	//job.Stat = "finished"
 	//DatahubJob[jobid] = job
-	updateJobQueue(jobid, "downloaded")
+	updateJobQueue(jobid, status)
 
 	InsertTagToDb(dpexist, p)
 	return n, nil

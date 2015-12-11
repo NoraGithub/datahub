@@ -12,6 +12,8 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/julienschmidt/httprouter"
 	//"io"
+	"crypto/md5"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -210,6 +212,10 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			}
 			log.Printf("Copy %d bytes from %s to %s", count, pub.Detail, DestFullPathFileName)
 		}*/
+		bmd5, err := ComputeMd5(DestFullPathFileName)
+		if err != nil {
+			log.Error(DestFullPathFileName, err, fmt.Sprintf("%x", bmd5))
+		}
 		err = InsertPubTagToDb(repo, item, tag, FileName)
 		if err != nil {
 			RollBackTag(repo, item, tag)
@@ -450,4 +456,20 @@ func SizeToStr(size int64) (s string) {
 		s = fmt.Sprintf(" Size:%.2f TB", float64(size)/(1024*1024*1024*1024))
 	}
 	return s
+}
+
+func ComputeMd5(filePath string) ([]byte, error) {
+	var result []byte
+	file, err := os.Open(filePath)
+	if err != nil {
+		return result, err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return result, err
+	}
+
+	return hash.Sum(result), nil
 }
