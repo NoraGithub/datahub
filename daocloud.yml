@@ -2,10 +2,10 @@ image: golang:1.5-wheezy
 before_script:
   - cd /daocloud/builder/src && ls -ll
 script:
-  - mkdir -p /daocloud/builder/src/github.com/asiainfoLDP/datahub
-  - cp -r /daocloud/builder/src/*  /daocloud/builder/src/github.com/asiainfoLDP/datahub
-  - export GOPATH=/daocloud/builder
-  - cd /daocloud/builder/src
+  - export GOPATH=/daocloud/go
+  - mkdir -p $GOPATH/src/github.com/asiainfoLDP/datahub
+  - cp -r /daocloud/builder/src/*  $GOPATH/src/github.com/asiainfoLDP/datahub
+  - cd $GOPATH/src
   - curl -s https://raw.githubusercontent.com/pote/gpm/v1.3.2/bin/gpm | bash
   - cd $GOPATH/src/github.com/asiainfoLDP/datahub
-  - go test -v ./...
+  - go test -v -cover ./...
