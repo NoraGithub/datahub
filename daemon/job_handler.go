@@ -15,9 +15,9 @@ var DatahubJob = []ds.JobInfo{} //job[id]=JobInfo
 func jobHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	log.Trace("from", req.RemoteAddr, req.Method, req.URL.RequestURI(), req.Proto)
 
-	for _, v := range DatahubJob {
-		if v.Stat == "downloading" {
-			v.Dlsize, _ = GetFileSize(v.Path)
+	for i := len(DatahubJob) - 1; i >= 0; i-- {
+		if DatahubJob[i].Stat == "downloading" {
+			DatahubJob[i].Dlsize, _ = GetFileSize(DatahubJob[i].Path)
 		}
 	}
 

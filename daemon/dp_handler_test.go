@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	g_dbfileU string = "/var/lib/datahub/datahubUtest.db"
+	g_dbfileU string = "/tmp/datahubUtest.db"
 )
 
 type Context struct {
