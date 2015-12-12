@@ -30,7 +30,7 @@ type Context struct {
 
 func init() {
 
-	fmt.Println("connect to db sqlite3----unit-test")
+	fmt.Println("connect to db sqlite3----unit-test", g_dbfileU)
 	db, err := sql.Open("sqlite3", g_dbfileU)
 	if err != nil {
 		fmt.Println(err)
