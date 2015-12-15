@@ -84,18 +84,15 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	r.ParseForm()
 	rw.WriteHeader(http.StatusOK)
-	//msg := &ds.MsgResp{}
-	//msg.Msg = "OK."
+
 	dps := []cmd.FormatDp{}
 	result := &ds.Result{Code: cmd.ResultOK, Data: &dps} //must use a pointer dps to initial Data
 	onedp := cmd.FormatDp{}
 	sqlDp := fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
 	rows, err := g_ds.QueryRows(sqlDp)
 	if err != nil {
-		result.Msg = err.Error()
-		result.Code = cmd.ErrorSqlExec
-		resp, _ := json.Marshal(result)
-		rw.Write(resp)
+		SqlExecError(rw, result, err.Error())
+		return
 	}
 	defer rows.Close()
 	bresultflag := false
@@ -105,12 +102,7 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 		dps = append(dps, onedp)
 	}
 	if bresultflag == false {
-		//fmt.Println(bresultflag)
-		result.Msg = "There isn't any datapool."
-		result.Code = cmd.ErrorNoRecord
-		resp, _ := json.Marshal(result)
-		log.Println(string(resp))
-		rw.Write(resp)
+		SqlExecError(rw, result, "There isn't any datapool.")
 		return
 	}
 
@@ -148,10 +140,8 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	var total int
 	row.Scan(&total)
 	if total == 0 {
-		result.Msg = fmt.Sprintf("Datapool %v not found.", dpname)
-		result.Code = cmd.ErrorNoRecord
-		resp, _ := json.Marshal(result)
-		fmt.Fprintln(rw, string(resp))
+		msg := fmt.Sprintf("Datapool %v not found.", dpname)
+		SqlExecError(rw, result, msg)
 		return
 	}
 
@@ -201,7 +191,7 @@ func SqlExecError(rw http.ResponseWriter, result *ds.Result, msg string) {
 	result.Msg = msg
 	result.Code = cmd.ErrorSqlExec
 	resp, _ := json.Marshal(result)
-	fmt.Fprintln(rw, string(resp))
+	rw.Write(resp)
 }
 
 func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -214,7 +204,11 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 	dprows, err := g_ds.QueryRows(sql_dp_rm)
 	if err != nil {
 		msg.Msg = err.Error()
+		resp, _ := json.Marshal(msg)
+		rw.Write(resp)
+		return
 	}
+	defer dprows.Close()
 
 	bresultflag := false
 
@@ -224,7 +218,6 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		dprows.Scan(&strcone.Dpid, &strcone.Dptype)
 		dpid_type = append(dpid_type, strcone)
 	}
-	dprows.Close()
 
 	for _, v := range dpid_type {
 		var dpid = v.Dpid
@@ -250,15 +243,12 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 				msg.Msg = fmt.Sprintf("Datapool %s with type:%s removed successfully!", dpname, dptype)
 			}
 		}
-		rw.WriteHeader(http.StatusOK)
 		resp, _ := json.Marshal(msg)
-		respStr := string(resp)
-		fmt.Fprintln(rw, respStr)
+		rw.Write(resp)
 	}
 	if bresultflag == false {
-		rw.WriteHeader(http.StatusOK)
 		msg.Msg = fmt.Sprintf("Datapool %s not found.", dpname)
 		resp, _ := json.Marshal(msg)
-		fmt.Fprintln(rw, string(resp))
+		rw.Write(resp)
 	}
 }

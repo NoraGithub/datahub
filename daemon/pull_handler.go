@@ -206,8 +206,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	c <- 1
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
 
-	srcsize, err := strconv.ParseInt(resp.Header.Get("Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
-	md5str := resp.Header.Get("Source-MD5")
+	srcsize, err := strconv.ParseInt(resp.Header.Get("X-Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
+	md5str := resp.Header.Get("X-Source-MD5")
 	log.Info("pull tag:", jobtag, destfilename, "downloading", srcsize)
 	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
 

@@ -89,27 +89,12 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	msg := &ds.MsgResp{}
 	msg.Msg = "OK."
 
-	/*sSqlGetRpdmidDpid := fmt.Sprintf(`SELECT DPID, RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
-	    	WHERE REPOSITORY = '%s' AND DATAITEM = '%s' AND STATUS='A'`, sRepoName, sDataItem)
-		row, err := g_ds.QueryRow(sSqlGetRpdmidDpid)
-		if err != nil {
-			msg.Msg = err.Error()
-		}
-		row.Scan(&idpid, &irpdmid, &itemdesc)*/
-
 	irpdmid, idpid, itemdesc = GetRpdmidDpidItemdesc(sRepoName, sDataItem)
 	if len(itemdesc) == 0 {
 		itemdesc = sRepoName + "_" + sDataItem
 	}
 	log.Println("dpid:", idpid, "rpdmid:", irpdmid, "itemdesc:", itemdesc)
 
-	/*sSqlGetTagDetail := fmt.Sprintf(`SELECT DETAIL FROM DH_RPDM_TAG_MAP
-	        WHERE RPDMID = '%d' AND TAGNAME = '%s' AND STATUS='A'`, irpdmid, sTag)
-		tagrow, err := g_ds.QueryRow(sSqlGetTagDetail)
-		if err != nil {
-			msg.Msg = err.Error()
-		}
-		tagrow.Scan(&stagdetail)*/
 	stagdetail = GetTagDetail(irpdmid, sTag)
 	log.Println("tagdetail", stagdetail)
 	if len(stagdetail) == 0 {
@@ -119,12 +104,6 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	/*sSqlGetDpconn := fmt.Sprintf(`SELECT DPNAME, DPCONN FROM DH_DP WHERE DPID='%d'`, idpid)
-	dprow, err := g_ds.QueryRow(sSqlGetDpconn)
-	if err != nil {
-		msg.Msg = err.Error()
-	}
-	dprow.Scan(&sdpname, &sdpconn)*/
 	sdpconn = GetDpconnByDpid(idpid)
 	log.Println("dpconn:", sdpconn)
 
@@ -152,8 +131,8 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		log.Error(filepathname, err, fmt.Sprintf("%x", bmd5))
 	}
-	rw.Header().Set("Source-FileSize", strconv.FormatInt(size, 10))
-	rw.Header().Set("Source-MD5", fmt.Sprintf("%x", bmd5))
+	rw.Header().Set("X-Source-FileSize", strconv.FormatInt(size, 10))
+	rw.Header().Set("X-Source-MD5", fmt.Sprintf("%x", bmd5))
 	l = log.Info("transfering", filepathname)
 	logq.LogPutqueue(l)
 

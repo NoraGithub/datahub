@@ -341,6 +341,7 @@ func GetAllTagDetails(monitList *map[string]string) (e error) {
 	if e != nil {
 		return e
 	}
+	defer rDps.Close()
 	var conn string
 	var dpid int
 	for rDps.Next() {
@@ -352,6 +353,7 @@ func GetAllTagDetails(monitList *map[string]string) (e error) {
 		if e != nil {
 			return e
 		}
+		defer rItems.Close()
 		var id int
 		var repo, item, desc string
 		for rItems.Next() {
@@ -364,6 +366,7 @@ func GetAllTagDetails(monitList *map[string]string) (e error) {
 			if e != nil {
 				return e
 			}
+			defer rTags.Close()
 			var tagname, detail string
 			for rTags.Next() {
 				rTags.Scan(&tagname, &detail)
