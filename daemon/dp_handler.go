@@ -102,13 +102,13 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 		dps = append(dps, onedp)
 	}
 	if bresultflag == false {
-		SqlExecError(rw, result, "There isn't any datapool.")
-		return
+		result.Code = cmd.ErrorNoRecord
+		result.Msg = "There isn't any datapool."
 	}
 
 	resp, _ := json.Marshal(result)
 	log.Println(string(resp))
-	fmt.Fprintln(rw, string(resp))
+	rw.Write(resp)
 
 }
 
