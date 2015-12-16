@@ -282,7 +282,7 @@ func RunDaemon() {
 	router.GET("/repositories/:repo/:item", repoItemHandler)
 	router.GET("/repositories/:repo", repoRepoNameHandler)
 	router.GET("/repositories", repoHandler)
-	router.GET("/subscriptions", subsHandler)
+	router.GET("/subscriptions/pull", subsHandler)
 
 	router.POST("/repositories/:repo/:item", pubItemHandler)
 	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)
