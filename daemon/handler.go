@@ -3,7 +3,6 @@ package daemon
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -42,14 +41,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	gstrUsername = userforjson.Username
-	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"))
+	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", r.Header.Get("Authorization"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error(err)
-		fmt.Println("test 55")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 
 		return

@@ -91,6 +91,7 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	sqlDp := fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
 	rows, err := g_ds.QueryRows(sqlDp)
 	if err != nil {
+		log.Error(err)
 		SqlExecError(rw, result, err.Error())
 		return
 	}
@@ -104,12 +105,11 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if bresultflag == false {
 		result.Code = cmd.ErrorNoRecord
 		result.Msg = "There isn't any datapool."
+		log.Info(result.Msg)
 	}
 
 	resp, _ := json.Marshal(result)
-	log.Println(string(resp))
 	rw.Write(resp)
-
 }
 
 func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {

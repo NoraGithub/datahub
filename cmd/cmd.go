@@ -136,7 +136,7 @@ var Cmd = []Command{
 func login(interactive bool) {
 	if Logged {
 		if interactive {
-			fmt.Println("you are already logged in as", User.userName)
+			fmt.Println("You are already logged in as", User.userName)
 		}
 		return
 	}
@@ -159,7 +159,7 @@ func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, er
 	conn, err := net.Dial("unix", UnixSock)
 	if err != nil {
 		fmt.Println(err.Error())
-		fmt.Println("Datahub Daemon not running? use 'datahub --daemon' to start daemon.")
+		fmt.Println("Datahub daemon not running? Use 'datahub --daemon' to start daemon.")
 		os.Exit(2)
 	}
 	//client := &http.Client{}

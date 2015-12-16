@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
+	"net/http"
 	"os"
 )
 
@@ -53,7 +54,7 @@ func Dp(needLogin bool, args []string) (err error) {
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode == 200 {
+		if resp.StatusCode == http.StatusOK {
 			dpResp(false, body)
 		} else {
 			fmt.Println(string(body))
@@ -66,14 +67,14 @@ func Dp(needLogin bool, args []string) (err error) {
 		for _, v := range args {
 			if len(v) > 0 && v[0] != '-' {
 				strdp := fmt.Sprintf("/datapools/%s", v)
-				resp, _ := commToDaemon("GET", strdp, nil)
+				resp, err := commToDaemon("GET", strdp, nil)
 				if err != nil {
 					fmt.Println(err)
 					return err
 				}
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
-				if resp.StatusCode == 200 {
+				if resp.StatusCode == http.StatusOK {
 					dpResp(true, body)
 				} else {
 					fmt.Println(resp.StatusCode)
@@ -91,9 +92,10 @@ func dpResp(bDetail bool, RespBody []byte) {
 		result := &ds.Result{Data: &strcDps}
 		err := json.Unmarshal(RespBody, result)
 		if err != nil {
-			fmt.Println("Get /datapools  dpResp json.Unmarshal error!")
+			fmt.Println("ERROR:", err)
 			return
 		}
+
 		if result.Code == ResultOK {
 			n, _ := fmt.Printf("%-16s    %-8s\n", "DATAPOOL", "TYPE")
 			printDash(n - 5)
@@ -101,14 +103,14 @@ func dpResp(bDetail bool, RespBody []byte) {
 				fmt.Printf("%-16s    %-8s\n", dp.Name, dp.Type)
 			}
 		} else {
-			fmt.Println("Result code:", result.Code, " Msg:", result.Msg)
+			fmt.Println("ERROR:", result.Code, " Msg:", result.Msg)
 		}
 	} else {
 		strcDp := FormatDpDetail{}
-		result := &ds.Result{Data: &strcDp}
+		result := ds.Result{Data: &strcDp}
 		err := json.Unmarshal(RespBody, &result)
 		if err != nil {
-			fmt.Println("Get /datapools/:dpname  dpResp json.Unmarshal error!")
+			fmt.Println("ERROR: dpname ", err)
 			return
 		}
 		if result.Code == ResultOK {
@@ -123,7 +125,7 @@ func dpResp(bDetail bool, RespBody []byte) {
 			}
 			printDash(n)
 		} else {
-			fmt.Println("Result code:", result.Code, " Msg:", result.Msg)
+			fmt.Println("ERROR:", result.Code, " Msg:", result.Msg)
 		}
 	}
 }

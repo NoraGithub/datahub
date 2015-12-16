@@ -311,11 +311,11 @@ func GetSampleData(dpconn, itemdesc string) (sample string) {
 			scanner.Split(bufio.ScanLines)
 			var i = 0
 			for scanner.Scan() {
-				if i > 10 {
+				if i > 9 {
 					break
 				}
 				i++
-				sample += scanner.Text() + "\n\n" //md \\n is a new line
+				sample += scanner.Text() + "  \n" //md "  \n" is a new line
 				//log.Println(scanner.Text())
 			}
 			break
