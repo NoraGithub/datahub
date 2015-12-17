@@ -138,7 +138,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	jobid := putToJobQueue(jobtag, filepathname, "transfering", size)
 	http.ServeFile(rw, r, filepathname)
-	updateJobQueue(jobid, "transfered")
+	updateJobQueue(jobid, "transfered", 0)
 
 	return
 }

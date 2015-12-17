@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v0.6.1"
+	DATAHUB_VERSION = "v0.7.0"
 )
 
 type DsPull struct {
@@ -141,6 +141,18 @@ const CreateDhDaemon string = `CREATE TABLE IF NOT EXISTS
     	DAEMONID       VARCHAR(64),
         ENTRYPOINT     VARCHAR(128),
         STATUS         CHAR(2)
+    );`
+
+const CreateDhJob string = `CREATE TABLE IF NOT EXISTS 
+    DH_JOB (  
+    	JOBID 	VARCHAR(32),
+        TAG		VARCHAR(256),
+        FILEPATH	VARCHAR(256),
+        STATUS		VARCHAR(20),
+        CREATE_TIME	DATETIME,
+        STAT_TIME	DATETIME,
+        DOWNSIZE	INTEGER,
+        SRCSIZE		INTEGER
     );`
 
 type Executer interface {

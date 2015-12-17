@@ -250,6 +250,12 @@ func CreateTable() (err error) {
 		logq.LogPutqueue(l)
 		return err
 	}
+	_, err = g_ds.Create(ds.CreateDhJob)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
 	return
 }
 

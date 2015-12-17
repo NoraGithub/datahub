@@ -18,65 +18,64 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	r.ParseForm()
 	rw.WriteHeader(http.StatusOK)
 
-	if r.Method == "POST" {
-		result, _ := ioutil.ReadAll(r.Body)
-		reqJson := cmd.FormatDpCreate{}
-		err := json.Unmarshal(result, &reqJson)
-		if err != nil {
-			l := log.Error("invalid argument. json.Unmarshal error", err)
-			logq.LogPutqueue(l)
-			rw.Write([]byte(`{"Msg":"invalid argument."}`))
-			return
-		}
-		if len(reqJson.Name) == 0 {
-			log.Println("Invalid argument")
-			rw.Write([]byte(`{"Msg":"Invalid argument"}`))
-			return
+	result, _ := ioutil.ReadAll(r.Body)
+	reqJson := cmd.FormatDpCreate{}
+	err := json.Unmarshal(result, &reqJson)
+	if err != nil {
+		l := log.Error("Invalid argument. json.Unmarshal error", err)
+		logq.LogPutqueue(l)
+		rw.Write([]byte(`{"Msg":"Invalid argument."}`))
+		return
+	}
+	if len(reqJson.Name) == 0 {
+		log.Println("Invalid argument")
+		rw.Write([]byte(`{"Msg":"Invalid argument"}`))
+		return
+	} else {
+		log.Println("Creating datapool with name:", reqJson.Name)
+		msg := &ds.MsgResp{}
+		var sdpDirName string
+		if len(reqJson.Conn) == 0 {
+			reqJson.Conn = g_strDpPath
+			sdpDirName = g_strDpPath
+
+		} else if reqJson.Conn[0] != '/' {
+			sdpDirName = g_strDpPath + "/" + reqJson.Conn
+			reqJson.Conn = sdpDirName
+			/*if reqJson.Conn[len(reqJson.Conn)-1] == '/' {
+				sdpDirName = sdpDirName + reqJson.Name
+			} else {
+				sdpDirName = sdpDirName + "/" + reqJson.Name
+			}*/
 		} else {
-			log.Println("dpname", reqJson.Name)
-			msg := &ds.MsgResp{}
-			var sdpDirName string
-			if len(reqJson.Conn) == 0 {
-				reqJson.Conn = g_strDpPath
-				sdpDirName = g_strDpPath
+			sdpDirName = reqJson.Conn
+		}
 
-			} else if reqJson.Conn[0] != '/' {
-				sdpDirName = g_strDpPath + "/" + reqJson.Conn
-				reqJson.Conn = sdpDirName
-				/*if reqJson.Conn[len(reqJson.Conn)-1] == '/' {
-					sdpDirName = sdpDirName + reqJson.Name
-				} else {
-					sdpDirName = sdpDirName + "/" + reqJson.Name
-				}*/
-			} else {
-				sdpDirName = reqJson.Conn
-			}
-
-			dpexist := CheckDataPoolExist(reqJson.Name)
-			if dpexist {
-				msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", reqJson.Name)
-				resp, _ := json.Marshal(msg)
-				rw.Write(resp)
-				return
-			}
-			if err := os.MkdirAll(sdpDirName, 0777); err != nil {
-				l := log.Error(err, sdpDirName)
-				logq.LogPutqueue(l)
-				msg.Msg = err.Error()
-			} else {
-				msg.Msg = fmt.Sprintf("dp create success. name:%s type:%s path:%s", reqJson.Name, reqJson.Type, sdpDirName)
-				reqJson.Conn = strings.TrimRight(reqJson.Conn, "/")
-				sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
-					values (null, '%s', '%s', '%s', 'A')`, reqJson.Name, reqJson.Type, reqJson.Conn)
-				if _, err := g_ds.Insert(sql_dp_insert); err != nil {
-					os.Remove(sdpDirName)
-					msg.Msg = err.Error()
-				}
-			}
+		dpexist := CheckDataPoolExist(reqJson.Name)
+		if dpexist {
+			msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", reqJson.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
+			return
 		}
-
+		if err := os.MkdirAll(sdpDirName, 0777); err != nil {
+			l := log.Error(err, sdpDirName)
+			logq.LogPutqueue(l)
+			msg.Msg = err.Error()
+		} else {
+			msg.Msg = fmt.Sprintf("Datapool create success, name:%s type:%s path:%s", reqJson.Name, reqJson.Type, sdpDirName)
+			reqJson.Conn = strings.TrimRight(reqJson.Conn, "/")
+			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
+					values (null, '%s', '%s', '%s', 'A')`, reqJson.Name, reqJson.Type, reqJson.Conn)
+			if _, err := g_ds.Insert(sql_dp_insert); err != nil {
+				//os.Remove(sdpDirName)  //don't delete it. It is maybe used by others
+				l := log.Error(err)
+				logq.LogPutqueue(l)
+				msg.Msg = err.Error()
+			}
+		}
+		resp, _ := json.Marshal(msg)
+		rw.Write(resp)
 	}
 
 }
