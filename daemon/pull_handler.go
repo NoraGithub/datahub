@@ -223,11 +223,13 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	if len(md5str) > 0 {
 		bmd5, err := ComputeMd5(destfilename)
-		log.Debug("md5", fmt.Sprintf("%x", bmd5), destfilename, md5str)
+		bmd5str := fmt.Sprintf("%x", bmd5)
+		log.Debug("md5", md5str, destfilename, bmd5str)
 		if err != nil {
 			log.Error(destfilename, err, bmd5)
-		} else if md5str != fmt.Sprintf("%x", bmd5) {
-			log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5)
+		} else if md5str != bmd5str {
+			l := log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5str)
+			logq.LogPutqueue(l)
 			status = "md5 error"
 		}
 	}
