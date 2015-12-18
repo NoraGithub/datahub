@@ -22,6 +22,7 @@ import (
 
 var SampleFiles = []string{"sample.md", "Sample.md", "SAMPLE.MD", "sample.MD", "SAMPLE.md"}
 var MetaFiles = []string{"meta.md", "Meta.md", "META.MD", "meta.MD", "META.md"}
+var PriceFile = "price.cfg"
 
 type Sys struct {
 	Supplystyle string `json:"supply_style"`
@@ -30,11 +31,20 @@ type Label struct {
 	Ssys Sys `json:"sys"`
 }
 type ic struct {
-	AccessType string `json:"itemaccesstype"`
-	Comment    string `json:"comment"`
-	Meta       string `json:"meta,omitempty"`
-	Sample     string `json:"sample,omitempty"`
-	Slabel     Label  `json:"label"`
+	AccessType string      `json:"itemaccesstype"`
+	Comment    string      `json:"comment"`
+	Meta       string      `json:"meta,omitempty"`
+	Sample     string      `json:"sample,omitempty"`
+	Slabel     Label       `json:"label"`
+	PricePlans []PricePlan `json:"price,omitempty"`
+}
+
+type PricePlan struct {
+	Time   int     `json:"time, omitempty"`
+	Times  int     `json:"times, omitempty"`
+	Unit   string  `json:"unit, omitempty"`
+	Money  float64 `json:"money, omitempty"`
+	Expire int     `json:"expire, omitempty"`
 }
 
 func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -53,14 +63,20 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		return
 	}
 
-	meta, sample := GetMetaAndSample(pub.Datapool, pub.ItemDesc)
-
+	priceplans := []PricePlan{}
+	//fmt.Println("len priceplans", len(priceplans))
+	meta, sample, priceplans := GetMetaAndSampleAndPricePlan(pub.Datapool, pub.ItemDesc)
+	//fmt.Println("len priceplans", len(priceplans))
 	icpub := ic{AccessType: pub.Accesstype,
 		Comment: pub.Comment,
 		Meta:    meta,
 		Sample:  sample}
 	isys := Sys{Supplystyle: "batch"}
 	icpub.Slabel = Label{Ssys: isys}
+	if len(priceplans) > 0 {
+		log.Info(priceplans)
+		icpub.PricePlans = priceplans
+	}
 
 	body, err := json.Marshal(icpub)
 	if err != nil {
@@ -243,24 +259,51 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 }
 
-func GetMetaAndSample(datapool, itemdesc string) (meta, sample string) {
+func GetMetaAndSampleAndPricePlan(datapool, itemdesc string) (meta, sample string, plans []PricePlan) {
 	dpconn := GetDataPoolDpconn(datapool)
 	if len(dpconn) == 0 || len(itemdesc) == 0 {
 		l := log.Errorf("dpconn:%s or itemdesc:%s is empty", dpconn, itemdesc)
 		logq.LogPutqueue(l)
 		return
 	}
-	meta = GetMetaData(dpconn, itemdesc)
-	sample = GetSampleData(dpconn, itemdesc)
+
+	path := dpconn + "/" + itemdesc
+
+	meta = GetMetaData(path)
+	sample = GetSampleData(path)
+	plans = GetPricePlan(path)
+	log.Debug(plans)
 
 	return
 }
 
-func GetMetaData(dpconn, itemdesc string) (meta string) {
-	dirname := dpconn + "/" + itemdesc
+func GetPricePlan(path string) (plans []PricePlan) {
+	config := path + "/" + PriceFile
+	if isFileExists(config) == true {
+		bytes, err := ioutil.ReadFile(config)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		log.Debug(string(bytes))
+		type LPrices struct {
+			PricePlans []PricePlan `json:"price,omitempty"`
+		}
+		struPrices := LPrices{}
+		if err = json.Unmarshal(bytes, &struPrices); err != nil {
+			log.Error(err)
+			return
+		}
+		log.Debug(struPrices)
+		plans = struPrices.PricePlans
+	}
+	return
+}
+
+func GetMetaData(itempath string) (meta string) {
 	var filename string
 	for _, v := range MetaFiles {
-		filename = dirname + "/" + v
+		filename = itempath + "/" + v
 		if isFileExists(filename) == true {
 			if bytes, err := ioutil.ReadFile(filename); err == nil {
 				meta = string(bytes)
@@ -275,11 +318,10 @@ func GetMetaData(dpconn, itemdesc string) (meta string) {
 	return "  "
 }
 
-func GetSampleData(dpconn, itemdesc string) (sample string) {
-	dirname := dpconn + "/" + itemdesc
+func GetSampleData(itempath string) (sample string) {
 	var filename string
 	for _, v := range SampleFiles {
-		filename = dirname + "/" + v
+		filename = itempath + "/" + v
 		if isFileExists(filename) == true {
 			if bytes, err := ioutil.ReadFile(filename); err == nil {
 				sample = string(bytes)
@@ -290,7 +332,7 @@ func GetSampleData(dpconn, itemdesc string) (sample string) {
 			}
 		}
 	}
-	d, err := os.Open(dirname) //ppen dir
+	d, err := os.Open(itempath) //ppen dir
 	if err != nil {
 		log.Println(err)
 		return ""
@@ -300,9 +342,9 @@ func GetSampleData(dpconn, itemdesc string) (sample string) {
 	for i, fi := range ff {
 		log.Printf("sample filename %d: %+v\n", i, fi.Name())
 		filename = strings.ToLower(fi.Name())
-		if filename != "sample.md" && filename != "meta.md" {
-			f, err := os.Open(dirname + "/" + fi.Name())
-			log.Println("filename:", dirname+"/"+fi.Name())
+		if filename != "sample.md" && filename != "meta.md" && filename != PriceFile {
+			f, err := os.Open(itempath + "/" + fi.Name())
+			log.Println("filename:", itempath+"/"+fi.Name())
 			if err != nil {
 				continue
 			}
