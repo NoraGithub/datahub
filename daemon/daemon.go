@@ -251,6 +251,8 @@ func RunDaemon() {
 		DaemonID = getDaemonid()
 	}
 
+	LoadJobFromDB()
+
 	os.Chdir(g_strDpPath)
 	originalListener, err := net.Listen("unix", cmd.UnixSock)
 	if err != nil {
@@ -292,6 +294,7 @@ func RunDaemon() {
 	router.GET("/job", jobHandler)
 	router.GET("/job/:id", jobDetailHandler)
 	router.DELETE("/job/:id", jobRmHandler)
+	router.DELETE("/job", jobRmAllHandler)
 
 	http.Handle("/", router)
 	http.HandleFunc("/stop", stopHttp)

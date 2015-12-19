@@ -229,7 +229,7 @@ func checkLogEnv() {
 		lvl = strings.ToLower(lvl)
 		if level, ok := logEnv[lvl]; ok {
 			if logLevel != level {
-				fmt.Printf("set log level to %v[%v]\n", lvl, level)
+				//fmt.Printf("set log level to %v[%v]\n", lvl, level)
 				logLevel = level
 			}
 		}
