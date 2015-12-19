@@ -88,6 +88,8 @@ func Test_download_dl(t *testing.T) {
 	url := server.URL + pull
 	var c = make(chan int)
 	p := ds.DsPull{Datapool: "datapool12345"}
+
+	go func() { <-c }()
 	size, err := download(url, p, w, c)
 	if err == nil {
 		t.Error("1.download fail-------- size:", size)

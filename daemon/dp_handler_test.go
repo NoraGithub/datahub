@@ -55,7 +55,7 @@ var con = []Context{
 			Conn: "/var/lib/datahub/datahub-Unit-Test",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test"}},
-		out: "dp create success. name:datahub_unit_test type:file path:/var/lib/datahub/datahub-Unit-Test",
+		out: "Datapool create success, name:datahub_unit_test type:file path:/var/lib/datahub/datahub-Unit-Test",
 	},
 	Context{
 		desc: "2.create dup datapool err--------",
@@ -79,7 +79,7 @@ var con = []Context{
 									"dptype":"file",
 									"dpconn":"/var/lib/datahub/datahub-Unit-Test"						
 							 }`,
-		out: "invalid argument.",
+		out: "Invalid argument.",
 	},
 	Context{
 		desc: "4.create datapool without dpname--------",
@@ -102,7 +102,7 @@ var con = []Context{
 			Type: "file",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test2"}},
-		out: "dp create success. name:datahub_unit_test2 type:file path:/var/lib/datahub",
+		out: "Datapool create success, name:datahub_unit_test2 type:file path:/var/lib/datahub",
 	},
 	Context{
 		desc: "6.create datapool with relative path--------",
@@ -117,7 +117,7 @@ var con = []Context{
 			Conn: "/var/lib/datahub/datahub-Unit-Test-6",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test_6"}},
-		out: "dp create success. name:datahub_unit_test_6 type:file path:/var/lib/datahub/datahub-Unit-Test-6",
+		out: "Datapool create success, name:datahub_unit_test_6 type:file path:/var/lib/datahub/datahub-Unit-Test-6",
 	},
 }
 
