@@ -22,7 +22,7 @@ func Subs(login bool, args []string) (err error) {
 		return
 	}
 
-	uri := "/subscriptions"
+	uri := "/subscriptions/pull"
 
 	if len(args) == 1 {
 		uri = "/repositories"

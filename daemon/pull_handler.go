@@ -130,6 +130,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		l := log.Error(e)
 		logq.LogPutqueue(l)
 		err = errors.New(e)
+		c <- -1
 		return 0, err
 	} else {
 		dpconn := GetDataPoolDpconn(p.Datapool)
@@ -140,22 +141,27 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			l := log.Error(e)
 			logq.LogPutqueue(l)
 			err = errors.New(e)
+			c <- -1
 			return 0, err
 		} else {
 			os.MkdirAll(dpconn+"/"+p.ItemDesc, 0777)
 			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
 		}
 	}
-	log.Println("destfilename:", destfilename)
+	log.Info("destfilename:", destfilename)
 	out, err = os.OpenFile(destfilename, os.O_RDWR|os.O_CREATE, 0644)
 
 	if err != nil {
+		c <- -1
+		log.Error(err)
 		return 0, err
 	}
 
 	stat, err := out.Stat()
 	if err != nil {
 		out.Close()
+		c <- -1
+		log.Error(err)
 		return 0, err
 	}
 	out.Seek(stat.Size(), 0)
@@ -185,13 +191,13 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 			w.WriteHeader(resp.StatusCode)
 			w.Write(r)
-			c <- 1
 		}
 		filesize := stat.Size()
 		out.Close()
 		if filesize == 0 {
 			os.Remove(destfilename)
 		}
+		c <- -1
 		return 0, err
 	}
 	defer resp.Body.Close()
@@ -203,7 +209,9 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	r, _ := buildResp(7000, strret, nil)
 	w.WriteHeader(http.StatusOK)
 	w.Write(r)
+	//write channel
 	c <- 1
+
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
 
 	srcsize, err := strconv.ParseInt(resp.Header.Get("X-Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
@@ -214,6 +222,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
 		out.Close()
+		log.Error(err)
 		return 0, err
 	}
 	out.Close()
@@ -222,11 +231,13 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	if len(md5str) > 0 {
 		bmd5, err := ComputeMd5(destfilename)
-		log.Debug("md5", fmt.Sprintf("%x", bmd5), destfilename, md5str)
+		bmd5str := fmt.Sprintf("%x", bmd5)
+		log.Debug("md5", md5str, destfilename, bmd5str)
 		if err != nil {
 			log.Error(destfilename, err, bmd5)
-		} else if md5str != fmt.Sprintf("%x", bmd5) {
-			log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5)
+		} else if md5str != bmd5str {
+			l := log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5str)
+			logq.LogPutqueue(l)
 			status = "md5 error"
 		}
 	}
@@ -234,7 +245,12 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	//job.Dlsize = stat.Size()
 	//job.Stat = "finished"
 	//DatahubJob[jobid] = job
-	updateJobQueue(jobid, status)
+	dlsize, e := GetFileSize(destfilename)
+	if e != nil {
+		l := log.Error(e)
+		logq.LogPutqueue(l)
+	}
+	updateJobQueue(jobid, status, dlsize)
 
 	InsertTagToDb(dpexist, p)
 	return n, nil
@@ -276,38 +292,4 @@ func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string
 		}
 	}
 	return "", "", errors.New("get access token error.")
-}
-
-func putToJobQueue(tag, destfilename, stat string, srcsize int64 /*, stat os.FileInfo*/) string {
-
-	var jobid string
-	var err error
-
-	if jobid, err = genJobID(); err != nil {
-		jobid = destfilename //ops...
-	}
-
-	job := ds.JobInfo{}
-	job.ID = jobid
-	job.Path = destfilename
-	//job.Dlsize = stat.Size()
-	job.Stat = stat
-	job.Tag = tag
-	job.Srcsize = srcsize
-	//DatahubJob[jobid] = job
-	DatahubJob = append(DatahubJob, job)
-
-	saveJobDB()
-
-	return jobid
-}
-
-func updateJobQueue(jobid, stat string) {
-	for k, j := range DatahubJob {
-		if j.ID == jobid {
-			DatahubJob[k].Stat = stat
-			DatahubJob[k].Dlsize = DatahubJob[k].Srcsize
-			updateJobStatus()
-		}
-	}
 }

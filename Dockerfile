@@ -3,6 +3,9 @@
 FROM golang:1.5
 MAINTAINER Zonesan <chaizs@asiainfo.com>
 
+ENV TIME_ZONE=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone
+
 ENV SRCPATH $GOPATH/src/github.com/asiainfoLDP/datahub 
 ENV PATH $PATH:$GOPATH/bin:$SRCPATH
 RUN mkdir $SRCPATH -p

@@ -54,6 +54,7 @@ const (
 	ErrorFileNotExist
 	ErrorTagAlreadyExist
 	ErrorDatapoolNotExits
+	ErrorRemoveAllJobs
 )
 
 var Cmd = []Command{

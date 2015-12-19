@@ -22,7 +22,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 	d := FormatDpCreate{}
 	//f.StringVar(&d.Type, []string{"-type", "t"}, "file", "datapool type")
 	//f.StringVar(&d.Conn, []string{"-conn", "c"}, "", "datapool connection info")
-	f.Usage = dpcUseage
+	f.Usage = dpcUseage //--help
 	if err = f.Parse(args); err != nil {
 		return err
 	}
@@ -42,18 +42,18 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		}
 		d.Name = args[0]
 		sp := strings.Split(args[1], "://")
-		//fmt.Println("sp len:", len(sp), sp)
+
 		if len(sp) > 1 && len(sp[1]) > 0 {
 			d.Type = strings.ToLower(sp[0])
 			if sp[1][0] != '/' && d.Type == "file" {
-				fmt.Println("please input absolute path after 'file://', e.g. file:///home/user/mydp")
+				fmt.Println("Please input absolute path after 'file://', e.g. file:///home/user/mydp")
 				return
 			}
 			d.Conn = "/" + strings.Trim(sp[1], "/")
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
 			if sp[0][0] != '/' {
-				fmt.Println("please input absolute path , e.g. /home/user/mydp")
+				fmt.Println("Please input absolute path , e.g. /home/user/mydp")
 				return
 			}
 			d.Conn = "/" + strings.Trim(sp[0], "/")
@@ -74,9 +74,9 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return
 	}
 
-	if needLogin && !Logged {
+	/*if needLogin && !Logged {
 		login(false)
-	}
+	}*/
 	jsonData, err := json.Marshal(d)
 	if err != nil {
 		return err
