@@ -10,7 +10,7 @@ import (
 func subsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(subs)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	commToServer("get", r.URL.Path, reqBody, w)
+	commToServer("get", r.URL.Path+"?phase=1", reqBody, w)
 
 	return
 
