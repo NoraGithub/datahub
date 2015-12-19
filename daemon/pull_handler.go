@@ -119,8 +119,6 @@ func dl(uri, ip string, p ds.DsPull, w http.ResponseWriter, c chan int) error {
 func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64, error) {
 	log.Printf("we are going to download %s, save to dp=%s,name=%s\n", url, p.Datapool, p.DestName)
 
-	defer func() { c <- 1 }()
-
 	var out *os.File
 	var err error
 	var destfilename string
@@ -132,6 +130,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		l := log.Error(e)
 		logq.LogPutqueue(l)
 		err = errors.New(e)
+		c <- -1
 		return 0, err
 	} else {
 		dpconn := GetDataPoolDpconn(p.Datapool)
@@ -142,6 +141,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			l := log.Error(e)
 			logq.LogPutqueue(l)
 			err = errors.New(e)
+			c <- -1
 			return 0, err
 		} else {
 			os.MkdirAll(dpconn+"/"+p.ItemDesc, 0777)
@@ -152,12 +152,16 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	out, err = os.OpenFile(destfilename, os.O_RDWR|os.O_CREATE, 0644)
 
 	if err != nil {
+		c <- -1
+		log.Error(err)
 		return 0, err
 	}
 
 	stat, err := out.Stat()
 	if err != nil {
 		out.Close()
+		c <- -1
+		log.Error(err)
 		return 0, err
 	}
 	out.Seek(stat.Size(), 0)
@@ -193,6 +197,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		if filesize == 0 {
 			os.Remove(destfilename)
 		}
+		c <- -1
 		return 0, err
 	}
 	defer resp.Body.Close()
@@ -204,6 +209,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	r, _ := buildResp(7000, strret, nil)
 	w.WriteHeader(http.StatusOK)
 	w.Write(r)
+	//write channel
+	c <- 1
 
 	jobtag := p.Repository + "/" + p.Dataitem + ":" + p.Tag
 
@@ -215,6 +222,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
 		out.Close()
+		log.Error(err)
 		return 0, err
 	}
 	out.Close()
