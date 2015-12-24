@@ -51,6 +51,12 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	log.Println(r.URL.Path, "(pub dataitem)")
 	repo := ps.ByName("repo")
 	item := ps.ByName("item")
+
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "Unlogin")
+		return
+	}
+
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	pub := ds.PubPara{}
 	if err := json.Unmarshal(reqBody, &pub); err != nil {
@@ -59,14 +65,15 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 	if CheckDataPoolExist(pub.Datapool) == false {
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal,
-			fmt.Sprintf("datapool %s not exist, please check.", pub.Datapool))
+			fmt.Sprintf("Datapool %s not exist, please check.", pub.Datapool))
 		return
 	}
 
+	//ToDO  check item dir exist
+
 	priceplans := []PricePlan{}
-	//fmt.Println("len priceplans", len(priceplans))
+
 	meta, sample, priceplans := GetMetaAndSampleAndPricePlan(pub.Datapool, pub.ItemDesc)
-	//fmt.Println("len priceplans", len(priceplans))
 	icpub := ic{AccessType: pub.Accesstype,
 		Comment: pub.Comment,
 		Meta:    meta,
@@ -89,18 +96,16 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	log.Println("daemon: connecting to", DefaultServer+r.URL.Path)
 	req, err := http.NewRequest("POST", DefaultServer+r.URL.Path, bytes.NewBuffer(body))
-	if len(loginAuthStr) > 0 {
-		req.Header.Set("Authorization", loginAuthStr)
-	}
+
+	req.Header.Set("Authorization", loginAuthStr)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		s := "pub dataitem service unavailable"
+		s := "Pub dataitem service unavailable"
 		HttpNoData(w, http.StatusServiceUnavailable, cmd.ErrorServiceUnavailable, s)
 		return
 	}
 	defer resp.Body.Close()
-
 	//Get server result
 	rbody, _ := ioutil.ReadAll(resp.Body)
 	log.Println(resp.StatusCode, string(rbody))

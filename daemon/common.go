@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"strings"
 )
 
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
@@ -339,6 +340,41 @@ func UpdateSql04To05() (err error) {
 	}
 	log.Info("update db successfully!")
 	return
+}
+
+func UpgradeSql07To08() (err error) {
+	var RetDhJob string
+	row, err := g_ds.QueryRow(ds.SQLIsExistTableDhJob)
+	if err != nil {
+		l := log.Error("Get TABLE Dh_Job error!")
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&RetDhJob)
+	if len(RetDhJob) > 1 {
+		if false == strings.Contains(RetDhJob, "ACCESSTOKEN") {
+			return AlterDhJob()
+		}
+	}
+	return nil
+}
+
+func AlterDhJob() (err error) {
+	sqltoken := `ALTER TABLE DH_JOB ADD ACCESSTOKEN VARCHAR(20);`
+	_, err = g_ds.Exec(sqltoken)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	sqlep := `ALTER TABLE DH_JOB ADD ENTRYPOINT VARCHAR(128);`
+	_, err = g_ds.Exec(sqlep)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	return nil
 }
 
 func GetAllTagDetails(monitList *map[string]string) (e error) {

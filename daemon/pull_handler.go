@@ -178,10 +178,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	/*Save response body to file only when HTTP 2xx received. TODO*/
 	if err != nil || (resp != nil && resp.StatusCode/100 != 2) {
 		if resp != nil {
-			l := log.Error("http status code:", resp.StatusCode, err)
-			logq.LogPutqueue(l)
 			body, _ := ioutil.ReadAll(resp.Body)
-			l = log.Error("response Body:", string(body))
+			l := log.Error("http status code:", resp.StatusCode, "response Body:", string(body), err)
 			logq.LogPutqueue(l)
 			msg := string(body)
 			if resp.StatusCode == 416 {
@@ -201,10 +199,6 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		return 0, err
 	}
 	defer resp.Body.Close()
-	//fname := resp.Header.Get("Source-Filename")
-	//if len(fname) > 0 {
-	//	p.DestName = fname
-	//}
 
 	r, _ := buildResp(7000, strret, nil)
 	w.WriteHeader(http.StatusOK)
@@ -216,18 +210,27 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	srcsize, err := strconv.ParseInt(resp.Header.Get("X-Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
 	md5str := resp.Header.Get("X-Source-MD5")
-	log.Info("pull tag:", jobtag, destfilename, "downloading", srcsize)
-	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
+	status := "downloading"
+	log.Info("pull tag:", jobtag, destfilename, status, srcsize)
+	jobid := putToJobQueue(jobtag, destfilename, status, srcsize)
 
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
 		out.Close()
-		log.Error(err)
+		bl := log.Error(err)
+		logq.LogPutqueue(bl)
+		dlsize, e := GetFileSize(destfilename)
+		if e != nil {
+			l := log.Error(e)
+			logq.LogPutqueue(l)
+		}
+		status = "failed"
+		updateJobQueue(jobid, status, dlsize)
 		return 0, err
 	}
 	out.Close()
 
-	status := "downloaded"
+	status = "downloaded"
 
 	if len(md5str) > 0 {
 		bmd5, err := ComputeMd5(destfilename)
@@ -242,9 +245,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		}
 	}
 	log.Printf("%d bytes downloaded.", n)
-	//job.Dlsize = stat.Size()
-	//job.Stat = "finished"
-	//DatahubJob[jobid] = job
+
 	dlsize, e := GetFileSize(destfilename)
 	if e != nil {
 		l := log.Error(e)

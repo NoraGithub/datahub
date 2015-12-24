@@ -99,6 +99,7 @@ type Ds struct {
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
+const SQLIsExistTableDhJob string = `select sql from sqlite_master where tbl_name='DH_JOB' and type='table';`
 
 const Create_dh_dp string = `CREATE TABLE IF NOT EXISTS 
     DH_DP ( 
@@ -152,7 +153,9 @@ const CreateDhJob string = `CREATE TABLE IF NOT EXISTS
         CREATE_TIME	DATETIME,
         STAT_TIME	DATETIME,
         DOWNSIZE	INTEGER,
-        SRCSIZE		INTEGER
+        SRCSIZE		INTEGER, 
+        ACCESSTOKEN VARCHAR(20),
+        ENTRYPOINT  VARCHAR(128)
     );`
 
 type Executer interface {

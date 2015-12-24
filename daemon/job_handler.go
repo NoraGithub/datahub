@@ -30,8 +30,6 @@ func jobHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) 
 	w.WriteHeader(http.StatusOK)
 	w.Write(r)
 
-	//http.Error(w, log.Info(req.URL.RequestURI()), http.StatusNotImplemented)
-
 	return
 
 }

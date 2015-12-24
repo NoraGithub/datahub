@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	//"net/url"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,13 +36,13 @@ func Pub(needlogin bool, args []string) (err error) {
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
 	f.Usage = pubUsage
 
-	if err = f.Parse(args[2:]); err != nil {
-		//fmt.Println("parse parameter error")
-		return err
+	if len(args) > 2 {
+		if err = f.Parse(args[2:]); err != nil {
+			//fmt.Println("parse parameter error")
+			return err
+		}
 	}
 
-	//fmt.Println(pub.Accesstype)
-	//fmt.Println(pub.Comment)
 	if len(args[0]) == 0 || len(args[1]) == 0 {
 		pubUsage()
 		return errors.New("need item or tag error!")
@@ -132,7 +133,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
 		if err != nil {
@@ -145,7 +146,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 				fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
 			}
 		}
-	} else if resp.StatusCode == 401 {
+	} else if resp.StatusCode == http.StatusUnauthorized {
 		if err := Login(false, nil); err == nil {
 			Pub(true, args)
 		} else {

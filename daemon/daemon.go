@@ -67,10 +67,13 @@ func dbinit() {
 			UpdateSql04To05()
 		}
 	}
+	if err := UpgradeSql07To08(); err != nil {
+		panic(err)
+	}
 	if err := CreateTable(); err != nil {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
-		return
+		panic(err)
 	}
 }
 
