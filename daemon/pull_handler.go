@@ -121,7 +121,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	var out *os.File
 	var err error
-	var destfilename string
+	var destfilename, tmpdestfilename, tmpdir string
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
 		//os.MkdirAll(g_strDpPath+"/"+p.ItemDesc, 0777)
@@ -144,12 +144,14 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			c <- -1
 			return 0, err
 		} else {
-			os.MkdirAll(dpconn+"/"+p.ItemDesc, 0777)
+			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+			os.MkdirAll(tmpdir, 0777)
 			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
+			tmpdestfilename = tmpdir + "/" + p.DestName
 		}
 	}
-	log.Info("destfilename:", destfilename)
-	out, err = os.OpenFile(destfilename, os.O_RDWR|os.O_CREATE, 0644)
+	log.Info("tmpdestfilename:", tmpdestfilename)
+	out, err = os.OpenFile(tmpdestfilename, os.O_RDWR|os.O_CREATE, 0644)
 
 	if err != nil {
 		c <- -1
@@ -183,7 +185,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			logq.LogPutqueue(l)
 			msg := string(body)
 			if resp.StatusCode == 416 {
-				msg = destfilename + " has already been downloaded."
+				msg = tmpdestfilename + " has already been downloaded."
 			}
 			r, _ := buildResp(7000+resp.StatusCode, msg, nil)
 
@@ -193,7 +195,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		filesize := stat.Size()
 		out.Close()
 		if filesize == 0 {
-			os.Remove(destfilename)
+			os.Remove(tmpdestfilename)
 		}
 		c <- -1
 		return 0, err
@@ -211,15 +213,15 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	srcsize, err := strconv.ParseInt(resp.Header.Get("X-Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
 	md5str := resp.Header.Get("X-Source-MD5")
 	status := "downloading"
-	log.Info("pull tag:", jobtag, destfilename, status, srcsize)
-	jobid := putToJobQueue(jobtag, destfilename, status, srcsize)
+	log.Info("pull tag:", jobtag, tmpdestfilename, status, srcsize)
+	jobid := putToJobQueue(jobtag, tmpdestfilename, status, srcsize)
 
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
 		out.Close()
 		bl := log.Error(err)
 		logq.LogPutqueue(bl)
-		dlsize, e := GetFileSize(destfilename)
+		dlsize, e := GetFileSize(tmpdestfilename)
 		if e != nil {
 			l := log.Error(e)
 			logq.LogPutqueue(l)
@@ -233,11 +235,11 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	status = "downloaded"
 
 	if len(md5str) > 0 {
-		bmd5, err := ComputeMd5(destfilename)
+		bmd5, err := ComputeMd5(tmpdestfilename)
 		bmd5str := fmt.Sprintf("%x", bmd5)
-		log.Debug("md5", md5str, destfilename, bmd5str)
+		log.Debug("md5", md5str, tmpdestfilename, bmd5str)
 		if err != nil {
-			log.Error(destfilename, err, bmd5)
+			log.Error(tmpdestfilename, err, bmd5)
 		} else if md5str != bmd5str {
 			l := log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5str)
 			logq.LogPutqueue(l)
@@ -245,6 +247,10 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		}
 	}
 	log.Printf("%d bytes downloaded.", n)
+
+	if err := MoveFromTmp(tmpdestfilename, destfilename); err != nil {
+		status = "MoveFromTmp error"
+	}
 
 	dlsize, e := GetFileSize(destfilename)
 	if e != nil {
@@ -255,6 +261,15 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	InsertTagToDb(dpexist, p)
 	return n, nil
+}
+
+func MoveFromTmp(src, dest string) (err error) {
+	err = os.Rename(src, dest)
+	if err != nil {
+		l := log.Errorf("Rename %v to %v error. %v", src, dest, err)
+		logq.LogPutqueue(l)
+	}
+	return err
 }
 
 func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string, err error) {

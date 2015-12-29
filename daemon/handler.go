@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	loginLogged   = false
-	loginAuthStr  string
-	gstrUsername  string
-	DefaultServer = "http://hub.dataos.io/api"
+	loginLogged       = false
+	loginAuthStr      string
+	loginBasicAuthStr string
+	gstrUsername      string
+	DefaultServer     = "http://hub.dataos.io/api"
 )
 
 type UserForJson struct {
@@ -40,6 +41,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	gstrUsername = userforjson.Username
 	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
 	req, err := http.NewRequest("GET", url, nil)
@@ -72,6 +74,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			loginAuthStr = "Token " + token.Token
 			loginLogged = true
 			log.Println(loginAuthStr)
+			loginBasicAuthStr = r.Header.Get("Authorization")
 		}
 	}
 	w.WriteHeader(resp.StatusCode)
