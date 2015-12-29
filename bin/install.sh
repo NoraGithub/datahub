@@ -19,7 +19,7 @@ daemonid=$1
 
 url='http://hub.dataos.io'
 
-deb_package='datahub_0.7.0-1_amd64.deb'
+deb_package='datahub_0.8.0-1_amd64.deb'
 
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
