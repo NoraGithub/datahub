@@ -105,7 +105,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 	url := repo + "/" + item + "/" + tag
 	if len(p.Detail) == 0 {
-		fmt.Println("Publishing tag requires a parameter \"--detail=???\" to ")
+		fmt.Println("Publishing tag requires a parameter \"--detail=???\" ")
 		return
 	}
 	if p.Detail[0] != '/' && strings.Contains(p.Detail, "/") {
@@ -137,7 +137,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
 		if err != nil {
-			fmt.Println("Pub error.", err)
+			fmt.Println("Pub error.", err) //todo add http code
 			return err
 		} else {
 			if result.Code == 0 {
@@ -147,7 +147,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 			}
 		}
 	} else if resp.StatusCode == http.StatusUnauthorized {
-		if err := Login(false, nil); err == nil {
+		if err = Login(false, nil); err == nil {
 			Pub(true, args)
 		} else {
 			fmt.Println(err)

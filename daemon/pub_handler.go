@@ -161,7 +161,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	repo := ps.ByName("repo")
 	item := ps.ByName("item")
 	tag := ps.ByName("tag")
-	fmt.Println("repo", repo, "item", item, "tag", tag)
+	log.Println("repo", repo, "item", item, "tag", tag)
 
 	//get DpFullPath and check whether repo/dataitem has been published
 	DpItemFullPath, err := CheckTagAndGetDpPath(repo, item, tag)
@@ -191,8 +191,8 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	body, err := json.Marshal(&struct {
 		Commnet string `json:"comment"`
-	}{
-		pub.Comment})
+	}{pub.Comment})
+
 	if err != nil {
 		s := "pub tag error while marshal struct"
 		log.Println(s)
@@ -204,7 +204,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	req, err := http.NewRequest("POST", DefaultServer+r.URL.Path, bytes.NewBuffer(body))
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
-	}
+	} //todo
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -218,7 +218,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	rbody, _ := ioutil.ReadAll(resp.Body)
 	log.Println(resp.StatusCode, string(rbody))
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		/*if NeedCopy {
 			if false == isDirExists(DestFullPath) {
 				log.Println("mkdir ", DestFullPath)
@@ -233,10 +233,10 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			}
 			log.Printf("Copy %d bytes from %s to %s", count, pub.Detail, DestFullPathFileName)
 		}*/
-		bmd5, err := ComputeMd5(DestFullPathFileName)
-		if err != nil {
-			log.Error(DestFullPathFileName, err, fmt.Sprintf("%x", bmd5))
-		}
+		//bmd5, err := ComputeMd5(DestFullPathFileName)
+		//if err != nil {
+		//	log.Error(DestFullPathFileName, err, fmt.Sprintf("%x", bmd5))
+		//}
 		err = InsertPubTagToDb(repo, item, tag, FileName)
 		if err != nil {
 			RollBackTag(repo, item, tag)
