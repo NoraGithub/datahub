@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v0.7"
+	DATAHUB_VERSION = "v0.8.0"
 )
 
 type DsPull struct {
