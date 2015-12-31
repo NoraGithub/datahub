@@ -8,6 +8,8 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -104,10 +106,24 @@ func HeartBeat() {
 }
 
 func GetMessages() {
-	log.Info("start GetMessages from messages")
+	log.Info("start GetMessages from messages service")
+	var sleepInterval int
+	var srtInterval string
+	var e error
 	url := DefaultServer + "/notifications?forclient=1&type=item_event&status=0"
 	for AutoPull == true {
-		time.Sleep(30 * time.Second)
+
+		if srtInterval = os.Getenv("DATAHUB_MSG_INTERVAL"); len(srtInterval) > 0 {
+			sleepInterval, e = strconv.Atoi(srtInterval)
+			if e != nil {
+				l := log.Error(e)
+				logq.LogPutqueue(l)
+			}
+		} else {
+			sleepInterval = 180
+		}
+
+		time.Sleep(time.Duration(sleepInterval) * time.Second)
 		log.Debug("connecting to", url)
 		req, err := http.NewRequest("GET", url, nil)
 
@@ -147,8 +163,6 @@ func GetMessages() {
 			} else {
 				log.Error(err)
 			}
-
-			time.Sleep(30 * time.Second)
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
