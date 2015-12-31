@@ -7,6 +7,8 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"strings"
+	"time"
 )
 
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
@@ -256,6 +258,13 @@ func CreateTable() (err error) {
 		logq.LogPutqueue(l)
 		return err
 	}
+
+	_, err = g_ds.Create(ds.CreateMsgTagAdded)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
 	return
 }
 
@@ -341,6 +350,41 @@ func UpdateSql04To05() (err error) {
 	return
 }
 
+func UpgradeSql07To08() (err error) {
+	var RetDhJob string
+	row, err := g_ds.QueryRow(ds.SQLIsExistTableDhJob)
+	if err != nil {
+		l := log.Error("Get TABLE Dh_Job error!")
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&RetDhJob)
+	if len(RetDhJob) > 1 {
+		if false == strings.Contains(RetDhJob, "ACCESSTOKEN") {
+			return AlterDhJob()
+		}
+	}
+	return nil
+}
+
+func AlterDhJob() (err error) {
+	sqltoken := `ALTER TABLE DH_JOB ADD ACCESSTOKEN VARCHAR(20);`
+	_, err = g_ds.Exec(sqltoken)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	sqlep := `ALTER TABLE DH_JOB ADD ENTRYPOINT VARCHAR(128);`
+	_, err = g_ds.Exec(sqlep)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	return nil
+}
+
 func GetAllTagDetails(monitList *map[string]string) (e error) {
 	sqlDp := `SELECT DPID, DPCONN FROM DH_DP WHERE DPTYPE='file' AND STATUS = 'A';`
 	rDps, e := g_ds.QueryRows(sqlDp)
@@ -397,6 +441,57 @@ func GetTagDetail(rpdmid int, tag string) (detail string) {
 	row.Scan(&detail)
 	log.Println("tagdetail", detail)
 	return detail
+}
+
+func InsertToTagadded(EventTime time.Time, Repname, Itemname, Tag string, status int) (err error) {
+	log.Debugf("Insert into MSG_TAGADDED time:%s, repo:%s, item:%s, tag:%s, status:%d",
+		EventTime, Repname, Itemname, Tag, status)
+	sql := fmt.Sprintf(`INSERT INTO MSG_TAGADDED (ID, REPOSITORY, DATAITEM, TAG, STATUS, CREATE_TIME, STATUS_TIME) 
+		VALUES (null, '%s', '%s', '%s', %d, '%s',datetime('now'));`,
+		Repname, Itemname, Tag, status, EventTime.Format("2006-01-02 15:04:05"))
+	_, err = g_ds.Insert(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+	}
+	return err
+}
+
+func GetTagFromMsgTagadded(Repository, DataItem string, Status int) (Tags map[int]string) {
+	sql := fmt.Sprintf(`SELECT ID, TAG FROM MSG_TAGADDED 
+		WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS=%d;`,
+		Repository, DataItem, Status)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return
+	}
+	defer rows.Close()
+
+	var tag string
+	var ID int
+	Tags = make(map[int]string)
+	for rows.Next() {
+		rows.Scan(&ID, &tag)
+		log.Println("ID, tag:", ID, tag)
+		Tags[ID] = tag
+	}
+	return Tags
+}
+
+func UpdateStatMsgTagadded(ID, Status int) (err error) {
+
+	log.Info("update MSG_TAGADDED status")
+	sql := fmt.Sprintf(`UPDATE MSG_TAGADDED SET STATUS=%d 
+		WHERE ID=%d;`, Status, ID)
+	_, err = g_ds.Update(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return
+	}
+	return
 }
 
 func getDaemonid() (id string) {

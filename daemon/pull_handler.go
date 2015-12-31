@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"container/list"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,8 +13,11 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
+	"sync"
+	"time"
 )
 
 const DECIMAL_BASE = 10
@@ -26,6 +30,11 @@ type AccessToken struct {
 }
 
 var strret string
+
+var (
+	AutomaticPullList = list.New()
+	pullmu            sync.Mutex
+)
 
 func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path + "(pull)")
@@ -66,9 +75,21 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	if dpconn := GetDataPoolDpconn(p.Datapool); len(dpconn) == 0 {
-		strret = p.Datapool + " not found. " + p.Tag + " will be pull into " + g_strDpPath + "/" + p.ItemDesc
+		strret = p.Datapool + " not found. " + p.Tag + " will be pulled into " + g_strDpPath + "/" + p.ItemDesc
 	} else {
-		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pull into " + dpconn + "/" + p.ItemDesc
+		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled into " + dpconn + "/" + p.ItemDesc
+	}
+
+	//add to automatic pull list
+	if p.Automatic == true {
+		AutomaticPullPutqueue(p)
+
+		strret = p.Repository + "/" + p.Dataitem + "will be pull automatically."
+		msgret := ds.MsgResp{Msg: strret}
+		resp, _ := json.Marshal(msgret)
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+		return
 	}
 
 	url := "/transaction/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag
@@ -121,7 +142,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	var out *os.File
 	var err error
-	var destfilename string
+	var destfilename, tmpdestfilename, tmpdir string
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
 		//os.MkdirAll(g_strDpPath+"/"+p.ItemDesc, 0777)
@@ -144,12 +165,14 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			c <- -1
 			return 0, err
 		} else {
-			os.MkdirAll(dpconn+"/"+p.ItemDesc, 0777)
+			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+			os.MkdirAll(tmpdir, 0777)
 			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
+			tmpdestfilename = tmpdir + "/" + p.DestName
 		}
 	}
-	log.Info("destfilename:", destfilename)
-	out, err = os.OpenFile(destfilename, os.O_RDWR|os.O_CREATE, 0644)
+	log.Info("tmpdestfilename:", tmpdestfilename)
+	out, err = os.OpenFile(tmpdestfilename, os.O_RDWR|os.O_CREATE, 0644)
 
 	if err != nil {
 		c <- -1
@@ -178,14 +201,12 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	/*Save response body to file only when HTTP 2xx received. TODO*/
 	if err != nil || (resp != nil && resp.StatusCode/100 != 2) {
 		if resp != nil {
-			l := log.Error("http status code:", resp.StatusCode, err)
-			logq.LogPutqueue(l)
 			body, _ := ioutil.ReadAll(resp.Body)
-			l = log.Error("response Body:", string(body))
+			l := log.Error("http status code:", resp.StatusCode, "response Body:", string(body), err)
 			logq.LogPutqueue(l)
 			msg := string(body)
 			if resp.StatusCode == 416 {
-				msg = destfilename + " has already been downloaded."
+				msg = tmpdestfilename + " has already been downloaded."
 			}
 			r, _ := buildResp(7000+resp.StatusCode, msg, nil)
 
@@ -195,16 +216,12 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		filesize := stat.Size()
 		out.Close()
 		if filesize == 0 {
-			os.Remove(destfilename)
+			os.Remove(tmpdestfilename)
 		}
 		c <- -1
 		return 0, err
 	}
 	defer resp.Body.Close()
-	//fname := resp.Header.Get("Source-Filename")
-	//if len(fname) > 0 {
-	//	p.DestName = fname
-	//}
 
 	r, _ := buildResp(7000, strret, nil)
 	w.WriteHeader(http.StatusOK)
@@ -216,25 +233,34 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	srcsize, err := strconv.ParseInt(resp.Header.Get("X-Source-FileSize"), DECIMAL_BASE, INT_SIZE_64)
 	md5str := resp.Header.Get("X-Source-MD5")
-	log.Info("pull tag:", jobtag, destfilename, "downloading", srcsize)
-	jobid := putToJobQueue(jobtag, destfilename, "downloading", srcsize)
+	status := "downloading"
+	log.Info("pull tag:", jobtag, tmpdestfilename, status, srcsize)
+	jobid := putToJobQueue(jobtag, tmpdestfilename, status, srcsize)
 
 	n, err := io.Copy(out, resp.Body)
 	if err != nil {
 		out.Close()
-		log.Error(err)
+		bl := log.Error(err)
+		logq.LogPutqueue(bl)
+		dlsize, e := GetFileSize(tmpdestfilename)
+		if e != nil {
+			l := log.Error(e)
+			logq.LogPutqueue(l)
+		}
+		status = "failed"
+		updateJobQueue(jobid, status, dlsize)
 		return 0, err
 	}
 	out.Close()
 
-	status := "downloaded"
+	status = "downloaded"
 
 	if len(md5str) > 0 {
-		bmd5, err := ComputeMd5(destfilename)
+		bmd5, err := ComputeMd5(tmpdestfilename)
 		bmd5str := fmt.Sprintf("%x", bmd5)
-		log.Debug("md5", md5str, destfilename, bmd5str)
+		log.Debug("md5", md5str, tmpdestfilename, bmd5str)
 		if err != nil {
-			log.Error(destfilename, err, bmd5)
+			log.Error(tmpdestfilename, err, bmd5)
 		} else if md5str != bmd5str {
 			l := log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5str)
 			logq.LogPutqueue(l)
@@ -242,9 +268,11 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		}
 	}
 	log.Printf("%d bytes downloaded.", n)
-	//job.Dlsize = stat.Size()
-	//job.Stat = "finished"
-	//DatahubJob[jobid] = job
+
+	if err := MoveFromTmp(tmpdestfilename, destfilename); err != nil {
+		status = "MoveFromTmp error"
+	}
+
 	dlsize, e := GetFileSize(destfilename)
 	if e != nil {
 		l := log.Error(e)
@@ -254,6 +282,15 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	InsertTagToDb(dpexist, p)
 	return n, nil
+}
+
+func MoveFromTmp(src, dest string) (err error) {
+	err = os.Rename(src, dest)
+	if err != nil {
+		l := log.Errorf("Rename %v to %v error. %v", src, dest, err)
+		logq.LogPutqueue(l)
+	}
+	return err
 }
 
 func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string, err error) {
@@ -292,4 +329,79 @@ func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string
 		}
 	}
 	return "", "", errors.New("get access token error.")
+}
+
+func AutomaticPullPutqueue(p ds.DsPull) {
+	pullmu.Lock()
+	defer pullmu.Unlock()
+
+	AutomaticPullList.PushBack(p)
+}
+
+func AutomaticPullRmqueue(p ds.DsPull) {
+	pullmu.Lock()
+	defer pullmu.Unlock()
+
+	var next *list.Element
+	for e := AutomaticPullList.Front(); e != nil; e = next {
+		v := e.Value.(ds.DsPull)
+		if v == p {
+			AutomaticPullList.Remove(e)
+			log.Info(v, "removed from the queue.")
+			break
+		} else {
+			next = e.Next()
+		}
+	}
+}
+
+func PullTagAutomatic() {
+	for {
+		time.Sleep(5 * time.Second)
+
+		//log.Debug("AutomaticPullList.Len()", AutomaticPullList.Len())
+		var Tags map[int]string
+		for e := AutomaticPullList.Front(); e != nil; e = e.Next() {
+			v := e.Value.(ds.DsPull)
+			log.Info("PullTagAutomatic begin", v.Repository, v.Dataitem)
+			Tags = GetTagFromMsgTagadded(v.Repository, v.Dataitem, NOTREAD)
+
+			log.Println("Tags ", Tags)
+			go PullItemAutomatic(Tags, v)
+
+		}
+	}
+}
+
+func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
+	var d ds.DsPull = v
+	for id, tag := range Tags {
+		var chn = make(chan int)
+		d.Tag = tag
+		d.DestName = d.Tag
+
+		go PullOneTagAutomatic(d, chn)
+		<-chn
+		UpdateStatMsgTagadded(id, ALREADYREAD)
+	}
+}
+
+func PullOneTagAutomatic(p ds.DsPull, c chan int) {
+	var ret string
+	var w *httptest.ResponseRecorder = httptest.NewRecorder()
+	url := "/transaction/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag
+
+	token, entrypoint, err := getAccessToken(url, w)
+	if err != nil {
+		log.Println(err)
+		ret = err.Error()
+		return
+	} else {
+		url = "/pull/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag +
+			"?token=" + token + "&username=" + gstrUsername
+
+		go dl(url, entrypoint, p, w, c)
+	}
+
+	log.Println(ret)
 }

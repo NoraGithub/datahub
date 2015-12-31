@@ -19,7 +19,8 @@ daemonid=$1
 
 url='http://hub.dataos.io'
 
-deb_package='datahub_0.7.0-1_amd64.deb'
+deb_package='datahub_0.8.0-1_amd64.deb'
+rpm_x86_64_package='datahub-0.8.0-1.x86_64.rpm'
 
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
@@ -139,7 +140,19 @@ lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
 case "$lsb_dist" in
 	fedora|centos|amzn)
 		(
-            echo "datahub not support ${lsb_dist} ${lsb_version} now"
+            echo " * Installing datahub..."
+			echo " * Downloading datahub from ${url}/${rpm_x86_64_package}"
+			$sh_c "$curl -o /tmp/${rpm_x86_64_package} ${url}/${rpm_x86_64_package}"	
+			if command_exists /usr/bin/datahub; then
+                echo "uninstall old version of datahub"
+                                $sh_c "datahub stop"
+				sleep 1
+				$sh_c "rm /usr/bin/datahub"
+
+                        fi                      
+                        $sh_c "rpm -ivh /tmp/${rpm_x86_64_package}"
+            $sh_c "rm -rf /tmp/${rpm_x86_64_package}"
+			start_datahub
 		)
 		exit 0
 		;;

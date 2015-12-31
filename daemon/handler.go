@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	loginLogged   = false
-	loginAuthStr  string
-	gstrUsername  string
-	DefaultServer = "http://hub.dataos.io/api"
+	loginLogged       = false
+	loginAuthStr      string
+	loginBasicAuthStr string
+	gstrUsername      string
+	DefaultServer     = "http://hub.dataos.io/api"
 )
 
 type UserForJson struct {
@@ -25,7 +26,7 @@ type UserForJson struct {
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	url := DefaultServer + "/" //r.URL.Path
-	r.ParseForm()
+	//r.ParseForm()
 
 	if _, ok := r.Header["Authorization"]; !ok {
 
@@ -40,6 +41,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	gstrUsername = userforjson.Username
 	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
 	req, err := http.NewRequest("GET", url, nil)
@@ -49,15 +51,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-
 		return
 	}
 	defer resp.Body.Close()
 	log.Println("login return", resp.StatusCode)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	} else if resp.StatusCode == 200 {
+	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		//fmt.Println("test body", string(body))
 		log.Println(string(body))
@@ -76,6 +74,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			loginAuthStr = "Token " + token.Token
 			loginLogged = true
 			log.Println(loginAuthStr)
+			loginBasicAuthStr = r.Header.Get("Authorization")
 		}
 	}
 	w.WriteHeader(resp.StatusCode)

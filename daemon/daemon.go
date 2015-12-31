@@ -67,10 +67,13 @@ func dbinit() {
 			UpdateSql04To05()
 		}
 	}
+	if err := UpgradeSql07To08(); err != nil {
+		panic(err)
+	}
 	if err := CreateTable(); err != nil {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
-		return
+		panic(err)
 	}
 }
 
@@ -323,6 +326,8 @@ func RunDaemon() {
 		go startP2PServer()
 		go HeartBeat()
 		go datapoolMonitor()
+		go GetMessages()
+		go PullTagAutomatic()
 	} else {
 		l := log.Error("no daemonid specificed.")
 		logq.LogPutqueue(l)

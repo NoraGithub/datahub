@@ -12,7 +12,7 @@ import (
 )
 
 //var DatahubJob = make(map[string]ds.JobInfo) //job[id]=JobInfo
-const DatahubJobLenth = 16
+//const DatahubJobLenth = 16
 
 var DatahubJob = []ds.JobInfo{} //job[id]=JobInfo
 
@@ -29,8 +29,6 @@ func jobHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) 
 	r, _ := buildResp(0, "ok", DatahubJob)
 	w.WriteHeader(http.StatusOK)
 	w.Write(r)
-
-	//http.Error(w, log.Info(req.URL.RequestURI()), http.StatusNotImplemented)
 
 	return
 
@@ -83,7 +81,7 @@ func jobRmHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params
 func jobRmAllHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	log.Trace("from", req.RemoteAddr, req.Method, req.URL.RequestURI(), req.Proto)
 
-	DatahubJob = make([]ds.JobInfo, DatahubJobLenth)
+	DatahubJob = make([]ds.JobInfo, 0)
 	msg, code, httpcode := "Remove all jobs OK.", cmd.ResultOK, http.StatusOK
 	if err := removeAllJobDB(); err != nil {
 		msg, code, httpcode = fmt.Sprintln("Remove all jobs error.", err), cmd.ErrorRemoveAllJobs, http.StatusOK

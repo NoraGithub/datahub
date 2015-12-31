@@ -25,7 +25,7 @@ func repoRepoNameHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 }
 
 func repoItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Println(r.URL.Path, "(subsdetail)")
+	log.Println(r.URL.Path, "(repo/item)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	commToServer("get", r.URL.Path+"?size=100", reqBody, w)
 
@@ -33,7 +33,7 @@ func repoItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 }
 
 func repoTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Println(r.URL.Path, "(repo)")
+	log.Println(r.URL.Path, "(repo/item/tag)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	commToServer("get", r.URL.Path, reqBody, w)
 	return

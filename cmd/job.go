@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
@@ -46,20 +47,30 @@ func Job(needLogin bool, args []string) (err error) {
 func JobRm(needLogin bool, args []string) (err error) {
 
 	f := mflag.NewFlagSet("datahub job rm", mflag.ContinueOnError)
-	fForce := f.Bool([]string{"-force", "f"}, false, "force cancel a pulling job.")
+	//fForce := f.Bool([]string{"-force", "f"}, false, "force cancel a pulling job.")
+	fRmAll := f.Bool([]string{"-all"}, false, "rm all the jobs.")
 
 	path := "/job"
 	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
 		path += "/" + args[0]
 
+	} else if len(args) == 0 {
+		jobUsage()
+		return errors.New("Invalid arguments.")
 	}
-	if len(args) > 1 && len(args[1]) > 0 {
-		if err := f.Parse(args[1:]); err != nil {
-			return err
-		}
-		if *fForce {
-			path += "?opt=force"
-		}
+
+	//if len(args) > 0 && len(args[0]) > 0 {
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	//if *fForce {
+	//	path += "?opt=force"
+	//}
+	//}
+
+	if (path == "/job") && (*fRmAll == false) {
+		jobUsage()
+		return errors.New("Invalid arguments.")
 	}
 
 	resp, err := commToDaemon("DELETE", path, nil)
@@ -77,7 +88,8 @@ func JobRm(needLogin bool, args []string) (err error) {
 }
 
 func jobUsage() {
-	fmt.Println("Usage: datahub job [-a]")
+	fmt.Println("Usage: datahub job [JOBID]")
+	fmt.Println("Usage: datahub job rm [JOBID][--all]")
 }
 
 func jobResp(resp *http.Response) {
@@ -89,13 +101,13 @@ func jobResp(resp *http.Response) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		n, _ := fmt.Printf("%-8s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n", "JOBID", "STATUS", "DOWN", "TOTAL", "PERCENT", "TAG")
+		n, _ := fmt.Printf("%-8s\t%-20s\t%-10s\t%-10s\t%-10s\t%-10s\n", "JOBID", "STATUS", "DOWN", "TOTAL", "PERCENT", "TAG")
 		printDash(n + 24)
 		for _, job := range d {
 			if job.Srcsize == 0 {
-				fmt.Printf("%-8s\t%-10s\t%-10d\t%-10v\t%v\t%s\n", job.ID, job.Stat, job.Dlsize, "-", "-", job.Tag)
+				fmt.Printf("%-8s\t%-20s\t%-10d\t%-10v\t%v\t%s\n", job.ID, job.Stat, job.Dlsize, "-", "-", job.Tag)
 			} else {
-				fmt.Printf("%-8s\t%-10s\t%-10d\t%-10d\t%.1f%%\t%s\n", job.ID, job.Stat, job.Dlsize, job.Srcsize, 100*float64(job.Dlsize)/float64(job.Srcsize), job.Tag)
+				fmt.Printf("%-8s\t%-20s\t%-10d\t%-10d\t%.1f%%\t%s\n", job.ID, job.Stat, job.Dlsize, job.Srcsize, 100*float64(job.Dlsize)/float64(job.Srcsize), job.Tag)
 			}
 
 		}

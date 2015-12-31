@@ -11,22 +11,22 @@ func DpRm(needLogin bool, args []string) (err error) {
 	if err = f.Parse(args); err != nil {
 		return err
 	}
-	if needLogin && !Logged {
+	/*if needLogin && !Logged {
 		login(false)
-	}
+	}*/
 
 	if len(args) > 0 && args[0][0] != '-' {
 		for _, v := range args {
 			dp := v
 			if v[0] != '-' {
 
-				resp, _ := commToDaemon("DELETE", "/datapools/"+dp, nil)
+				resp, err := commToDaemon("DELETE", "/datapools/"+dp, nil)
 				if err != nil {
 					fmt.Println(err)
 					return err
 				}
-				defer resp.Body.Close()
 				showResponse(resp)
+				resp.Body.Close()
 			}
 		}
 	}

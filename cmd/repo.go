@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -41,13 +42,13 @@ func Repo(login bool, args []string) (err error) {
 			panic(err)
 		}
 		source := u.Path
-		if len(u.Path) > 0 && u.Path[0] == '/' {
+		if (len(u.Path) > 0) && (u.Path[0] == '/') {
 			source = u.Path[1:]
 		}
 
 		urls := strings.Split(source, "/")
 		lenth := len(urls)
-		//fmt.Println(lenth, urls)
+
 		if lenth == 0 {
 			uri = "/repositories"
 			icmd = Repos
@@ -79,7 +80,7 @@ func Repo(login bool, args []string) (err error) {
 			return errors.New("The parameter after repo is in wrong format!")
 		}
 	}
-	//fmt.Println(uri)
+
 	resp, err := commToDaemon("get", uri, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -87,27 +88,29 @@ func Repo(login bool, args []string) (err error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		repoResp(icmd, body, repo, item, tag)
-	} else if resp.StatusCode == 401 || resp.StatusCode == 400 {
+	} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusBadRequest {
 		body, _ := ioutil.ReadAll(resp.Body)
 		result := ds.Result{}
-		err := json.Unmarshal(body, &result)
+		err = json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("http StatusCode:", resp.StatusCode, "Json format error!")
 			return err
 		}
-		if result.Code != 1400 {
+		if result.Code == 1400 {
+			if err = Login(false, nil); err == nil {
+				err = Repo(login, args)
+			} else {
+				fmt.Println(err)
+			}
+		} else {
 			fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
 			return nil
 		}
 		//fmt.Println(resp.StatusCode, "returned....")
-		if err := Login(false, nil); err == nil {
-			Repo(login, args)
-		} else {
-			fmt.Println(err)
-		}
+
 	} else {
 		showError(resp)
 	}

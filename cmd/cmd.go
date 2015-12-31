@@ -55,6 +55,7 @@ const (
 	ErrorTagAlreadyExist
 	ErrorDatapoolNotExits
 	ErrorRemoveAllJobs
+	ErrorUnAuthorization
 )
 
 var Cmd = []Command{
