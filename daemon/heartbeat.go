@@ -104,9 +104,11 @@ func HeartBeat() {
 }
 
 func GetMessages() {
+	log.Info("start GetMessages from messages")
 	url := DefaultServer + "/notifications?forclient=1&type=item_event&status=0"
 	for AutoPull == true {
-		log.Trace("connecting to", url)
+		time.Sleep(30 * time.Second)
+		log.Debug("connecting to", url)
 		req, err := http.NewRequest("GET", url, nil)
 
 		if len(loginAuthStr) > 0 {
@@ -117,7 +119,7 @@ func GetMessages() {
 		if err != nil {
 			l := log.Error(err)
 			logq.LogPutqueue(l)
-			time.Sleep(30 * time.Second)
+
 			continue
 		}
 		defer resp.Body.Close()
@@ -125,13 +127,14 @@ func GetMessages() {
 		body, _ := ioutil.ReadAll(resp.Body)
 
 		if resp.StatusCode == http.StatusOK {
-			log.Tracef("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
+			log.Debugf("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
 
 			result := ds.Result{}
 			MessagesSlice := []Messages{}
 			result.Data = &MessagesSlice
 			if err := json.Unmarshal(body, &result); err == nil {
 				if result.Code == 0 {
+					log.Debug(result)
 					for _, v := range MessagesSlice {
 						if v.Type == "item_event" && v.Data.Event == TAGADDED {
 							InsertToTagadded(v.Data.EventTime, v.Data.Repname, v.Data.Itemname, v.Data.Tag, NOTREAD)
@@ -148,19 +151,22 @@ func GetMessages() {
 			time.Sleep(600 * time.Second)
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
+			log.Debug("not login", http.StatusUnauthorized)
 			reql, err := http.NewRequest("GET", url, nil)
 			if len(loginBasicAuthStr) > 0 {
 				reql.Header.Set("Authorization", loginBasicAuthStr)
 				log.Info("user name:", gstrUsername)
 			} else {
 				log.Warn("not login")
-				return
+				time.Sleep(30 * time.Second)
+				continue
 			}
 
 			respl, err := http.DefaultClient.Do(reql)
 			if err != nil {
 				log.Error(err)
-				return
+				time.Sleep(30 * time.Second)
+				continue
 			}
 			defer respl.Body.Close()
 			log.Println("login return", respl.StatusCode)
@@ -174,7 +180,8 @@ func GetMessages() {
 				if err = json.Unmarshal(body, token); err != nil {
 					log.Error(err)
 					log.Println(respl.StatusCode, string(body))
-					return
+					time.Sleep(30 * time.Second)
+					continue
 				} else {
 					loginAuthStr = "Token " + token.Token
 					loginLogged = true
@@ -182,5 +189,6 @@ func GetMessages() {
 				}
 			}
 		}
+		time.Sleep(30 * time.Second)
 	}
 }

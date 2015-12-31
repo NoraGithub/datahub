@@ -444,7 +444,8 @@ func GetTagDetail(rpdmid int, tag string) (detail string) {
 }
 
 func InsertToTagadded(EventTime time.Time, Repname, Itemname, Tag string, status int) (err error) {
-
+	log.Debugf("Insert into MSG_TAGADDED time:%s, repo:%s, item:%s, tag:%s, status:%d",
+		EventTime, Repname, Itemname, Tag, status)
 	sql := fmt.Sprintf(`INSERT INTO MSG_TAGADDED (ID, REPOSITORY, DATAITEM, TAG, STATUS, CREATE_TIME, STATUS_TIME) 
 		VALUES (null, '%s', '%s', '%s', %d, '%s',datetime('now'));`,
 		Repname, Itemname, Tag, status, EventTime.Format("2006-01-02 15:04:05"))
@@ -470,8 +471,10 @@ func GetTagFromMsgTagadded(Repository, DataItem string, Status int) (Tags map[in
 
 	var tag string
 	var ID int
+	Tags = make(map[int]string)
 	for rows.Next() {
 		rows.Scan(&ID, &tag)
+		log.Println("ID, tag:", ID, tag)
 		Tags[ID] = tag
 	}
 	return Tags
@@ -480,7 +483,7 @@ func GetTagFromMsgTagadded(Repository, DataItem string, Status int) (Tags map[in
 func UpdateStatMsgTagadded(ID, Status int) (err error) {
 
 	log.Info("update MSG_TAGADDED status")
-	sql := fmt.Sprintf(`UPDATE MSG_TAGADDED SET STATUS='%s' 
+	sql := fmt.Sprintf(`UPDATE MSG_TAGADDED SET STATUS=%d 
 		WHERE ID=%d;`, Status, ID)
 	_, err = g_ds.Update(sql)
 	if err != nil {

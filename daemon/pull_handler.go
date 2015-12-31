@@ -360,28 +360,21 @@ func PullTagAutomatic() {
 		time.Sleep(5 * time.Second)
 
 		//log.Debug("AutomaticPullList.Len()", AutomaticPullList.Len())
-		Tags := make(map[int]string, 0)
+		var Tags map[int]string
 		for e := AutomaticPullList.Front(); e != nil; e = e.Next() {
 			v := e.Value.(ds.DsPull)
 			log.Info("PullTagAutomatic begin", v.Repository, v.Dataitem)
 			Tags = GetTagFromMsgTagadded(v.Repository, v.Dataitem, NOTREAD)
+
+			log.Println("Tags ", Tags)
 			go PullItemAutomatic(Tags, v)
-			/*tagslen := len(tags)
-			for i := 0; i < tagslen; i++ {
-				var d = v
-				var chn = make(chan int)
-				d.Tag = tags[i]
-				fmt.Println("d", d)
-				go PullOneTagAutomatic(p , chn)
-				<-chn
-			}*/
+
 		}
 	}
 }
 
 func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
 	var d ds.DsPull = v
-	fmt.Println("d", d)
 	for id, tag := range Tags {
 		var chn = make(chan int)
 		d.Tag = tag
@@ -395,7 +388,7 @@ func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
 
 func PullOneTagAutomatic(p ds.DsPull, c chan int) {
 	var ret string
-	var w *httptest.ResponseRecorder
+	var w *httptest.ResponseRecorder = httptest.NewRecorder()
 	url := "/transaction/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag
 
 	token, entrypoint, err := getAccessToken(url, w)
