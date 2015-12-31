@@ -148,7 +148,7 @@ func GetMessages() {
 				log.Error(err)
 			}
 
-			time.Sleep(600 * time.Second)
+			time.Sleep(30 * time.Second)
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
@@ -158,14 +158,12 @@ func GetMessages() {
 				log.Info("user name:", gstrUsername)
 			} else {
 				log.Warn("not login")
-				time.Sleep(30 * time.Second)
 				continue
 			}
 
 			respl, err := http.DefaultClient.Do(reql)
 			if err != nil {
 				log.Error(err)
-				time.Sleep(30 * time.Second)
 				continue
 			}
 			defer respl.Body.Close()
@@ -180,7 +178,6 @@ func GetMessages() {
 				if err = json.Unmarshal(body, token); err != nil {
 					log.Error(err)
 					log.Println(respl.StatusCode, string(body))
-					time.Sleep(30 * time.Second)
 					continue
 				} else {
 					loginAuthStr = "Token " + token.Token
@@ -189,6 +186,5 @@ func GetMessages() {
 				}
 			}
 		}
-		time.Sleep(30 * time.Second)
 	}
 }
