@@ -28,6 +28,7 @@ type DsPull struct {
 	Repository string `json:"repository, omitempty"`
 	Dataitem   string `json:"dataitem, omitempty"`
 	ItemDesc   string `json:"itemdesc, omitempty"`
+	Automatic  bool   `json:"automatic, omitempty"`
 }
 
 type Result struct {
@@ -152,11 +153,24 @@ const CreateDhJob string = `CREATE TABLE IF NOT EXISTS
         STATUS		VARCHAR(20),
         CREATE_TIME	DATETIME,
         STAT_TIME	DATETIME,
-        DOWNSIZE	INTEGER,
-        SRCSIZE		INTEGER, 
+        DOWNSIZE	BIGINT,
+        SRCSIZE		BIGINT, 
         ACCESSTOKEN VARCHAR(20),
         ENTRYPOINT  VARCHAR(128)
     );`
+
+const CreateMsgTagAdded string = `CREATE TABLE IF NOT EXISTS
+	MSG_TAGADDED (
+		ID 			INTEGER PRIMARY KEY AUTOINCREMENT,
+		REPOSITORY  VARCHAR(128) NOT NULL,
+		DATAITEM    VARCHAR(128) NOT NULL,
+		TAG			VARCHAR(128) NOT NULL,
+		STATUS	    INT,
+		CREATE_TIME DATETIME,
+		STATUS_TIME DATETIME
+
+	);
+	`
 
 type Executer interface {
 	Insert(cmd string) (interface{}, error)

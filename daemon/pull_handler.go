@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"container/list"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,8 +13,11 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
+	"sync"
+	"time"
 )
 
 const DECIMAL_BASE = 10
@@ -26,6 +30,11 @@ type AccessToken struct {
 }
 
 var strret string
+
+var (
+	AutomaticPullList = list.New()
+	pullmu            sync.Mutex
+)
 
 func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path + "(pull)")
@@ -66,9 +75,21 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	if dpconn := GetDataPoolDpconn(p.Datapool); len(dpconn) == 0 {
-		strret = p.Datapool + " not found. " + p.Tag + " will be pull into " + g_strDpPath + "/" + p.ItemDesc
+		strret = p.Datapool + " not found. " + p.Tag + " will be pulled into " + g_strDpPath + "/" + p.ItemDesc
 	} else {
-		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pull into " + dpconn + "/" + p.ItemDesc
+		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled into " + dpconn + "/" + p.ItemDesc
+	}
+
+	//add to automatic pull list
+	if p.Automatic == true {
+		AutomaticPullPutqueue(p)
+
+		strret = p.Repository + "/" + p.Dataitem + "will be pull automatically."
+		msgret := ds.MsgResp{Msg: strret}
+		resp, _ := json.Marshal(msgret)
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+		return
 	}
 
 	url := "/transaction/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag
@@ -308,4 +329,86 @@ func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string
 		}
 	}
 	return "", "", errors.New("get access token error.")
+}
+
+func AutomaticPullPutqueue(p ds.DsPull) {
+	pullmu.Lock()
+	defer pullmu.Unlock()
+
+	AutomaticPullList.PushBack(p)
+}
+
+func AutomaticPullRmqueue(p ds.DsPull) {
+	pullmu.Lock()
+	defer pullmu.Unlock()
+
+	var next *list.Element
+	for e := AutomaticPullList.Front(); e != nil; e = next {
+		v := e.Value.(ds.DsPull)
+		if v == p {
+			AutomaticPullList.Remove(e)
+			log.Info(v, "removed from the queue.")
+			break
+		} else {
+			next = e.Next()
+		}
+	}
+}
+
+func PullTagAutomatic() {
+	for {
+		time.Sleep(5 * time.Second)
+
+		//log.Debug("AutomaticPullList.Len()", AutomaticPullList.Len())
+		Tags := make(map[int]string, 0)
+		for e := AutomaticPullList.Front(); e != nil; e = e.Next() {
+			v := e.Value.(ds.DsPull)
+			log.Info("PullTagAutomatic begin", v.Repository, v.Dataitem)
+			Tags = GetTagFromMsgTagadded(v.Repository, v.Dataitem, NOTREAD)
+			go PullItemAutomatic(Tags, v)
+			/*tagslen := len(tags)
+			for i := 0; i < tagslen; i++ {
+				var d = v
+				var chn = make(chan int)
+				d.Tag = tags[i]
+				fmt.Println("d", d)
+				go PullOneTagAutomatic(p , chn)
+				<-chn
+			}*/
+		}
+	}
+}
+
+func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
+	var d ds.DsPull = v
+	fmt.Println("d", d)
+	for id, tag := range Tags {
+		var chn = make(chan int)
+		d.Tag = tag
+		d.DestName = d.Tag
+
+		go PullOneTagAutomatic(d, chn)
+		<-chn
+		UpdateStatMsgTagadded(id, ALREADYREAD)
+	}
+}
+
+func PullOneTagAutomatic(p ds.DsPull, c chan int) {
+	var ret string
+	var w *httptest.ResponseRecorder
+	url := "/transaction/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag
+
+	token, entrypoint, err := getAccessToken(url, w)
+	if err != nil {
+		log.Println(err)
+		ret = err.Error()
+		return
+	} else {
+		url = "/pull/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag +
+			"?token=" + token + "&username=" + gstrUsername
+
+		go dl(url, entrypoint, p, w, c)
+	}
+
+	log.Println(ret)
 }

@@ -8,6 +8,7 @@ import (
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"strings"
+	"time"
 )
 
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
@@ -257,6 +258,13 @@ func CreateTable() (err error) {
 		logq.LogPutqueue(l)
 		return err
 	}
+
+	_, err = g_ds.Create(ds.CreateMsgTagAdded)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
 	return
 }
 
@@ -433,6 +441,54 @@ func GetTagDetail(rpdmid int, tag string) (detail string) {
 	row.Scan(&detail)
 	log.Println("tagdetail", detail)
 	return detail
+}
+
+func InsertToTagadded(EventTime time.Time, Repname, Itemname, Tag string, status int) (err error) {
+
+	sql := fmt.Sprintf(`INSERT INTO MSG_TAGADDED (ID, REPOSITORY, DATAITEM, TAG, STATUS, CREATE_TIME, STATUS_TIME) 
+		VALUES (null, '%s', '%s', '%s', %d, '%s',datetime('now'));`,
+		Repname, Itemname, Tag, status, EventTime.Format("2006-01-02 15:04:05"))
+	_, err = g_ds.Insert(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+	}
+	return err
+}
+
+func GetTagFromMsgTagadded(Repository, DataItem string, Status int) (Tags map[int]string) {
+	sql := fmt.Sprintf(`SELECT ID, TAG FROM MSG_TAGADDED 
+		WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS=%d;`,
+		Repository, DataItem, Status)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return
+	}
+	defer rows.Close()
+
+	var tag string
+	var ID int
+	for rows.Next() {
+		rows.Scan(&ID, &tag)
+		Tags[ID] = tag
+	}
+	return Tags
+}
+
+func UpdateStatMsgTagadded(ID, Status int) (err error) {
+
+	log.Info("update MSG_TAGADDED status")
+	sql := fmt.Sprintf(`UPDATE MSG_TAGADDED SET STATUS='%s' 
+		WHERE ID=%d;`, Status, ID)
+	_, err = g_ds.Update(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return
+	}
+	return
 }
 
 func getDaemonid() (id string) {

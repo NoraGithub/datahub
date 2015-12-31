@@ -43,6 +43,7 @@ type PricePlan struct {
 	Time   int     `json:"time, omitempty"`
 	Times  int     `json:"times, omitempty"`
 	Unit   string  `json:"unit, omitempty"`
+	Units  string  `json:"units, omitempty"`
 	Money  float64 `json:"money, omitempty"`
 	Expire int     `json:"expire, omitempty"`
 }

@@ -15,6 +15,7 @@ func Pull(login bool, args []string) (err error) {
 	dstruc := ds.DsPull{}
 	f := mflag.NewFlagSet("pull", mflag.ContinueOnError)
 	f.StringVar(&dstruc.DestName, []string{"-destname", "d"}, "", "indicates the name that tag will be stored as ")
+	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "pull a new tag of a dataitem automatically")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
 		pullUsage()
@@ -29,6 +30,7 @@ func Pull(login bool, args []string) (err error) {
 		fmt.Println(err)
 		return
 	}
+	dstruc.Automatic = *pbAutomatic
 	source := strings.Trim(u.Path, "/")
 
 	if url := strings.Split(source, "/"); len(url) != 2 {

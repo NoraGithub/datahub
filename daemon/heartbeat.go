@@ -17,6 +17,20 @@ type Beatbody struct {
 	Log        []string `json:"log,omitempty"`
 }
 
+type MessageData struct {
+	Event     string    `json:"event,omitempty"`
+	EventTime time.Time `json:"eventtime,omitempty"`
+	Repname   string    `json:"repname,omitempty"`
+	Itemname  string    `json:"itemname,omitempty"`
+	Tag       string    `json:"tag,omitempty"`
+}
+
+type Messages struct {
+	Messageid int         `json:messageid`
+	Type      string      `json:type`
+	Data      MessageData `json:data`
+}
+
 var (
 	EntryPoint       string
 	EntryPointStatus = "not available"
@@ -26,6 +40,12 @@ var (
 
 var (
 	AutoPull bool = true
+)
+
+const (
+	TAGADDED    = "tag_added"
+	NOTREAD     = 0
+	ALREADYREAD = 1
 )
 
 func HeartBeat() {
@@ -108,15 +128,25 @@ func GetMessages() {
 			log.Tracef("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
 
 			result := ds.Result{}
+			MessagesSlice := []Messages{}
+			result.Data = &MessagesSlice
 			if err := json.Unmarshal(body, &result); err == nil {
 				if result.Code == 0 {
-					EntryPointStatus = "available"
+					for _, v := range MessagesSlice {
+						if v.Type == "item_event" && v.Data.Event == TAGADDED {
+							InsertToTagadded(v.Data.EventTime, v.Data.Repname, v.Data.Itemname, v.Data.Tag, NOTREAD)
+						}
+					}
 				} else {
-					EntryPointStatus = "not available"
+					l := log.Error("Get Messages errror:", result.Code)
+					logq.LogPutqueue(l)
 				}
+			} else {
+				log.Error(err)
 			}
 
-			time.Sleep(900 * time.Second)
+			time.Sleep(600 * time.Second)
+
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			reql, err := http.NewRequest("GET", url, nil)
 			if len(loginBasicAuthStr) > 0 {

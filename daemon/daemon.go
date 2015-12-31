@@ -326,6 +326,8 @@ func RunDaemon() {
 		go startP2PServer()
 		go HeartBeat()
 		go datapoolMonitor()
+		go GetMessages()
+		go PullTagAutomatic()
 	} else {
 		l := log.Error("no daemonid specificed.")
 		logq.LogPutqueue(l)
