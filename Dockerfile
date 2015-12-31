@@ -1,4 +1,4 @@
-# This is a local-build docker image for p2p-dl test
+# Datahub Client
 
 FROM golang:1.5
 MAINTAINER Zonesan <chaizs@asiainfo.com>
