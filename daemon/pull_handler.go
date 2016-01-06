@@ -70,6 +70,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	if len(alItemdesc) != 0 && p.ItemDesc != alItemdesc {
 		p.ItemDesc = alItemdesc
+		//TODO add log tishi
 	} else if len(p.ItemDesc) == 0 && len(alItemdesc) == 0 {
 		p.ItemDesc = p.Repository + "_" + p.Dataitem
 	}
@@ -82,9 +83,22 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	//add to automatic pull list
 	if p.Automatic == true {
-		AutomaticPullPutqueue(p)
+		if true == CheckExistInQueue(p) {
+			strret = p.Repository + "/" + p.Dataitem + "is being pulled automatically."
+		} else {
+			AutomaticPullPutqueue(p)
+			strret = p.Repository + "/" + p.Dataitem + "will be pulled automatically."
+		}
 
-		strret = p.Repository + "/" + p.Dataitem + "will be pull automatically."
+		msgret := ds.MsgResp{Msg: strret}
+		resp, _ := json.Marshal(msgret)
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+		return
+	}
+	if p.CancelAutomatic == true {
+		AutomaticPullRmqueue(p)
+		strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + "successfully."
 		msgret := ds.MsgResp{Msg: strret}
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusOK)
@@ -124,6 +138,7 @@ func dl(uri, ip string, p ds.DsPull, w http.ResponseWriter, c chan int) error {
 
 	if len(ip) == 0 {
 		ip = "http://localhost:65535"
+		//TODO return
 	}
 
 	target := ip + uri
@@ -265,6 +280,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			l := log.Errorf("check md5 code error! src md5:%v,  local md5:%v", md5str, bmd5str)
 			logq.LogPutqueue(l)
 			status = "md5 error"
+			updateJobQueue(jobid, status, 0)
+			return n, nil
 		}
 	}
 	log.Printf("%d bytes downloaded.", n)
@@ -310,7 +327,7 @@ func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	log.Println(resp.StatusCode, string(body))
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
@@ -345,19 +362,30 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 	var next *list.Element
 	for e := AutomaticPullList.Front(); e != nil; e = next {
 		v := e.Value.(ds.DsPull)
-		if v == p {
+		if v.Repository == p.Repository && v.Dataitem == p.Dataitem {
 			AutomaticPullList.Remove(e)
 			log.Info(v, "removed from the queue.")
-			break
 		} else {
 			next = e.Next()
 		}
 	}
 }
 
+func CheckExistInQueue(p ds.DsPull) (exist bool) {
+	exist = false
+	for e := AutomaticPullList.Front(); e != nil; e = e.Next() {
+		v := e.Value.(ds.DsPull)
+		if v.Repository == p.Repository && v.Dataitem == p.Dataitem {
+			exist = true
+			return
+		}
+	}
+	return
+}
+
 func PullTagAutomatic() {
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(30 * time.Second)
 
 		//log.Debug("AutomaticPullList.Len()", AutomaticPullList.Len())
 		var Tags map[int]string

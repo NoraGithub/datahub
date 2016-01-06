@@ -22,13 +22,14 @@ const (
 )
 
 type DsPull struct {
-	Tag        string `json:"tag"`
-	Datapool   string `json:"datapool"`
-	DestName   string `json:"destname"`
-	Repository string `json:"repository, omitempty"`
-	Dataitem   string `json:"dataitem, omitempty"`
-	ItemDesc   string `json:"itemdesc, omitempty"`
-	Automatic  bool   `json:"automatic, omitempty"`
+	Tag             string `json:"tag"`
+	Datapool        string `json:"datapool"`
+	DestName        string `json:"destname"`
+	Repository      string `json:"repository, omitempty"`
+	Dataitem        string `json:"dataitem, omitempty"`
+	ItemDesc        string `json:"itemdesc, omitempty"`
+	Automatic       bool   `json:"automatic, omitempty"`
+	CancelAutomatic bool   `json:"cancelautomatic, omitempty"`
 }
 
 type Result struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ func Pull(login bool, args []string) (err error) {
 	f := mflag.NewFlagSet("pull", mflag.ContinueOnError)
 	f.StringVar(&dstruc.DestName, []string{"-destname", "d"}, "", "indicates the name that tag will be stored as ")
 	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "pull a new tag of a dataitem automatically")
+	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
 		pullUsage()
@@ -23,6 +25,7 @@ func Pull(login bool, args []string) (err error) {
 	}
 	f.Usage = pullUsage
 	if err = f.Parse(args[2:]); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	u, err := url.Parse(args[0])
@@ -31,6 +34,8 @@ func Pull(login bool, args []string) (err error) {
 		return
 	}
 	dstruc.Automatic = *pbAutomatic
+	dstruc.CancelAutomatic = *pbCancelAutomatic
+
 	source := strings.Trim(u.Path, "/")
 
 	if url := strings.Split(source, "/"); len(url) != 2 {
@@ -76,6 +81,7 @@ func Pull(login bool, args []string) (err error) {
 
 	jsonData, err := json.Marshal(dstruc)
 	if err != nil {
+		fmt.Println("Error")
 		return
 	}
 
@@ -86,15 +92,15 @@ func Pull(login bool, args []string) (err error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		//body, _ := ioutil.ReadAll(resp.Body)
 		//ShowMsgResp(body, true)
 		showResponse(resp)
 		//fmt.Printf("%s/%s:%s will be download to %s\n.", repo, item, ds.Tag, ds.Datapool)
 
-	} else if resp.StatusCode == 401 {
+	} else if resp.StatusCode == http.StatusUnauthorized {
 		if err := Login(false, nil); err == nil {
-			Pull(login, args)
+			return Pull(login, args)
 		} else {
 			fmt.Println(err)
 			return err
