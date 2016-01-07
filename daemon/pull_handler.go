@@ -365,6 +365,7 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 		if v.Repository == p.Repository && v.Dataitem == p.Dataitem {
 			AutomaticPullList.Remove(e)
 			log.Info(v, "removed from the queue.")
+			break
 		} else {
 			next = e.Next()
 		}
