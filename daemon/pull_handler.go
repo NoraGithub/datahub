@@ -410,6 +410,7 @@ func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
 
 		go PullOneTagAutomatic(d, chn)
 		<-chn
+
 		UpdateStatMsgTagadded(id, ALREADYREAD)
 	}
 }
