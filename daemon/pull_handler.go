@@ -84,10 +84,10 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	//add to automatic pull list
 	if p.Automatic == true {
 		if true == CheckExistInQueue(p) {
-			strret = p.Repository + "/" + p.Dataitem + "is being pulled automatically."
+			strret = p.Repository + "/" + p.Dataitem + " is being pulled automatically."
 		} else {
 			AutomaticPullPutqueue(p)
-			strret = p.Repository + "/" + p.Dataitem + "will be pulled automatically."
+			strret = p.Repository + "/" + p.Dataitem + " will be pulled automatically."
 		}
 
 		msgret := ds.MsgResp{Msg: strret}

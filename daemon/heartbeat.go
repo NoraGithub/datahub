@@ -166,7 +166,8 @@ func GetMessages() {
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
-			reql, err := http.NewRequest("GET", url, nil)
+			urllogin := DefaultServer + "/"
+			reql, err := http.NewRequest("GET", urllogin, nil)
 			if len(loginBasicAuthStr) > 0 {
 				reql.Header.Set("Authorization", loginBasicAuthStr)
 				log.Info("user name:", gstrUsername)
@@ -181,20 +182,20 @@ func GetMessages() {
 				continue
 			}
 			defer respl.Body.Close()
+
+			result := &ds.Result{}
 			log.Println("login return", respl.StatusCode)
 			if respl.StatusCode == 200 {
 				body, _ := ioutil.ReadAll(respl.Body)
 				log.Println(string(body))
-				type tk struct {
-					Token string `json:"token"`
-				}
-				token := &tk{}
-				if err = json.Unmarshal(body, token); err != nil {
+
+				result.Data = &tk{}
+				if err = json.Unmarshal(body, result); err != nil {
 					log.Error(err)
 					log.Println(respl.StatusCode, string(body))
 					continue
 				} else {
-					loginAuthStr = "Token " + token.Token
+					loginAuthStr = "Token " + result.Data.(*tk).Token
 					loginLogged = true
 					log.Println(loginAuthStr)
 				}

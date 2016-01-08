@@ -175,6 +175,7 @@ func checkAccessToken(tokenUrl string) bool {
 	result := &ds.Result{Data: &tkresp}
 	if err = json.Unmarshal(body, &result); err != nil {
 		log.Println(err)
+		return false
 	}
 	log.Println(string(body))
 
