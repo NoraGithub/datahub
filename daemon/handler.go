@@ -63,13 +63,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("login return", resp.StatusCode)
 	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		//fmt.Println("test body", string(body))
 		log.Println(string(body))
 
 		result.Data = &tk{}
 		if err = json.Unmarshal(body, result); err != nil {
 			log.Error(err)
-			//w.WriteHeader(resp.StatusCode)
 			w.WriteHeader(http.StatusServiceUnavailable)
 
 			l := log.Println(resp.StatusCode, string(body))
@@ -88,6 +86,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		logq.LogPutqueue(l)
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
+	}else{
+		w.WriteHeader(resp.StatusCode)
 	}
 
 }

@@ -70,7 +70,14 @@ func Login(login bool, args []string) (err error) {
 		} else {
 			retrytimes, _ := strconv.Atoi(objloginerr.Retrytimes)
 			leftchance := 5 - retrytimes
-			fmt.Printf("%s\n%v chance left.\n", result.Msg, leftchance)
+			switch leftchance {
+			case 0:
+				fmt.Printf("%s\nno chance left.\n", result.Msg)
+			case 1:
+				fmt.Printf("%s\n1 chance left.\n", result.Msg)
+			default:
+				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
+			}
 			return fmt.Errorf("ERROR %d: login failed.", resp.StatusCode)
 		}
 	} else {
