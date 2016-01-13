@@ -53,6 +53,10 @@ const (
 func HeartBeat() {
 	getEp := false
 	for {
+		if len(DaemonID) == 0 {
+			log.Warn("No daemonid. You'd better start datahub with the parameter \"--token\".")
+			return
+		}
 
 		heartbeatbody := Beatbody{Daemonid: DaemonID}
 		if getEp == false && len(EntryPoint) == 0 {
