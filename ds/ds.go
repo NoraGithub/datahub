@@ -37,6 +37,12 @@ type Result struct {
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 }
+
+type ResultPages struct {
+	Total   int         `json:total`
+	Results interface{} `json:results`
+}
+
 type MsgResp struct {
 	Msg string `json:"msg"`
 }
@@ -128,6 +134,7 @@ const Create_dh_dp_repo_ditem_map string = `CREATE TABLE IF NOT EXISTS
 
 //DH_DP_REPO_DITEM_MAP  PUBLISH: 'Y' the dataitem is published by you,
 //'N' the dataitem is pulled by you
+
 //TAGID        INTEGER PRIMARY KEY AUTOINCREMENT,
 const Create_dh_repo_ditem_tag_map string = `CREATE TABLE IF NOT EXISTS 
     DH_RPDM_TAG_MAP (  

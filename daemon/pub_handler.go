@@ -125,6 +125,8 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 					"Insert dataitem to datapool error, please check it immediately!")
 			} else {
 				HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
+
+				g_DaemonRole = PUBLISHER
 			}
 		}
 	} else {
@@ -246,6 +248,8 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		} else {
 			AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
 			HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
+
+			g_DaemonRole = PUBLISHER
 		}
 	} else {
 

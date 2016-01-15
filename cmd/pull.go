@@ -16,7 +16,7 @@ func Pull(login bool, args []string) (err error) {
 	dstruc := ds.DsPull{}
 	f := mflag.NewFlagSet("pull", mflag.ContinueOnError)
 	f.StringVar(&dstruc.DestName, []string{"-destname", "d"}, "", "indicates the name that tag will be stored as ")
-	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "pull a new tag of a dataitem automatically")
+	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "pull the new tags of a dataitem automatically")
 	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
@@ -118,7 +118,9 @@ func Pull(login bool, args []string) (err error) {
 }
 
 func pullUsage() {
-	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [--destname]\n", os.Args[0])
+	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [--destname] [--automatic] [--cancel]\n", os.Args[0])
 	fmt.Println("\nPull a tag from the provider\n")
 	fmt.Println("  --destname, -d = name  indicates the name that tag will be stored as")
+	fmt.Println("  --automatic, -a        pull the new tags of a dataitem automatically")
+	fmt.Println("  --cancel, -c           cancel the automatical pulling of a dataitem")
 }

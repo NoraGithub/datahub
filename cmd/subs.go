@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 func Subs(login bool, args []string) (err error) {
@@ -22,13 +23,17 @@ func Subs(login bool, args []string) (err error) {
 		return
 	}
 
-	uri := "/subscriptions/pull"
+	uri := "/subscriptions/dataitems?phase=1"
 
 	if len(args) == 1 {
-		uri = "/repositories"
-		uri = uri + "/" + args[0]
-		itemDetail = true
-		return Repo(login, args) //deal  repo/item:tag by repo cmd
+		if false == strings.Contains(args[0], "/") {
+			uri = uri + "&repname=" + args[0]
+		} else {
+			uri = "/repositories"
+			uri = uri + "/" + args[0]
+			itemDetail = true
+			return Repo(login, args) //deal  repo/item:tag by repo cmd
+		}
 	}
 
 	resp, err := commToDaemon("GET", uri, nil)
@@ -36,10 +41,12 @@ func Subs(login bool, args []string) (err error) {
 		fmt.Println(err)
 		return err
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
+
 		if itemDetail {
 			subsResp(itemDetail, body, args[0])
 		} else {
@@ -47,6 +54,7 @@ func Subs(login bool, args []string) (err error) {
 		}
 
 	} else if resp.StatusCode == 401 {
+
 		if err := Login(false, nil); err == nil {
 			Subs(login, args)
 		} else {
@@ -55,6 +63,7 @@ func Subs(login bool, args []string) (err error) {
 			fmt.Println(err)
 		}
 	} else {
+
 		showError(resp)
 	}
 
@@ -82,7 +91,8 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		}
 	} else {
 		subs := []ds.Data{}
-		result := &ds.Result{Data: &subs}
+		pages := ds.ResultPages{Results: &subs}
+		result := &ds.Result{Data: &pages}
 		err := json.Unmarshal(respbody, &result)
 		if err != nil {
 			panic(err)
