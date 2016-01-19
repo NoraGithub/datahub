@@ -120,7 +120,7 @@ func HeartBeat() {
 }
 
 func GetMessages() {
-	log.Info("start GetMessages from messages service")
+	log.Info("start GetMessages from messages server")
 	var sleepInterval int
 	var srtInterval string
 	var e error

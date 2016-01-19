@@ -67,6 +67,7 @@ func jobRmHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params
 
 			DatahubJob = append(DatahubJob[:idx], DatahubJob[idx+1:]...)
 			msg, code, httpcode = fmt.Sprintf("job %s deleted.", jobid), 0, http.StatusOK
+			break
 		}
 	}
 

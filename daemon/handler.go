@@ -17,7 +17,7 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "http://hub.dataos.io/api"
+	DefaultServer     = "https://hub.dataos.io/api"
 )
 
 type UserForJson struct {
@@ -86,7 +86,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		logq.LogPutqueue(l)
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
-	}else{
+	} else {
 		w.WriteHeader(resp.StatusCode)
 	}
 

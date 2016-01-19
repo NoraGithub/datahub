@@ -17,10 +17,10 @@ fi
 
 daemonid=$1
 
-url='http://hub.dataos.io'
+url='https://hub.dataos.io'
 
-deb_package='datahub_0.8.0-1_amd64.deb'
-rpm_x86_64_package='datahub-0.8.0-1.x86_64.rpm'
+deb_package='datahub_0.9.0-1_amd64.deb'
+rpm_x86_64_package='datahub-0.9.0-1.x86_64.rpm'
 
 command_exists() {
 	command -v "$@" > /dev/null 2>&1

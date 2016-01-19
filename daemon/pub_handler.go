@@ -111,7 +111,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	rbody, _ := ioutil.ReadAll(resp.Body)
 	log.Println(resp.StatusCode, string(rbody))
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		err := MkdirForDataItem(repo, item, pub.Datapool, pub.ItemDesc)
 		if err != nil {
 			RollBackItem(repo, item)
