@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -287,7 +288,7 @@ func RunDaemon() {
 	router.GET("/repositories/:repo/:item", repoItemHandler)
 	router.GET("/repositories/:repo", repoRepoNameHandler)
 	router.GET("/repositories", repoHandler)
-	router.GET("/subscriptions/pull", subsHandler)
+	router.GET("/subscriptions/dataitems", subsHandler)
 
 	router.POST("/repositories/:repo/:item", pubItemHandler)
 	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)
@@ -358,6 +359,11 @@ func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
 	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	http.DefaultClient.Transport = tr
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
 }

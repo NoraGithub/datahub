@@ -584,6 +584,23 @@ func delEntryPoint() {
 	}
 }
 
+func GetDaemonRoleByPubRecord() (role int) {
+	sql := `SELECT COUNT(*) FROM DH_DP_RPDM_MAP WHERE PUBLISH='Y' AND STATUS='A' 
+	        AND DPID IN (SELECT DPID FROM DH_DP WHERE STATUS='A');`
+	row := g_ds.Db.QueryRow(sql)
+
+	var count int
+	row.Scan(&count)
+	if count > 0 {
+		role = PUBLISHER
+		log.Debug("This datahub daemon is a publisher.")
+	} else {
+		role = PULLER
+		log.Debug("This datahub daemon is a puller.")
+	}
+	return
+}
+
 func buildResp(code int, msg string, data interface{}) (body []byte, err error) {
 	r := ds.Response{}
 

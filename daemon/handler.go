@@ -17,11 +17,15 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "http://hub.dataos.io/api"
+	DefaultServer     = "https://hub.dataos.io/api"
 )
 
 type UserForJson struct {
 	Username string `json:"username", omitempty`
+}
+
+type tk struct {
+	Token string `json:"token"`
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,30 +58,38 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	result := &ds.Result{}
 	log.Println("login return", resp.StatusCode)
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		//fmt.Println("test body", string(body))
 		log.Println(string(body))
-		type tk struct {
-			Token string `json:"token"`
-		}
-		token := &tk{}
-		if err = json.Unmarshal(body, token); err != nil {
+
+		result.Data = &tk{}
+		if err = json.Unmarshal(body, result); err != nil {
 			log.Error(err)
-			//w.WriteHeader(resp.StatusCode)
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write(body)
-			log.Println(resp.StatusCode, string(body))
+
+			l := log.Println(resp.StatusCode, string(body))
+			logq.LogPutqueue(l)
 			return
 		} else {
-			loginAuthStr = "Token " + token.Token
+
+			loginAuthStr = "Token " + result.Data.(*tk).Token //must be pointer
 			loginLogged = true
 			log.Println(loginAuthStr)
 			loginBasicAuthStr = r.Header.Get("Authorization")
 		}
+	} else if resp.StatusCode == http.StatusForbidden {
+		body, _ := ioutil.ReadAll(resp.Body)
+		l := log.Println(string(body))
+		logq.LogPutqueue(l)
+		w.WriteHeader(resp.StatusCode)
+		w.Write(body)
+	} else {
+		w.WriteHeader(resp.StatusCode)
 	}
-	w.WriteHeader(resp.StatusCode)
+
 }
 
 func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (resp *http.Response, err error) {

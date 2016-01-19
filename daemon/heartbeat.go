@@ -17,6 +17,7 @@ type Beatbody struct {
 	Daemonid   string   `json:"daemonid"`
 	Entrypoint []string `json:"entrypoint"`
 	Log        []string `json:"log,omitempty"`
+	Role       int      `json:"role"` //0 puller, 1 publisher
 }
 
 type MessageData struct {
@@ -28,9 +29,9 @@ type MessageData struct {
 }
 
 type Messages struct {
-	Messageid int         `json:messageid`
-	Type      string      `json:type`
-	Data      MessageData `json:data`
+	Messageid int         `json:messageid,omitempty`
+	Type      string      `json:type,omitempty`
+	Data      MessageData `json:data,omitempty`
 }
 
 var (
@@ -41,25 +42,38 @@ var (
 )
 
 var (
-	AutoPull bool = true
+	AutoPull     bool = true
+	g_DaemonRole int  = 0
 )
 
 const (
 	TAGADDED    = "tag_added"
 	NOTREAD     = 0
 	ALREADYREAD = 1
+
+	PUBLISHER = 1
+	PULLER    = 0
 )
 
 func HeartBeat() {
 	getEp := false
-	for {
 
-		heartbeatbody := Beatbody{Daemonid: DaemonID}
+	g_DaemonRole = GetDaemonRoleByPubRecord()
+
+	for {
+		if len(DaemonID) == 0 {
+			log.Warn("No daemonid. You'd better start datahub with the parameter \"--token\".")
+			return
+		}
+
+		heartbeatbody := Beatbody{Daemonid: DaemonID, Role: g_DaemonRole}
 		if getEp == false && len(EntryPoint) == 0 {
 			EntryPoint = getEntryPoint()
 			getEp = true
 		}
-		heartbeatbody.Entrypoint = append(heartbeatbody.Entrypoint, EntryPoint)
+		if len(EntryPoint) != 0 {
+			heartbeatbody.Entrypoint = append(heartbeatbody.Entrypoint, EntryPoint)
+		}
 
 		logQueue := logq.LogGetqueue()
 		if len(logQueue) > 0 {
@@ -106,7 +120,7 @@ func HeartBeat() {
 }
 
 func GetMessages() {
-	log.Info("start GetMessages from messages service")
+	log.Info("start GetMessages from messages server")
 	var sleepInterval int
 	var srtInterval string
 	var e error
@@ -120,7 +134,7 @@ func GetMessages() {
 				logq.LogPutqueue(l)
 			}
 		} else {
-			sleepInterval = 180
+			sleepInterval = 600
 		}
 
 		time.Sleep(time.Duration(sleepInterval) * time.Second)
@@ -146,8 +160,11 @@ func GetMessages() {
 			log.Debugf("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
 
 			result := ds.Result{}
+			Pages := ds.ResultPages{}
 			MessagesSlice := []Messages{}
-			result.Data = &MessagesSlice
+			Pages.Results = &MessagesSlice
+			result.Data = &Pages
+
 			if err := json.Unmarshal(body, &result); err == nil {
 				if result.Code == 0 {
 					log.Debug(result)
@@ -166,7 +183,8 @@ func GetMessages() {
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
-			reql, err := http.NewRequest("GET", url, nil)
+			urllogin := DefaultServer + "/"
+			reql, err := http.NewRequest("GET", urllogin, nil)
 			if len(loginBasicAuthStr) > 0 {
 				reql.Header.Set("Authorization", loginBasicAuthStr)
 				log.Info("user name:", gstrUsername)
@@ -181,20 +199,20 @@ func GetMessages() {
 				continue
 			}
 			defer respl.Body.Close()
+
+			result := &ds.Result{}
 			log.Println("login return", respl.StatusCode)
 			if respl.StatusCode == 200 {
 				body, _ := ioutil.ReadAll(respl.Body)
 				log.Println(string(body))
-				type tk struct {
-					Token string `json:"token"`
-				}
-				token := &tk{}
-				if err = json.Unmarshal(body, token); err != nil {
+
+				result.Data = &tk{}
+				if err = json.Unmarshal(body, result); err != nil {
 					log.Error(err)
 					log.Println(respl.StatusCode, string(body))
 					continue
 				} else {
-					loginAuthStr = "Token " + token.Token
+					loginAuthStr = "Token " + result.Data.(*tk).Token
 					loginLogged = true
 					log.Println(loginAuthStr)
 				}

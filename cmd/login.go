@@ -7,13 +7,21 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strconv"
 )
 
 type UserForJson struct {
 	Username string `json:"username", omitempty`
+}
+
+type Loginerr struct {
+	Retrytimes string `json:"retry_times"`
+	Ttltimes   string `json:"ttl_times"`
 }
 
 func Login(login bool, args []string) (err error) {
@@ -45,12 +53,33 @@ func Login(login bool, args []string) (err error) {
 	}
 	defer resp.Body.Close()
 	//fmt.Println("login return", resp.StatusCode)
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		Logged = true
 		if login {
 			fmt.Println("login success.")
 		}
 		return
+	} else if resp.StatusCode == http.StatusForbidden {
+
+		result := &ds.Result{}
+		objloginerr := &Loginerr{}
+		result.Data = objloginerr
+		body, _ := ioutil.ReadAll(resp.Body)
+		if err = json.Unmarshal(body, result); err != nil {
+			return err
+		} else {
+			retrytimes, _ := strconv.Atoi(objloginerr.Retrytimes)
+			leftchance := 5 - retrytimes
+			switch leftchance {
+			case 0:
+				fmt.Printf("%s\nno chance left.\n", result.Msg)
+			case 1:
+				fmt.Printf("%s\n1 chance left.\n", result.Msg)
+			default:
+				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
+			}
+			return fmt.Errorf("ERROR %d: login failed.", resp.StatusCode)
+		}
 	} else {
 		if /*resp.StatusCode == 401 &&*/ login {
 			body, _ := ioutil.ReadAll(resp.Body)
