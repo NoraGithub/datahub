@@ -11,9 +11,6 @@ func DpRm(needLogin bool, args []string) (err error) {
 	if err = f.Parse(args); err != nil {
 		return err
 	}
-	/*if needLogin && !Logged {
-		login(false)
-	}*/
 
 	if len(args) > 0 && args[0][0] != '-' {
 		for _, v := range args {
