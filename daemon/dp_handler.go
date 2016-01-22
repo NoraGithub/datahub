@@ -113,14 +113,7 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	dpname := ps.ByName("dpname")
 
-	/*In future, we need to get dptype in Json to surpport FILE\ DB\ SDK\ API datapool
-	result, _ := ioutil.ReadAll(r.Body)
-	reqJson := cmd.FormatDp{}
-	err := json.Unmarshal(result, &reqJson)
-	if err != nil {
-		fmt.Printf("%T\n%s\n%#v\n", err, err, err)
-		fmt.Println(rw, "invalid argument.")
-	}*/
+	//In future, we need to get dptype in Json to surpport FILE\ DB\ SDK\ API datapool
 
 	onedp := cmd.FormatDpDetail{}
 	result := &ds.Result{Code: cmd.ResultOK, Msg: "", Data: &onedp}
