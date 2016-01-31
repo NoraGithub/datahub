@@ -49,7 +49,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 				fmt.Println("Please input absolute path after 'file://', e.g. file:///home/user/mydp")
 				return
 			}
-			d.Conn = "/" + strings.Trim(sp[1], "/")
+			if d.Type == "file" {
+				d.Conn = "/" + strings.Trim(sp[1], "/")
+			} else {
+				d.Conn = strings.Trim(sp[1], "/")
+			}
+
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
 			if sp[0][0] != '/' {
