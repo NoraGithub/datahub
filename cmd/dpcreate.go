@@ -113,9 +113,9 @@ func GetEnsure() bool {
 
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
-	fmt.Println("  datahub dp create DATAPOOL [file://][ABSOLUTE PATH]")
+	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]]")
 	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
-	fmt.Println("       datahub dp create dptest /home/user/test")
+	fmt.Println("       datahub dp create s3dp s3://mybucket")
 	fmt.Println("Create a datapool\n")
 
 }

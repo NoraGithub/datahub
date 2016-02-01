@@ -7,21 +7,29 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"os"
 	"strings"
 	"time"
 )
 
+func Env(name string, required bool) string {
+	s := os.Getenv(name)
+	if required && s == "" {
+		panic("env variable required, " + name)
+	}
+	log.Infof("[env][%s] %s\n", name, s)
+	return s
+}
+
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
 	sqlcheck := fmt.Sprintf("SELECT COUNT(1) FROM DH_DP WHERE DPNAME='%s' AND STATUS='A'", datapoolname)
 	row, err := g_ds.QueryRow(sqlcheck)
-	//fmt.Println(sqlcheck)
 	if err != nil {
-		log.Println("CheckDataPoolExist QueryRow error:", err.Error())
+		log.Error("CheckDataPoolExist QueryRow error:", err.Error())
 		return
 	} else {
 		var num int
 		row.Scan(&num)
-		//fmt.Println("num:", num)
 		if num == 0 {
 			return false
 		} else {
@@ -41,6 +49,20 @@ func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	} else {
 		row.Scan(&dpconn)
 		return dpconn
+	}
+}
+
+func GetDataPoolDpconnAndDptype(datapoolname string) (dpconn, dptype string) {
+	sqlgetdpconn := fmt.Sprintf("SELECT DPCONN, DPTYPE FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
+	//fmt.Println(sqlgetdpconn)
+	row, err := g_ds.QueryRow(sqlgetdpconn)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return "", ""
+	} else {
+		row.Scan(&dpconn, &dptype)
+		return dpconn, dptype
 	}
 }
 
@@ -78,7 +100,7 @@ func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
 		return
 	}
 	rpdmid := GetRepoItemId(p.Repository, p.Dataitem)
-	//fmt.Println("GetRepoItemId1", rpdmid, DpId)
+
 	if rpdmid == 0 {
 		sqlInsertRpdm := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP
 			(RPDMID ,REPOSITORY, DATAITEM, DPID, PUBLISH ,CREATE_TIME ,STATUS, ITEMDESC) 
@@ -86,7 +108,6 @@ func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
 			p.Repository, p.Dataitem, DpId, p.ItemDesc)
 		g_ds.Insert(sqlInsertRpdm)
 		rpdmid = GetRepoItemId(p.Repository, p.Dataitem)
-		//fmt.Println("GetRepoItemId2", rpdmid, DpId)
 	}
 	sqlInsertTag := fmt.Sprintf(`INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME ,RPDMID ,DETAIL,CREATE_TIME, STATUS) 
 		VALUES (null, '%s', '%d', '%s', datetime('now'), 'A')`,
