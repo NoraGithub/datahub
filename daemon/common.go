@@ -7,21 +7,29 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"os"
 	"strings"
 	"time"
 )
 
+func Env(name string, required bool) string {
+	s := os.Getenv(name)
+	if required && s == "" {
+		panic("env variable required, " + name)
+	}
+	log.Infof("[env][%s] %s\n", name, s)
+	return s
+}
+
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
 	sqlcheck := fmt.Sprintf("SELECT COUNT(1) FROM DH_DP WHERE DPNAME='%s' AND STATUS='A'", datapoolname)
 	row, err := g_ds.QueryRow(sqlcheck)
-	//fmt.Println(sqlcheck)
 	if err != nil {
-		log.Println("CheckDataPoolExist QueryRow error:", err.Error())
+		log.Error("CheckDataPoolExist QueryRow error:", err.Error())
 		return
 	} else {
 		var num int
 		row.Scan(&num)
-		//fmt.Println("num:", num)
 		if num == 0 {
 			return false
 		} else {
@@ -41,6 +49,20 @@ func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	} else {
 		row.Scan(&dpconn)
 		return dpconn
+	}
+}
+
+func GetDataPoolDpconnAndDptype(datapoolname string) (dpconn, dptype string) {
+	sqlgetdpconn := fmt.Sprintf("SELECT DPCONN, DPTYPE FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
+	//fmt.Println(sqlgetdpconn)
+	row, err := g_ds.QueryRow(sqlgetdpconn)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return "", ""
+	} else {
+		row.Scan(&dpconn, &dptype)
+		return dpconn, dptype
 	}
 }
 

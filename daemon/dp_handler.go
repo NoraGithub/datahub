@@ -52,9 +52,18 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", struDp.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
-			return3
+			return
 		}
-		if err := os.MkdirAll(sdpDirName, 0777); err != nil {
+
+		var err error
+		if struDp.Type == DPS3 {
+			struDp.Conn = strings.TrimLeft(struDp.Conn, "/")
+			err = nil
+		} else if struDp.Type == DPFILE {
+			err = os.MkdirAll(sdpDirName, 0777)
+		}
+
+		if err != nil {
 			l := log.Error(err, sdpDirName)
 			logq.LogPutqueue(l)
 			msg.Msg = err.Error()
@@ -63,11 +72,11 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
-			if _, err := g_ds.Insert(sql_dp_insert); err != nil {
+			if _, e := g_ds.Insert(sql_dp_insert); err != nil {
 				//os.Remove(sdpDirName)  //don't delete it. It is maybe used by others
-				l := log.Error(err)
+				l := log.Error(e)
 				logq.LogPutqueue(l)
-				msg.Msg = err.Error()
+				msg.Msg = e.Error()
 			}
 		}
 		resp, _ := json.Marshal(msg)

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"compress/gzip"
 	"container/list"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,9 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"io/ioutil"
@@ -157,11 +161,9 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	var out *os.File
 	var err error
-	var destfilename, tmpdestfilename, tmpdir string
+	var destfilename, tmpdestfilename, tmpdir, dpconn, dptype string
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
-		//os.MkdirAll(g_strDpPath+"/"+p.ItemDesc, 0777)
-		//destfilename = g_strDpPath + "/" + p.ItemDesc + "/" + p.DestName
 		e := fmt.Sprintf("datapool:%s not exist!", p.Datapool)
 		l := log.Error(e)
 		logq.LogPutqueue(l)
@@ -169,10 +171,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		c <- -1
 		return 0, err
 	} else {
-		dpconn := GetDataPoolDpconn(p.Datapool)
+		dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
 		if len(dpconn) == 0 {
-			//os.MkdirAll(g_strDpPath+"/"+p.ItemDesc, 0777)
-			//destfilename = g_strDpPath + "/" + p.ItemDesc + "/" + p.DestName
 			e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
 			l := log.Error(e)
 			logq.LogPutqueue(l)
@@ -180,12 +180,21 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			c <- -1
 			return 0, err
 		} else {
-			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
-			os.MkdirAll(tmpdir, 0777)
 			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
 			tmpdestfilename = tmpdir + "/" + p.DestName
+			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
 		}
 	}
+
+	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
+	if dptype == DPS3 {
+		destfilename = g_strDpPath + "/" + destfilename
+		tmpdestfilename = g_strDpPath + "/" + tmpdestfilename
+		tmpdir = g_strDpPath + "/" + tmpdir
+	}
+
+	os.MkdirAll(tmpdir, 0777)
+
 	log.Info("tmpdestfilename:", tmpdestfilename)
 	out, err = os.OpenFile(tmpdestfilename, os.O_RDWR|os.O_CREATE, 0644)
 
@@ -295,10 +304,50 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		l := log.Error(e)
 		logq.LogPutqueue(l)
 	}
-	updateJobQueue(jobid, status, dlsize)
+
+	switch dptype {
+	case "file":
+		updateJobQueue(jobid, status, dlsize)
+	case "s3":
+		updateJobQueue(jobid, "uploading to s3", dlsize)
+		UploadtoS3(destfilename, dpconn, jobid)
+	}
 
 	InsertTagToDb(dpexist, p)
 	return n, nil
+}
+
+func UploadtoS3(filename, bucket, status string) {
+	file, err := os.Open(filename)
+	if err != nil {
+		l := log.Error("Failed to open file", err)
+		logq.LogPutqueue(l)
+		return
+	}
+
+	// Not required, but you could zip the file before uploading it
+	// using io.Pipe read/writer to stream gzip'd file contents.
+	reader, writer := io.Pipe()
+	go func() {
+		gw := gzip.NewWriter(writer)
+		io.Copy(writer, file)
+
+		file.Close()
+		gw.Close()
+		writer.Close()
+	}()
+	uploader := s3manager.NewUploader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
+	//uploader := s3manager.NewUploader(session.New(aws.NewConfig()))
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Body:   reader,
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename + ".gz"),
+	})
+	if err != nil {
+		log.Error("Failed to upload", err)
+	}
+
+	log.Info("Successfully uploaded to", result.Location)
 }
 
 func MoveFromTmp(src, dest string) (err error) {
