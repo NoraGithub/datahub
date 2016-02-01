@@ -127,15 +127,8 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	log.Println(strret)
-	/*
-		msgret := ds.MsgResp{Msg: strret}
-		resp, _ := json.Marshal(msgret)
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-	*/
 
 	return
-
 }
 
 func dl(uri, ip string, p ds.DsPull, w http.ResponseWriter, c chan int) error {
@@ -309,7 +302,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	case "file":
 		updateJobQueue(jobid, status, dlsize)
 	case "s3":
-		updateJobQueue(jobid, "uploading to s3", dlsize)
+		updateJobQueue(jobid, "putting to s3", dlsize)
+
 		UploadtoS3(destfilename, dpconn, jobid)
 	}
 
@@ -317,7 +311,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	return n, nil
 }
 
-func UploadtoS3(filename, bucket, status string) {
+func UploadtoS3(filename, bucket, jobid string) {
 	file, err := os.Open(filename)
 	if err != nil {
 		l := log.Error("Failed to open file", err)
@@ -335,6 +329,8 @@ func UploadtoS3(filename, bucket, status string) {
 		file.Close()
 		gw.Close()
 		writer.Close()
+
+		updateJobQueueStatus(jobid, "puttos3ok")
 	}()
 	uploader := s3manager.NewUploader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
 	//uploader := s3manager.NewUploader(session.New(aws.NewConfig()))

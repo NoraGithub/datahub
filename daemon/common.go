@@ -100,7 +100,7 @@ func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
 		return
 	}
 	rpdmid := GetRepoItemId(p.Repository, p.Dataitem)
-	//fmt.Println("GetRepoItemId1", rpdmid, DpId)
+
 	if rpdmid == 0 {
 		sqlInsertRpdm := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP
 			(RPDMID ,REPOSITORY, DATAITEM, DPID, PUBLISH ,CREATE_TIME ,STATUS, ITEMDESC) 
@@ -108,7 +108,6 @@ func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
 			p.Repository, p.Dataitem, DpId, p.ItemDesc)
 		g_ds.Insert(sqlInsertRpdm)
 		rpdmid = GetRepoItemId(p.Repository, p.Dataitem)
-		//fmt.Println("GetRepoItemId2", rpdmid, DpId)
 	}
 	sqlInsertTag := fmt.Sprintf(`INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME ,RPDMID ,DETAIL,CREATE_TIME, STATUS) 
 		VALUES (null, '%s', '%d', '%s', datetime('now'), 'A')`,

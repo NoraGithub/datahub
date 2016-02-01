@@ -115,6 +115,15 @@ func updateJobQueue(jobid, stat string, dlsize int64) {
 	}
 }
 
+func updateJobQueueStatus(jobid, stat string) {
+	for k, j := range DatahubJob {
+		if j.ID == jobid {
+			DatahubJob[k].Stat = stat
+			updateJobStatus(&DatahubJob[k])
+		}
+	}
+}
+
 func putToJobQueue(tag, destfilename, stat string, srcsize int64 /*, stat os.FileInfo*/) string {
 
 	var jobid string

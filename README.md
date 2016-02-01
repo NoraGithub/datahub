@@ -1,4 +1,4 @@
-# datahub-client
+﻿# datahub-client
 
 # Datahub-Client
 ----------------
@@ -99,16 +99,23 @@ $
 - 目前只支持本地目录形式的数据池创建。
 
 ```shell
-datahub dp create $DPNAME [file://][ABSOLUTE PATH]
+datahub dp create $DPNAME [[file://][ABSOLUTE PATH]] [[s3://][BUCKET]]
 ```
 输出
 ```
 %msg
 ```
-例子
+例子 1
 ```
 $ datahub dp create testdp file:///var/lib/datahub/testdp
 dp create success. name:testdp type:file path:/var/lib/datahub/testdp
+$
+```
+
+例子 2
+```
+$ datahub dp create s3dp s3://mybucket
+dp create success. name:s3dp type:s3 path:mybucket
 $
 ```
 
@@ -116,7 +123,7 @@ $
 
 - 删除数据池不会删除目标数据池已保存的数据。该dp有发布的数据项时，不能被删除。删除是在sqlite中标记状态，不真实删除。
 
-```
+```shell
 datahub dp rm $DPNAME
 ```
 输出
@@ -134,7 +141,7 @@ $
 
 ##### 2.1. 列出所有已订阅项
 
-```
+```shell
 datahub subs 
 ```
 输出
@@ -144,37 +151,51 @@ datahub subs
 例子
 ```
 $ datahub subs
-cmcc/beijing        regular file
+cmcc/beijing        file
 repo1/testing       api
 $
 ```
 
-##### 2.2. 列出已订阅item详情
+##### 2.2. 列出用户在某个repository下已订阅的item
 
+```shell
+datahub subs $REPO
 ```
+输出
+```
+%REPO/%ITEM     %TYPE
+
+{%ITEM:%TAGNAME %UPDATE_TIME    %INFO}
+```
+例子
+```
+$ datahub subs cmcc
+cmcc/beijing    regular file
+$ datahub subs cmcc
+cmcc/Beijing     file
+cmcc/Tianjin     file
+cmcc/Shanghai    file
+$
+```
+##### 2.3. 列出已订阅item详情
+```shell
 datahub subs $REPO/$ITEM
 ```
 输出
 ```
 %REPO/%ITEM     %TYPE
-DESCRIPTION:
-%DESCRIPTION
-METADATA:
-%METADATA
 {%ITEM:%TAGNAME %UPDATE_TIME    %INFO}
 ```
 例子
 ```
 $ datahub subs cmcc/beijing
-cmcc/beijing    regular file
+cmcc/beijing    file
 DESCRIPTION:
 移动数据北京地区
-METADATA:
-BLABLABLA
-beijing:chaoyang    15:34 Oct 12 2015       600M
-beijing:daxing  16:40 Oct 13 2015       435M
-beijing:shunyi  16:40 Oct 14 2015       324M
-beijing:haidian 16:40 Oct 15 2015       988M
+cmcc/beijing:chaoyang    15:34 Oct 12 2015       600M
+cmcc/beijing:daxing  16:40 Oct 13 2015       435M
+cmcc/beijing:shunyi  16:40 Oct 14 2015       324M
+cmcc/beijing:haidian 16:40 Oct 15 2015       988M
 $
 ```
 
@@ -182,9 +203,12 @@ $
 
 ##### 3.1. 拉取某个item的tag
 - pull一个tag，需指定$DATAPOOL, 可再指定$DATAPOOL下的子目录$LOCATION，默认下载到$DATAPOOL://$REPO_$ITEM. 
-可选参数--destname, -d 命名下载的tag
+可选参数:
+[--destname, -d]命名下载的tag
+[--automatic, -a]自动下载已订阅的Item新增的tag
+[--cancel, -c]取消自动下载tag
 
-```
+```shell
 datahub pull $REPO/$ITEM:$TAG $DATAPOOL[://$LOCATION] [--destname，-d]
 ```
 输出
@@ -204,7 +228,7 @@ $
 
 ##### 4.1. 登录到dataos.io
 
-```
+```shell
 datahub login [--user=user]
 ```
 输出
@@ -228,7 +252,7 @@ $
 
 ##### 5.1. 发布一个DataItem
 
-```
+```shell
 datahub pub $REPOSITORY/$DATAITEM $DATAPOOL://$LOCATION --accesstype=public [private]  [--comment, -m]
 ```
 输出
@@ -243,7 +267,7 @@ Pub success,  OK
 
 ##### 5.2.发布一个Tag
 
-```
+```shell
 datahub pub $REPO/$ITEM:$Tag $TAGDETAIL --comment=" "
 ```
 输出
@@ -261,7 +285,7 @@ $
 
 ##### 6.1. 查询自己创建的和具有写权限的所有repository
 
-```
+```shell
 datahub repo 
 ```
 输出
@@ -277,18 +301,18 @@ Base_station_location
 
 ##### 7.1. job查看所有任务列表，包括数据下载和发送的任务
 
-```
+```shell
 datahub job
 ```
 ##### 7.2. job查看某个任务Id对应的信息
 
-```
+```shell
 datahub job &JOBID
 ```
 
 ##### 7.3. job rm删除某个job
 
-```
+```shell
 datahub job rm &JOBID
 ```
 
@@ -298,7 +322,7 @@ datahub job rm &JOBID
 
 ##### 8.1. 列出帮助
 
-```
+```shell
 datahub help [$CMD] [$SUBCMD]
 ```
 输出
