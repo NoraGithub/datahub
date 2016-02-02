@@ -304,14 +304,14 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	case "s3":
 		updateJobQueue(jobid, "putting to s3", dlsize)
 
-		UploadtoS3(destfilename, dpconn, jobid)
+		UploadtoS3(destfilename, dpconn, jobid, p)
 	}
 
 	InsertTagToDb(dpexist, p)
 	return n, nil
 }
 
-func UploadtoS3(filename, bucket, jobid string) {
+func UploadtoS3(filename, bucket, jobid string, p ds.DsPull) {
 	file, err := os.Open(filename)
 	if err != nil {
 		l := log.Error("Failed to open file", err)
@@ -337,7 +337,7 @@ func UploadtoS3(filename, bucket, jobid string) {
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Body:   reader,
 		Bucket: aws.String(bucket),
-		Key:    aws.String(filename + ".gz"),
+		Key:    aws.String(p.Datapool + "/" + p.ItemDesc + "/" + p.DestName + ".gz"),
 	})
 	if err != nil {
 		log.Error("Failed to upload", err)
