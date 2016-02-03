@@ -26,11 +26,17 @@ var (
 	g_ds = new(ds.Ds)
 
 	wg sync.WaitGroup
+
+	AWS_SECRET_ACCESS_KEY string
+	AWS_ACCESS_KEY_ID     string
+	AWS_REGION            string
 )
 
 const (
 	g_dbfile    string = "/var/lib/datahub/datahub.db"
 	g_strDpPath string = cmd.GstrDpPath
+	DPFILE      string = "file"
+	DPS3        string = "s3"
 )
 
 type StoppableListener struct {
@@ -229,6 +235,7 @@ func isFileExists(file string) bool {
 func RunDaemon() {
 	//fmt.Println("Run daemon..")
 	// Daemonizing echo server application.
+
 	switch isDaemon, err := daemonigo.Daemonize(); {
 	case !isDaemon:
 		return
@@ -246,6 +253,10 @@ func RunDaemon() {
 	}
 
 	dbinit()
+
+	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	AWS_REGION = Env("AWS_REGION", false)
 
 	if len(DaemonID) == 40 {
 		log.Println("daemonid", DaemonID)

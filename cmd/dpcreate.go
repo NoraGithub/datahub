@@ -27,7 +27,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
-		fmt.Printf("Are you really going to create a datapool:%s in default type 'file'?\nY or N:", args[0])
+		fmt.Print("datahub:are you sure to create the datapool", args[0],
+			"with default type 'file' and path '/var/lib/datahub' ?\n[Y or N]:")
 		if GetEnsure() == true {
 			d.Name = args[0]
 			d.Conn = GstrDpPath
@@ -49,7 +50,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 				fmt.Println("Please input absolute path after 'file://', e.g. file:///home/user/mydp")
 				return
 			}
-			d.Conn = "/" + strings.Trim(sp[1], "/")
+			if d.Type == "file" {
+				d.Conn = "/" + strings.Trim(sp[1], "/")
+			} else {
+				d.Conn = strings.Trim(sp[1], "/")
+			}
+
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
 			if sp[0][0] != '/' {
@@ -74,9 +80,6 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return
 	}
 
-	/*if needLogin && !Logged {
-		login(false)
-	}*/
 	jsonData, err := json.Marshal(d)
 	if err != nil {
 		return err
@@ -108,9 +111,9 @@ func GetEnsure() bool {
 
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
-	fmt.Println("  datahub dp create DATAPOOL [file://][ABSOLUTE PATH]")
+	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]]")
 	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
-	fmt.Println("       datahub dp create dptest /home/user/test")
+	fmt.Println("       datahub dp create s3dp s3://mybucket")
 	fmt.Println("Create a datapool\n")
 
 }

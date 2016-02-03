@@ -11,7 +11,7 @@ set -e
 if [ -z "$1" ]
 then
     echo 'Error: you should install datahub with daemonid like:'
-    echo 'curl -sSL http://hub.dataos.io/install.sh | sh -s [DatahubDaemonID]'
+    echo 'curl -ksSL https://hub.dataos.io/install.sh | sh -s [DatahubDaemonID]'
     exit 0
 fi
 
@@ -19,8 +19,8 @@ daemonid=$1
 
 url='https://hub.dataos.io'
 
-deb_package='datahub_0.9.0-1_amd64.deb'
-rpm_x86_64_package='datahub-0.9.0-1.x86_64.rpm'
+deb_package='datahub_1.0.0-1_amd64.deb'
+rpm_x86_64_package='datahub-1.0.0-1.x86_64.rpm'
 
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
@@ -142,7 +142,7 @@ case "$lsb_dist" in
 		(
             echo " * Installing datahub..."
 			echo " * Downloading datahub from ${url}/${rpm_x86_64_package}"
-			$sh_c "$curl -o /tmp/${rpm_x86_64_package} ${url}/${rpm_x86_64_package}"	
+			$sh_c "$curl -k -o /tmp/${rpm_x86_64_package} ${url}/${rpm_x86_64_package}"	
 			if command_exists /usr/bin/datahub; then
                 echo "uninstall old version of datahub"
                                 $sh_c "datahub stop"
@@ -163,7 +163,7 @@ case "$lsb_dist" in
 			echo " * Installing datahub..."
 
 			echo " * Downloading datahub from ${url}/${deb_package}"
-			$sh_c "$curl -o /tmp/${deb_package} ${url}/${deb_package}"
+			$sh_c "$curl -k -o /tmp/${deb_package} ${url}/${deb_package}"
 			if command_exists /usr/bin/datahub; then
                 echo "uninstall old version of datahub"
 				$sh_c "dpkg -r datahub"

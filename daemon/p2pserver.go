@@ -31,9 +31,6 @@ func startP2PServer() {
 
 	p2pserver := http.Server{Handler: P2pRouter}
 
-	//stop := make(chan os.Signal)
-	//signal.Notify(stop, syscall.SIGINT)
-
 	wg.Add(1)
 	defer wg.Done()
 
@@ -82,7 +79,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	log.Println(sRepoName, sDataItem, sTag)
+	log.Info(sRepoName, sDataItem, sTag)
 	jobtag := fmt.Sprintf("%s/%s:%s", sRepoName, sDataItem, sTag)
 	var irpdmid, idpid int
 	var stagdetail, sdpconn, itemdesc string
@@ -93,10 +90,10 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if len(itemdesc) == 0 {
 		itemdesc = sRepoName + "_" + sDataItem
 	}
-	log.Println("dpid:", idpid, "rpdmid:", irpdmid, "itemdesc:", itemdesc)
+	log.Debug("dpid:", idpid, "rpdmid:", irpdmid, "itemdesc:", itemdesc)
 
 	stagdetail = GetTagDetail(irpdmid, sTag)
-	log.Println("tagdetail", stagdetail)
+	log.Debug("tagdetail", stagdetail)
 	if len(stagdetail) == 0 {
 		l := log.Warnf("%s(tag:%s) not found", stagdetail, sTag)
 		logq.LogPutqueue(l)
@@ -105,7 +102,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	sdpconn = GetDpconnByDpid(idpid)
-	log.Println("dpconn:", sdpconn)
+	log.Debug("dpconn:", sdpconn)
 
 	filepathname := sdpconn + "/" + itemdesc + "/" + stagdetail
 	log.Println("filename:", filepathname)
@@ -177,7 +174,7 @@ func checkAccessToken(tokenUrl string) bool {
 		log.Println(err)
 		return false
 	}
-	log.Println(string(body))
+	log.Trace(string(body))
 
 	return tkresp.Valid
 }

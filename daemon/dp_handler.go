@@ -19,55 +19,64 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	rw.WriteHeader(http.StatusOK)
 
 	result, _ := ioutil.ReadAll(r.Body)
-	reqJson := cmd.FormatDpCreate{}
-	err := json.Unmarshal(result, &reqJson)
+	struDp := cmd.FormatDpCreate{}
+	err := json.Unmarshal(result, &struDp)
 	if err != nil {
 		l := log.Error("Invalid argument. json.Unmarshal error", err)
 		logq.LogPutqueue(l)
 		rw.Write([]byte(`{"Msg":"Invalid argument."}`))
 		return
 	}
-	if len(reqJson.Name) == 0 {
+	if len(struDp.Name) == 0 {
 		log.Println("Invalid argument")
 		rw.Write([]byte(`{"Msg":"Invalid argument"}`))
 		return
 	} else {
-		log.Println("Creating datapool with name:", reqJson.Name)
+		log.Println("Creating datapool with name:", struDp.Name)
 		msg := &ds.MsgResp{}
 		var sdpDirName string
-		if len(reqJson.Conn) == 0 {
-			reqJson.Conn = g_strDpPath
+		if len(struDp.Conn) == 0 {
+			struDp.Conn = g_strDpPath
 			sdpDirName = g_strDpPath
 
-		} else if reqJson.Conn[0] != '/' {
-			sdpDirName = g_strDpPath + "/" + reqJson.Conn
-			reqJson.Conn = sdpDirName
+		} else if struDp.Conn[0] != '/' {
+			sdpDirName = g_strDpPath + "/" + struDp.Conn
+			struDp.Conn = sdpDirName
 
 		} else {
-			sdpDirName = reqJson.Conn
+			sdpDirName = struDp.Conn
 		}
 
-		dpexist := CheckDataPoolExist(reqJson.Name)
+		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", reqJson.Name)
+			msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", struDp.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
 			return
 		}
-		if err := os.MkdirAll(sdpDirName, 0777); err != nil {
+
+		var err error
+		if struDp.Type == DPS3 {
+			struDp.Conn = strings.TrimLeft(struDp.Conn, "/")
+			err = nil
+		} else if struDp.Type == DPFILE {
+			err = os.MkdirAll(sdpDirName, 0777)
+		}
+
+		if err != nil {
 			l := log.Error(err, sdpDirName)
 			logq.LogPutqueue(l)
 			msg.Msg = err.Error()
 		} else {
-			msg.Msg = fmt.Sprintf("Datapool create success, name:%s type:%s path:%s", reqJson.Name, reqJson.Type, sdpDirName)
-			reqJson.Conn = strings.TrimRight(reqJson.Conn, "/")
+			msg.Msg = fmt.Sprintf("Datapool create success, name:%s type:%s path:%s", struDp.Name, struDp.Type, sdpDirName)
+			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
-					values (null, '%s', '%s', '%s', 'A')`, reqJson.Name, reqJson.Type, reqJson.Conn)
-			if _, err := g_ds.Insert(sql_dp_insert); err != nil {
+					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
+			if _, e := g_ds.Insert(sql_dp_insert); err != nil {
 				//os.Remove(sdpDirName)  //don't delete it. It is maybe used by others
-				l := log.Error(err)
+				l := log.Error(e)
 				logq.LogPutqueue(l)
-				msg.Msg = err.Error()
+				msg.Msg = e.Error()
 			}
 		}
 		resp, _ := json.Marshal(msg)
@@ -113,14 +122,7 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	dpname := ps.ByName("dpname")
 
-	/*In future, we need to get dptype in Json to surpport FILE\ DB\ SDK\ API datapool
-	result, _ := ioutil.ReadAll(r.Body)
-	reqJson := cmd.FormatDp{}
-	err := json.Unmarshal(result, &reqJson)
-	if err != nil {
-		fmt.Printf("%T\n%s\n%#v\n", err, err, err)
-		fmt.Println(rw, "invalid argument.")
-	}*/
+	//In future, we need to get dptype in Json to surpport FILE\ DB\ SDK\ API datapool
 
 	onedp := cmd.FormatDpDetail{}
 	result := &ds.Result{Code: cmd.ResultOK, Msg: "", Data: &onedp}
