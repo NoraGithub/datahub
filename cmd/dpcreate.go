@@ -79,9 +79,6 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return
 	}
 
-	/*if needLogin && !Logged {
-		login(false)
-	}*/
 	jsonData, err := json.Marshal(d)
 	if err != nil {
 		return err
