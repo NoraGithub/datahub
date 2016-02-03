@@ -27,7 +27,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
-		fmt.Printf("Are you really going to create a datapool:%s in default type 'file'?\nY or N:", args[0])
+		fmt.Print("datahub:are you sure to create the datapool", args[0],
+			"with default type 'file' and path '/var/lib/datahub' ?\n[Y or N]:")
 		if GetEnsure() == true {
 			d.Name = args[0]
 			d.Conn = GstrDpPath
