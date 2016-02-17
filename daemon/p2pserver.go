@@ -61,24 +61,6 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sDataItem := ps.ByName("dataitem")
 	sTag := ps.ByName("tag")
 
-	tokenValid := false
-
-	token := r.Form.Get("token")
-	username := r.Form.Get("username")
-	if len(token) > 0 && len(username) > 0 {
-		log.Println(r.URL.Path, "token:", token, "username:", username)
-		url := "/transaction/" + sRepoName + "/" + sDataItem + "/" + sTag +
-			"?cypt_accesstoken=" + token + "&username=" + username
-		tokenValid = checkAccessToken(url)
-	}
-
-	if !tokenValid {
-		l := log.Warn("Access token not valid.", token, username)
-		logq.LogPutqueue(l)
-		http.Error(rw, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
 	log.Info(sRepoName, sDataItem, sTag)
 	jobtag := fmt.Sprintf("%s/%s:%s", sRepoName, sDataItem, sTag)
 	var irpdmid, idpid int
@@ -117,6 +99,24 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		fmt.Fprintln(rw, respStr)
 		return
 	}
+
+	tokenValid := false
+	token := r.Form.Get("token")
+	username := r.Form.Get("username")
+	if len(token) > 0 && len(username) > 0 {
+		log.Println(r.URL.Path, "token:", token, "username:", username)
+		url := "/transaction/" + sRepoName + "/" + sDataItem + "/" + sTag +
+			"?cypt_accesstoken=" + token + "&username=" + username
+		tokenValid = checkAccessToken(url)
+	}
+
+	if !tokenValid {
+		l := log.Warn("Access token not valid.", token, username)
+		logq.LogPutqueue(l)
+		http.Error(rw, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
 	size, err := GetFileSize(filepathname)
 	if err != nil {
 		l := log.Errorf("Get %s size error, %v", filepathname, err)
