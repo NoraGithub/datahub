@@ -95,7 +95,6 @@ type Repository struct {
 
 type PubPara struct {
 	Datapool   string `json:"datapool, omitempty"`
-	DpSub      string `json:"dpsub, omitempty"`
 	Detail     string `json:"detail, omitempty"`
 	Accesstype string `json:"itemaccesstype, omitempty"`
 	Comment    string `json:"comment, omitempty"`

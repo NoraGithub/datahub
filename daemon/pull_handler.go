@@ -174,16 +174,17 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			return 0, err
 		} else {
 			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
-			tmpdestfilename = tmpdir + "/" + p.DestName
+			//first tmpdir, then tmpdestfilename
 			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+			tmpdestfilename = tmpdir + "/" + p.DestName
 		}
 	}
 
 	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
 	if dptype == DPS3 {
-		destfilename = g_strDpPath + "/" + destfilename
-		tmpdestfilename = g_strDpPath + "/" + tmpdestfilename
-		tmpdir = g_strDpPath + "/" + tmpdir
+		destfilename = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/" + p.DestName
+		tmpdir = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/tmp"
+		tmpdestfilename = tmpdir + "/" + p.DestName
 	}
 
 	os.MkdirAll(tmpdir, 0777)
