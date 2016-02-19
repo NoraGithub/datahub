@@ -1,0 +1,60 @@
+/{reponame}/{itemname}/{tag}:
+  uriParameters:
+    reponame:
+      description: repository名称
+      example: Intenet_stats
+      required: true
+    itemname:
+      description: dataitem名称
+      example: Cars
+      required: true
+    tag:
+      description: tag名称
+      example: Cars_yieche_20151101
+      required: true
+  post:
+    description: 【需求者】返回该请求的access token。注意：tag需要UTF8编码。
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "code": 0,
+                "msg": "OK",
+                "data": {
+                  "accesstoken": "4460f5708fdc53fc",
+                  "remainingtime": "72h0m0s",
+                  "entrypoint": "http://54.223.72.171:35802"
+                }
+              }
+  get:
+    description:
+      【拥有者】校验该access_token的有效性，此access_token被需求者的私有证书加密
+      注意：本组api接口只有这个不需要验证用户身份。
+      注意：tag需要UTF8编码
+    queryParameters:
+      cypt_accesstoken:
+        description: 需求者的access token
+        example: cypt_accesstoken=4460f5708fdc53fc
+        required: true
+      username:
+        description: 需求者用户名
+        example: username=shendf
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            schema: |
+              valid：输入access token是否有效
+              remainingtime：剩余有效期。可能的结果："33h3m0.5s", "3m2s", "0"
+            example: |
+              {
+                "code": 0,
+                "msg": "OK",
+                "data": {
+                  "valid":true
+                  "remainingtime":"33h3m0.5s"
+                }
+              }

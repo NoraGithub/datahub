@@ -1,0 +1,308 @@
+get:
+  description: 
+    查询本人创建或具备写权限的所有repository
+  headers:
+    Authorization:
+      description: 传入用户Token
+      type: string
+      required: true
+      example: Token 1a9686a83076241637693cab91fa3010
+  responses:
+    200:
+      description: repname：数据仓库的名字 
+      body:
+        application/json:
+         example: |
+           {
+              "code": 0,
+              "msg":"ok",
+              "data":[
+                         {
+                             "repname": "mobile1"
+                         },
+                         {
+                             "repname": "mobile2"
+                         },
+                         {
+                             "repname": "mobile3"
+                         }
+                      ]
+           }
+  queryParameters:
+    page:
+      description: (分页页数),1 - N,默认=1（page=1可以不传）
+      required: false
+/{reponame}:
+  uriParameters:
+    reponame:
+      description: repository名称
+      example: Intenet_stats
+      required: true
+  get:
+    description: 【任意用户】查询repository详情
+    headers:
+      Authorization:
+        description: 传入用户Token
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    responses:
+      200:
+        description:
+          create_user         创建者
+          repaccesstype       对外开放类型[public(默认), private]
+          comment             详情
+          optime              更新时间
+          items               dataitem数量
+          label               标签
+          dataitems           dataitem的名称集
+        body:
+          application/json:
+           example: |
+            {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": {
+                            "create_user": "panxy3@asiainfo.com",
+                            "repaccesstype": "public",
+                            "comment": "详情",
+                            "optime": "2015-10.1122: 10: 20",
+                            "items": 3000,
+                            "label": {},
+                            "dataitems": [
+                                "dataitem1",
+                                "dataitem2"
+                            ]
+                         }
+             }
+
+/{reponame}/{itemname}:
+  uriParameters:
+    reponame:
+      description: repository名称
+      example: Intenet_stats
+      required: true
+    itemname:
+      description: dataitem名称
+      example: Cars
+      required: true
+  get:
+    description: 【任意用户】查询dataitem详情
+    headers:
+      Authorization:
+        description: 传入用户Token
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    responses:
+      200:
+        description:
+          create_user             Dataitem创建者
+          itemaccesstype          访问权限[public(默认), private]
+          optime                  更新时间
+          meta                    元数据
+          sample                  样例数据
+          comment                 详情
+          price                   计费计划
+          tags                    tag量
+          label.sys.supply_style  服务形式[api；batch；flow]
+          Tags.tag                tag名称
+          Tags.comment            tag详情
+          Tags.optime             tag上传日期
+          taglist                 item下所有tag的详细信息
+        body:
+          application/json:
+            example: |
+              {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": {
+                            "create_user": "panxy3",
+                            "itemaccesstype": "private",
+                            "optime": "2015-08-0100: 00: 00",
+                            "meta": {},
+                            "sample": {},
+                            "price":[
+                                        {
+                                            "time": 1,
+                                            "unit": "day",
+                                            "money": 5,
+                                            "expire":30,
+                                            "uuid":100000000000000000000000
+                                        },
+                                        {
+                                            "time": 10,
+                                            "unit": "day",
+                                            "money": 50,
+                                            "expire":30,
+                                            "uuid":100000000000000000000000
+                                        },
+                                        {
+                                            "time": 100,
+                                            "unit": "day",
+                                            "money": 400,
+                                            "expire":30,
+                                            "uuid":100000000000000000000000
+                                        }
+                                    ],      
+                            "comment": "对终端使用情况、变化情况进行了全方面的分析。包括分品牌统计市场存量、新增、机型、数量、换机等情况。终端与ARPU、DOU、网龄的映射关系。终端的APP安装情况等。",
+                            "tags":10,
+                            "label": {
+                                "sys": {
+                                    "supply_style": "flow"
+                                },
+                                "opt": {},
+                                "owner": {},
+                                "other": {}
+                            },
+                            "taglist":[
+                                    {
+                                        "tag": "tag001",
+                                        "comment": "2022201MB",
+                                        "optime": "2015-11-16 10:50:31.779460404 +0000 UTC|3小时以前"
+                                    },
+                                    {
+                                        "tag": "tag002",
+                                        "comment": "2001MB",
+                                        "optime": "2015-11-17 02:14:55.241920929 +0000 UTC|10分钟以前"
+                                    },
+                                    {
+                                        "tag": "tag003",
+                                        "comment": "2001MB",
+                                        "optime": "2015-11-17 02:14:59.491811069 +0000 UTC|6天以前"
+                                    }
+                            ]
+                         }
+              }
+    queryParameters:
+      abstract:
+        description: 是否只显示摘要信息， 1 只显示Item（optime，comment，label，tags）4个属性
+        example: abstract=1
+        required: false
+      page:
+        description: (分页页数),1 - N,默认=1（page=1可以不传）
+        required: false
+  post:
+    description: 【任意】创建DataItem
+    headers:
+      Authorization:
+        description: 传入用户Token
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    body:
+      description:
+        itemaccesstype                  访问权限[public(默认), private]
+        meta                            元数据
+        sample                          样例数据
+        comment                         详情
+        price                           价格计划
+        price.units                     购买数量
+        price.money                     价格
+        price.expire                    有效期(天)
+        price.limit                     限购次数【可选】
+        label.sys.supply_style          服务形式[api；batch；flow]【必选】
+        label.sys.supply_style.api      实时单条
+        label.sys.supply_style.batch    批量
+        label.sys.supply_style.flow     流式
+      application/json:
+        example: |
+             {
+                   "itemaccesstype": "private",
+                   "meta": "{}",
+                   "sample": "{}",
+                   "comment": "对终端使用情况、变化情况进行了全方面的分析。包括分品牌统计市场存量、新增、机型、数量、换机等情况。终端与ARPU、DOU、网龄的映射关系。终端的APP安装情况等。",
+                   "price":[
+                               {
+                                   "units": "30",
+                                   "money": 5,
+                                   "expire":30,
+                                   "limit":1
+                               },
+                               {
+                                   "units": "30",
+                                   "money": 5,
+                                   "expire":30,
+                                   "limit":1
+                               }
+                           ],
+                   "label": {
+                       "sys": {
+                           "supply_style": "batch"
+                       },
+                       "opt": {},
+                       "owner": {},
+                       "other": {}
+                   }
+             }
+    responses:
+      200:
+        body:
+          application/json:
+           example: |
+             {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": ""
+             }
+/{reponame}/{itemname}/{tag}:
+  uriParameters:
+    reponame:
+      description: repository名称
+      example: Intenet_stats
+      required: true
+    itemname:
+      description: dataitem名称
+      example: Cars
+      required: true
+    tag:
+      description: tag名称
+      example: Cars_yieche_20151101
+      required: true
+  get:
+    description: 【任意】查询DataItem下的Tag详情，注意Tag需要按照UTF8编码后传递
+    headers:
+      Authorization:
+        description: 传入用户Token
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    responses:
+      200:
+        description:
+          comment  daemon提交tag相关详情
+          optime   daemon提交tag时间
+        body:
+          application/json:
+            example: |
+              {
+                "comment": "50M",
+                "optime": "2015-08-03 00:00:00|6天以前"
+              }
+  post:
+    description: 【拥有者】发布Tag，注意Tag需要按照UTF8编码后传递
+    headers:
+      Authorization:
+        description: 传入用户Token
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    body:
+      description:
+        comment  tag相关详情
+      application/json:
+        example: |
+          {
+            "comment":"2001MB"
+          }
+    responses:
+      200:
+        body:
+          application/json:
+           example: |
+             {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": ""
+             }
+

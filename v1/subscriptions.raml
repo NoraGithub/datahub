@@ -1,0 +1,102 @@
+/dataitems:
+  get:
+    description: 查询自己订购的所有items
+    headers:
+      Authorization:
+        description: 需加Auth header
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    queryParameters:
+      phase:
+        description: 1
+        example: phase=1
+        required: true
+      repname:
+        description: 查询自己在某个repository下订购的所有items
+        example: repname=Internet_Stat
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            schema: |
+              repname: repository name
+              itemname: data item name
+            example: |
+              {
+                "code": 0,
+                "msg": "OK",
+                "data": 
+                  {
+                    "total": 2,
+                    "results":
+                      [
+                        {
+                          "repname":"CBA", 
+                          "itemname":"triger"
+                        },
+                        {
+                          "repname":"repo0",
+                          "itemname":"item1"
+                        }
+                      ]
+                  }
+              }
+/{repository}/{dataitem}/pull:
+  uriParameters:
+    repository:
+      description: repository名称
+      example: Location_information
+      required: true
+    dataitem:
+      description: dataitem名称
+      example: Cell
+      required: true
+  post:
+    description: 从提供者下载数据
+    headers:
+      Authorization:
+        description: 需加Auth header
+        type: string
+        required: false
+        example: Token 1a9686a83076241637693cab91fa3010
+    queryParameters:
+      phase:
+        description: 1
+        example: phase=1
+        required: true
+      repname:
+        description: 查询自己在某个repository下订购的所有items
+        example: repname=Location_information
+        required: false
+    body:
+      description: |
+        tag                             tag名称
+        datapool                        datapool名称
+        destname                        目标文件存储名称
+        repository                      repository名称
+        dataitem                        dataitem名称
+        itemdesc                        datapool中dataitem所在子目录
+        automatic                       是否自动pull
+        cancelautomatic                 是否取消自动pull
+      application/json:
+        example: |
+             {
+               "tag": "BR201511250013_23GCELL_05" ,       
+               "datapool": "mydp",
+               "destname": "BR201511250013_23GCELL_05.txt",
+               "itemdesc": "Cell",
+               "automatic": false,
+               "cancelautomatic": false,
+             }
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "code": 0,
+                "msg": "Location_information/Cell:BR201511250013_23GCELL_05 will be pulled into /data/mydp/Cell",
+                "data": null
+              }

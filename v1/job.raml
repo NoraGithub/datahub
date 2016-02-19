@@ -1,0 +1,82 @@
+get:
+  description: |
+    查看job信息列表
+    id: jobid
+    tag: tag全称
+    path: 存储路径
+    stat: 状态
+    dlsize: 已下载大小
+    srcsize: 提供方数据大小
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {
+              "code": 0,
+              "msg": "ok",
+              "data": [
+                        {
+                            "id": "3d462eff",
+                            "tag": "Transportation_of_beijing/Law-enforcing_department:entrypointstation",
+                            "path": "/var/lib/datahub/entrypointstation",
+                            "stat": "downloaded",
+                            "dlsize": "5422",
+                            "srcsize": "5422"
+                        }
+                      ]
+            }
+delete:
+  description: 
+    删除所有job信息
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            { 
+              "msg":"Remove all jobs OK."
+            }
+
+/{jobid}:
+  uriParameters:
+    jobid:
+      description: jobid
+      example: 3d462eff
+      required: true
+  get:
+    description:
+      获取job信息
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+               {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": [
+                           {
+                               "id": "3d462eff",
+                               "tag": "Transportation_of_beijing/Law-enforcing_department:entrypointstation",
+                               "path": "/var/lib/datahub/entrypointstation",
+                               "stat": "downloaded",
+                               "dlsize": "5422",
+                               "srcsize": "5422"
+                           }
+                         ]
+               }
+  delete:
+    description:
+      删除job
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "msg":"job 3d462eff deleted."
+              }
+  
+
+

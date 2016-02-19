@@ -1,0 +1,18 @@
+{
+    "repaccesstype": "public",
+    "comment": "中国移动北京终端详情",
+    "label": {
+        "sys": {
+            "loc": "北京"
+        },
+        "opt": {
+            "age": 22
+        },
+        "owner": {
+            "name": "michael"
+        },
+        "other": {
+            "friend": 22
+        }
+    }
+}

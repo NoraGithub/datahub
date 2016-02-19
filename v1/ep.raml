@@ -1,0 +1,40 @@
+get:
+  description: 
+    查询本机datahub-daemon的entrypoint
+  responses:
+    200:
+      body:
+        application/json:
+         example: |
+           {
+              "msg": "http://172.19.18.1:35800 available",
+           }
+post:
+  description: 
+    声明本机datahub-daemon的entrypoint
+  body:
+    application/json:
+      example: |
+        {
+           "entrypoint": "http://172.19.18.1:35800"
+        }
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {
+              "msg": "OK. your entrypoint is: http://172.19.18.1:35800"
+            }
+delete:
+  description:
+    删除entrypoint
+  responses:
+    200:
+      body:
+        application/json:
+          example: |
+            {
+              "msg": "OK. your entrypoint has been removed"
+            }
+

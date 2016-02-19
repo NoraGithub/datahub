@@ -1,0 +1,117 @@
+get:
+  description: | 
+    查询本人创建datapools
+    dpname: 数据仓库的名字
+    dptype: 数据仓库的类型
+  responses:
+    200:
+      body:
+        application/json:
+         example: |
+           {
+                 "code": 0,
+                 "msg": "ok",
+                 "data"：[
+                            {
+                                "dpname": "mydp1",
+                                "dptype": "file"
+                            }，
+                            {
+                                "dpname": "mydp2",
+                                "dptype"："file",
+                            },
+                            {
+                                "dpname": "dptest3",
+                                "dptype": "s3"
+                            }
+                         ]
+           }
+post:
+  description:
+    创建datapool
+  body:
+    description:
+      dpname       datapool的名称
+      dptype       datapool的类型
+      dpconn       datapool的连接串
+    application/json:
+      example: |
+           {
+                 "dpname": "mydp1",
+                 "dptype": "file",
+                 "dpconn": "/home/data/mydp1"
+           }
+  responses:
+    200:
+      body:
+        application/json:
+         example: |
+           {
+               "msg": "Datapool create success, name:mydp1 type:file path:/home/data/mydp1"
+           }
+           
+/{dpname}:
+  uriParameters:
+    dpname:
+      description: datapool名称
+      example: Intenet_stats
+      required: true
+  get:
+    description: 查询datapool详情
+    responses:
+      200:
+        description:
+          dpname 
+          dptype
+          dpconn
+          items.repository               repository名称
+          items.dataitem                 dataitem名称
+          items.tag                      tag名称
+          items.time                     创建时间
+          items.publish                  是否是发布的，Y表示发布，N表示下载
+          items.detail                   tag对应文件的文件名
+          items.itemdesc                 dataitem在datapool中的子路径
+        body:
+          application/json:
+            example: |
+              {
+                 "code": 0,
+                 "msg": "ok",
+                 "data": {
+                            "dpname": "mydp1",
+                            "dptype": "file",
+                            "dpconn": "/home/data/mydp1",
+                            "items":[
+                                        {
+                                            "repository": "Internet_stats",
+                                            "dataitem": "Film_and_television",
+                                            "tag": "movie_mtimemovie_5603",
+                                            "time": "2016-02-02 09:50:10",
+                                            "publish": "N",
+                                            "detail": "movie_mtimemovie_5603.txt",
+                                            "itemdesc": "item-movie" 
+                                        },
+                                        {
+                                            "repository": "Meteorological",
+                                            "dataitem": "Synthetic_pollution_index",
+                                            "tag": "2015chengshikongqi",
+                                            "time": "2016-02-01 09:50:10",
+                                            "publish": "Y",
+                                            "detail": "2015chengshikongqi.txt",
+                                            "itemdesc": "Meteorological_Synthetic_pollution_index"
+                                        }
+                                    ]   
+                         }
+              }
+  delete:
+    description: 【任意】删除datapool
+    responses:
+      200:
+        body:
+          application/json:
+           example: |
+             {
+                 "code": 0,
+                 "msg": "Datapool mydp with type:file removed successfully!",
+                 "data": null
+             }
