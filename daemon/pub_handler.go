@@ -23,6 +23,11 @@ import (
 var SampleFiles = []string{"sample.md", "Sample.md", "SAMPLE.MD", "sample.MD", "SAMPLE.md"}
 var MetaFiles = []string{"meta.md", "Meta.md", "META.MD", "meta.MD", "META.md"}
 var PriceFile = "price.cfg"
+var MaxRepoLength = 52
+var MaxItemLength = 100
+var MaxTagLength = 100
+var MaxCommentLength = 600
+
 
 type Sys struct {
 	Supplystyle string `json:"supply_style"`
@@ -53,13 +58,26 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	repo := ps.ByName("repo")
 	item := ps.ByName("item")
 
+	if CheckLength(w, repo, MaxRepoLength) == false {
+		return
+	}
+
+	if CheckLength(w, item, MaxItemLength) == false {
+		return
+	}
+
 	if len(loginAuthStr) == 0 {
 		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "Unlogin")
 		return
 	}
 
-	reqBody, _ := ioutil.ReadAll(r.Body)
 	pub := ds.PubPara{}
+	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
+		return
+
+	}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
 	if err := json.Unmarshal(reqBody, &pub); err != nil {
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "pub dataitem error while unmarshal reqBody")
 		return
@@ -150,8 +168,12 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(pub tag)")
 
-	reqBody, _ := ioutil.ReadAll(r.Body)
 	pub := ds.PubPara{}
+	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
+		return
+	}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
 	if err := json.Unmarshal(reqBody, &pub); err != nil {
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "pub tag error while unmarshal reqBody")
 		return
@@ -165,6 +187,10 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	item := ps.ByName("item")
 	tag := ps.ByName("tag")
 	log.Println("repo", repo, "item", item, "tag", tag)
+
+	if !CheckLength(w, repo, MaxRepoLength) || !CheckLength(w, item, MaxItemLength) || !CheckLength(w, tag, MaxTagLength) {
+		return
+	}
 
 	//get DpFullPath and check whether repo/dataitem has been published
 	DpItemFullPath, err := CheckTagAndGetDpPath(repo, item, tag)
@@ -525,3 +551,16 @@ func ComputeMd5(filePath string) ([]byte, error) {
 
 	return hash.Sum(result), nil
 }
+
+
+func CheckLength(w http.ResponseWriter, data string, length int) (bool) {
+	if len(data) > length {
+		m := fmt.Sprintf("length of %s can't over %d bytes", data, length)
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorOverLength, m)
+		log.Warn(m)
+		return false
+	}
+
+	return true
+}
+

@@ -56,6 +56,7 @@ const (
 	ErrorDatapoolNotExits
 	ErrorRemoveAllJobs
 	ErrorUnAuthorization
+	ErrorOverLength
 )
 
 var Cmd = []Command{
