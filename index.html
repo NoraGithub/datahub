@@ -1,0 +1,441 @@
+<!DOCTYPE HTML><html><head><title>API on datahub of asiainfo big data company. API documentation</title><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="generator" content="https://github.com/kevinrenskers/raml2html 2.2.0"><link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.1/styles/default.min.css"><script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script><script type="text/javascript" src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.1/highlight.min.js"></script><script type="text/javascript">
+      $(document).ready(function() {
+        $('.page-header pre code, .top-resource-description pre code').each(function(i, block) {
+          hljs.highlightBlock(block);
+        });
+
+        $('[data-toggle]').click(function() {
+          var selector = $(this).data('target') + ' pre code';
+          $(selector).each(function(i, block) {
+            hljs.highlightBlock(block);
+          });
+        });
+
+        // open modal on hashes like #_action_get
+        $(window).bind('hashchange', function(e) {
+          var anchor_id = document.location.hash.substr(1); //strip #
+          var element = $('#' + anchor_id);
+
+          // do we have such element + is it a modal?  --> show it
+          if (element.length && element.hasClass('modal')) {
+            element.modal('show');
+          }
+        });
+
+        // execute hashchange on first page load
+        $(window).trigger('hashchange');
+
+        // remove url fragment on modal hide
+        $('.modal').on('hidden.bs.modal', function() {
+          try {
+            if (history && history.replaceState) {
+                history.replaceState({}, '', '#');
+            }
+          } catch(e) {}
+        });
+      });
+    </script><style>
+      .hljs {
+        background: transparent;
+      }
+      .parent {
+        color: #999;
+      }
+      .list-group-item > .badge {
+        float: none;
+        margin-right: 6px;
+      }
+      .panel-title > .methods {
+        float: right;
+      }
+      .badge {
+        border-radius: 0;
+        text-transform: uppercase;
+        width: 70px;
+        font-weight: normal;
+        color: #f3f3f6;
+        line-height: normal;
+      }
+      .badge_get {
+        background-color: #63a8e2;
+      }
+      .badge_post {
+        background-color: #6cbd7d;
+      }
+      .badge_put {
+        background-color: #22bac4;
+      }
+      .badge_delete {
+        background-color: #d26460;
+      }
+      .badge_patch {
+        background-color: #ccc444;
+      }
+      .list-group, .panel-group {
+        margin-bottom: 0;
+      }
+      .panel-group .panel+.panel-white {
+        margin-top: 0;
+      }
+      .panel-group .panel-white {
+        border-bottom: 1px solid #F5F5F5;
+        border-radius: 0;
+      }
+      .panel-white:last-child {
+        border-bottom-color: white;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+      }
+      .panel-white .panel-heading {
+        background: white;
+      }
+      .tab-pane ul {
+        padding-left: 2em;
+      }
+      .tab-pane h2 {
+        font-size: 1.2em;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab-pane h3 {
+        font-size: 1.1em;
+      }
+      .tab-content {
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+      }
+      #sidebar {
+        margin-top: 30px;
+        padding-right: 5px;
+        overflow: auto;
+        height: 90%;
+      }
+      .top-resource-description {
+        border-bottom: 1px solid #ddd;
+        background: #fcfcfc;
+        padding: 15px 15px 0 15px;
+        margin: -15px -15px 10px -15px;
+      }
+      .resource-description {
+        border-bottom: 1px solid #fcfcfc;
+        background: #fcfcfc;
+        padding: 15px 15px 0 15px;
+        margin: -15px -15px 10px -15px;
+      }
+      .resource-description p:last-child {
+        margin: 0;
+      }
+      .list-group .badge {
+        float: left;
+      }
+      .method_description {
+        margin-left: 85px;
+      }
+      .method_description p:last-child {
+        margin: 0;
+      }
+      .list-group-item {
+        cursor: pointer;
+      }
+      .list-group-item:hover {
+        background-color: #f5f5f5;
+      }
+    </style></head><body data-spy="scroll" data-target="#sidebar"><div class="container"><div class="row"><div class="col-md-9" role="main"><div class="page-header"><h1>API on datahub of asiainfo big data company. API documentation <small>version v1</small></h1><p>../</p></div><div class="panel panel-default"><div class="panel-heading"><h3 id="repositories" class="panel-title">/repositories</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_repositories"><span class="parent"></span>/repositories</a> <span class="methods"><a href="#repositories_get"><span class="badge badge_get">get</span></a></span></h4></div><div id="panel_repositories" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#repositories_get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查询本人创建或具备写权限的所有repository</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories_get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent"></span>/repositories</h4></div><div class="modal-body"><div class="alert alert-info"><p>查询本人创建或具备写权限的所有repository</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories_get_request" data-toggle="tab">Request</a></li><li><a href="#repositories_get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories_get_request"><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>required (string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Query Parameters</h3><ul><li><strong>page</strong>: <em>(string)</em><p>(分页页数),1 - N,默认=1（page=1可以不传）</p></li></ul></div><div class="tab-pane" id="repositories_get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><p>repname：数据仓库的名字</p><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+   "code": 0,
+   "msg":"ok",
+   "data":[
+              {
+                  "repname": "mobile1"
+              },
+              {
+                  "repname": "mobile2"
+              },
+              {
+                  "repname": "mobile3"
+              }
+           ]
+}
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_repositories__reponame_"><span class="parent">/repositories</span>/{reponame}</a> <span class="methods"><a href="#repositories__reponame__get"><span class="badge badge_get">get</span></a></span></h4></div><div id="panel_repositories__reponame_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#repositories__reponame__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>【任意用户】查询repository详情</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories__reponame__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/repositories</span>/{reponame}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【任意用户】查询repository详情</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories__reponame__get_request" data-toggle="tab">Request</a></li><li><a href="#repositories__reponame__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories__reponame__get_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul></div><div class="tab-pane" id="repositories__reponame__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><p>create_user 创建者 repaccesstype 对外开放类型[public(默认), private] comment 详情 optime 更新时间 items dataitem数量 label 标签 dataitems dataitem的名称集</p><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+     "code": 0,
+     "msg": "ok",
+     "data": {
+                "create_user": "panxy3@asiainfo.com",
+                "repaccesstype": "public",
+                "comment": "详情",
+                "optime": "2015-10.1122: 10: 20",
+                "items": 3000,
+                "label": {},
+                "dataitems": [
+                    "dataitem1",
+                    "dataitem2"
+                ]
+             }
+ }
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_repositories__reponame___itemname_"><span class="parent">/repositories</span>/{reponame}/{itemname}</a> <span class="methods"><a href="#repositories__reponame___itemname__get"><span class="badge badge_get">get</span></a> <a href="#repositories__reponame___itemname__post"><span class="badge badge_post">post</span></a></span></h4></div><div id="panel_repositories__reponame___itemname_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#repositories__reponame___itemname__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>【任意用户】查询dataitem详情</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#repositories__reponame___itemname__post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>【任意】创建DataItem</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories__reponame___itemname__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/repositories</span>/{reponame}/{itemname}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【任意用户】查询dataitem详情</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories__reponame___itemname__get_request" data-toggle="tab">Request</a></li><li><a href="#repositories__reponame___itemname__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories__reponame___itemname__get_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Query Parameters</h3><ul><li><strong>abstract</strong>: <em>(string)</em><p>是否只显示摘要信息， 1 只显示Item（optime，comment，label，tags）4个属性</p><p><strong>Example</strong>:</p><pre>abstract=1</pre></li><li><strong>page</strong>: <em>(string)</em><p>(分页页数),1 - N,默认=1（page=1可以不传）</p></li></ul></div><div class="tab-pane" id="repositories__reponame___itemname__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><p>create_user Dataitem创建者 itemaccesstype 访问权限[public(默认), private] optime 更新时间 meta 元数据 sample 样例数据 comment 详情 price 计费计划 tags tag量 label.sys.supply_style 服务形式[api；batch；flow] Tags.tag tag名称 Tags.comment tag详情 Tags.optime tag上传日期 taglist item下所有tag的详细信息</p><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+   "code": 0,
+   "msg": "ok",
+   "data": {
+              "create_user": "panxy3",
+              "itemaccesstype": "private",
+              "optime": "2015-08-0100: 00: 00",
+              "meta": {},
+              "sample": {},
+              "price":[
+                          {
+                              "time": 1,
+                              "unit": "day",
+                              "money": 5,
+                              "expire":30,
+                              "uuid":100000000000000000000000
+                          },
+                          {
+                              "time": 10,
+                              "unit": "day",
+                              "money": 50,
+                              "expire":30,
+                              "uuid":100000000000000000000000
+                          },
+                          {
+                              "time": 100,
+                              "unit": "day",
+                              "money": 400,
+                              "expire":30,
+                              "uuid":100000000000000000000000
+                          }
+                      ],      
+              "comment": "对终端使用情况、变化情况进行了全方面的分析。包括分品牌统计市场存量、新增、机型、数量、换机等情况。终端与ARPU、DOU、网龄的映射关系。终端的APP安装情况等。",
+              "tags":10,
+              "label": {
+                  "sys": {
+                      "supply_style": "flow"
+                  },
+                  "opt": {},
+                  "owner": {},
+                  "other": {}
+              },
+              "taglist":[
+                      {
+                          "tag": "tag001",
+                          "comment": "2022201MB",
+                          "optime": "2015-11-16 10:50:31.779460404 +0000 UTC|3小时以前"
+                      },
+                      {
+                          "tag": "tag002",
+                          "comment": "2001MB",
+                          "optime": "2015-11-17 02:14:55.241920929 +0000 UTC|10分钟以前"
+                      },
+                      {
+                          "tag": "tag003",
+                          "comment": "2001MB",
+                          "optime": "2015-11-17 02:14:59.491811069 +0000 UTC|6天以前"
+                      }
+              ]
+           }
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories__reponame___itemname__post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent">/repositories</span>/{reponame}/{itemname}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【任意】创建DataItem</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories__reponame___itemname__post_request" data-toggle="tab">Request</a></li><li><a href="#repositories__reponame___itemname__post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories__reponame___itemname__post_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Body</h3><p><strong>Type: description</strong></p><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+      "itemaccesstype": "private",
+      "meta": "{}",
+      "sample": "{}",
+      "comment": "对终端使用情况、变化情况进行了全方面的分析。包括分品牌统计市场存量、新增、机型、数量、换机等情况。终端与ARPU、DOU、网龄的映射关系。终端的APP安装情况等。",
+      "price":[
+                  {
+                      "units": "30",
+                      "money": 5,
+                      "expire":30,
+                      "limit":1
+                  },
+                  {
+                      "units": "30",
+                      "money": 5,
+                      "expire":30,
+                      "limit":1
+                  }
+              ],
+      "label": {
+          "sys": {
+              "supply_style": "batch"
+          },
+          "opt": {},
+          "owner": {},
+          "other": {}
+      }
+}
+</code></pre></div><div class="tab-pane" id="repositories__reponame___itemname__post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+    "code": 0,
+    "msg": "ok",
+    "data": ""
+}
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_repositories__reponame___itemname___tag_"><span class="parent">/repositories</span>/{reponame}/{itemname}/{tag}</a> <span class="methods"><a href="#repositories__reponame___itemname___tag__get"><span class="badge badge_get">get</span></a> <a href="#repositories__reponame___itemname___tag__post"><span class="badge badge_post">post</span></a></span></h4></div><div id="panel_repositories__reponame___itemname___tag_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#repositories__reponame___itemname___tag__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>【任意】查询DataItem下的Tag详情，注意Tag需要按照UTF8编码后传递</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#repositories__reponame___itemname___tag__post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>【拥有者】发布Tag，注意Tag需要按照UTF8编码后传递</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories__reponame___itemname___tag__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/repositories</span>/{reponame}/{itemname}/{tag}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【任意】查询DataItem下的Tag详情，注意Tag需要按照UTF8编码后传递</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories__reponame___itemname___tag__get_request" data-toggle="tab">Request</a></li><li><a href="#repositories__reponame___itemname___tag__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories__reponame___itemname___tag__get_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li><li><strong>tag</strong>: <em>required (string)</em><p>tag名称</p><p><strong>Example</strong>:</p><pre>Cars_yieche_20151101</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul></div><div class="tab-pane" id="repositories__reponame___itemname___tag__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><p>comment daemon提交tag相关详情 optime daemon提交tag时间</p><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "comment": "50M",
+  "optime": "2015-08-03 00:00:00|6天以前"
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="repositories__reponame___itemname___tag__post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent">/repositories</span>/{reponame}/{itemname}/{tag}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【拥有者】发布Tag，注意Tag需要按照UTF8编码后传递</p></div><ul class="nav nav-tabs"><li class="active"><a href="#repositories__reponame___itemname___tag__post_request" data-toggle="tab">Request</a></li><li><a href="#repositories__reponame___itemname___tag__post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="repositories__reponame___itemname___tag__post_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li><li><strong>tag</strong>: <em>required (string)</em><p>tag名称</p><p><strong>Example</strong>:</p><pre>Cars_yieche_20151101</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>传入用户Token</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Body</h3><p><strong>Type: description</strong></p><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "comment":"2001MB"
+}
+</code></pre></div><div class="tab-pane" id="repositories__reponame___itemname___tag__post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+    "code": 0,
+    "msg": "ok",
+    "data": ""
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="subscriptions" class="panel-title">/subscriptions</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_subscriptions_dataitems"><span class="parent">/subscriptions</span>/dataitems</a> <span class="methods"><a href="#subscriptions_dataitems_get"><span class="badge badge_get">get</span></a></span></h4></div><div id="panel_subscriptions_dataitems" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#subscriptions_dataitems_get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查询自己订购的所有items</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="subscriptions_dataitems_get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/subscriptions</span>/dataitems</h4></div><div class="modal-body"><div class="alert alert-info"><p>查询自己订购的所有items</p></div><ul class="nav nav-tabs"><li class="active"><a href="#subscriptions_dataitems_get_request" data-toggle="tab">Request</a></li><li><a href="#subscriptions_dataitems_get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="subscriptions_dataitems_get_request"><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>需加Auth header</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Query Parameters</h3><ul><li><strong>phase</strong>: <em>required (string)</em><p>1</p><p><strong>Example</strong>:</p><pre>phase=1</pre></li><li><strong>repname</strong>: <em>(string)</em><p>查询自己在某个repository下订购的所有items</p><p><strong>Example</strong>:</p><pre>repname=Internet_Stat</pre></li></ul></div><div class="tab-pane" id="subscriptions_dataitems_get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Schema</strong>:</p><pre><code>repname: repository name
+itemname: data item name
+</code></pre><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "OK",
+  "data": 
+    {
+      "total": 2,
+      "results":
+        [
+          {
+            "repname":"CBA", 
+            "itemname":"triger"
+          },
+          {
+            "repname":"repo0",
+            "itemname":"item1"
+          }
+        ]
+    }
+}
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_subscriptions__repository___dataitem__pull"><span class="parent">/subscriptions</span>/{repository}/{dataitem}/pull</a> <span class="methods"><a href="#subscriptions__repository___dataitem__pull_post"><span class="badge badge_post">post</span></a></span></h4></div><div id="panel_subscriptions__repository___dataitem__pull" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#subscriptions__repository___dataitem__pull_post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>从提供者下载数据</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="subscriptions__repository___dataitem__pull_post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent">/subscriptions</span>/{repository}/{dataitem}/pull</h4></div><div class="modal-body"><div class="alert alert-info"><p>从提供者下载数据</p></div><ul class="nav nav-tabs"><li class="active"><a href="#subscriptions__repository___dataitem__pull_post_request" data-toggle="tab">Request</a></li><li><a href="#subscriptions__repository___dataitem__pull_post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="subscriptions__repository___dataitem__pull_post_request"><h3>URI Parameters</h3><ul><li><strong>repository</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Location_information</pre></li><li><strong>dataitem</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cell</pre></li></ul><h3>Headers</h3><ul><li><strong>Authorization</strong>: <em>(string)</em><p>需加Auth header</p><p><strong>Example</strong>:</p><pre>Token 1a9686a83076241637693cab91fa3010</pre></li></ul><h3>Query Parameters</h3><ul><li><strong>phase</strong>: <em>required (string)</em><p>1</p><p><strong>Example</strong>:</p><pre>phase=1</pre></li><li><strong>repname</strong>: <em>(string)</em><p>查询自己在某个repository下订购的所有items</p><p><strong>Example</strong>:</p><pre>repname=Location_information</pre></li></ul><h3>Body</h3><p><strong>Type: description</strong></p><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "tag": "BR201511250013_23GCELL_05" ,       
+  "datapool": "mydp",
+  "destname": "BR201511250013_23GCELL_05.txt",
+  "itemdesc": "Cell",
+  "automatic": false,
+  "cancelautomatic": false,
+}
+</code></pre></div><div class="tab-pane" id="subscriptions__repository___dataitem__pull_post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "Location_information/Cell:BR201511250013_23GCELL_05 will be pulled into /data/mydp/Cell",
+  "data": null
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="transaction" class="panel-title">/transaction</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_transaction__reponame___itemname___tag_"><span class="parent">/transaction</span>/{reponame}/{itemname}/{tag}</a> <span class="methods"><a href="#transaction__reponame___itemname___tag__post"><span class="badge badge_post">post</span></a> <a href="#transaction__reponame___itemname___tag__get"><span class="badge badge_get">get</span></a></span></h4></div><div id="panel_transaction__reponame___itemname___tag_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#transaction__reponame___itemname___tag__post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>【需求者】返回该请求的access token。注意：tag需要UTF8编码。</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#transaction__reponame___itemname___tag__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>【拥有者】校验该access_token的有效性，此access_token被需求者的私有证书加密 注意：本组api接口只有这个不需要验证用户身份。 注意：tag需要UTF8编码</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="transaction__reponame___itemname___tag__post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent">/transaction</span>/{reponame}/{itemname}/{tag}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【需求者】返回该请求的access token。注意：tag需要UTF8编码。</p></div><ul class="nav nav-tabs"><li class="active"><a href="#transaction__reponame___itemname___tag__post_request" data-toggle="tab">Request</a></li><li><a href="#transaction__reponame___itemname___tag__post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="transaction__reponame___itemname___tag__post_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li><li><strong>tag</strong>: <em>required (string)</em><p>tag名称</p><p><strong>Example</strong>:</p><pre>Cars_yieche_20151101</pre></li></ul></div><div class="tab-pane" id="transaction__reponame___itemname___tag__post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "accesstoken": "4460f5708fdc53fc",
+    "remainingtime": "72h0m0s",
+    "entrypoint": "http://54.223.72.171:35802"
+  }
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="transaction__reponame___itemname___tag__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/transaction</span>/{reponame}/{itemname}/{tag}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【拥有者】校验该access_token的有效性，此access_token被需求者的私有证书加密 注意：本组api接口只有这个不需要验证用户身份。 注意：tag需要UTF8编码</p></div><ul class="nav nav-tabs"><li class="active"><a href="#transaction__reponame___itemname___tag__get_request" data-toggle="tab">Request</a></li><li><a href="#transaction__reponame___itemname___tag__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="transaction__reponame___itemname___tag__get_request"><h3>URI Parameters</h3><ul><li><strong>reponame</strong>: <em>required (string)</em><p>repository名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li><li><strong>itemname</strong>: <em>required (string)</em><p>dataitem名称</p><p><strong>Example</strong>:</p><pre>Cars</pre></li><li><strong>tag</strong>: <em>required (string)</em><p>tag名称</p><p><strong>Example</strong>:</p><pre>Cars_yieche_20151101</pre></li></ul><h3>Query Parameters</h3><ul><li><strong>cypt_accesstoken</strong>: <em>required (string)</em><p>需求者的access token</p><p><strong>Example</strong>:</p><pre>cypt_accesstoken=4460f5708fdc53fc</pre></li><li><strong>username</strong>: <em>required (string)</em><p>需求者用户名</p><p><strong>Example</strong>:</p><pre>username=shendf</pre></li></ul></div><div class="tab-pane" id="transaction__reponame___itemname___tag__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Schema</strong>:</p><pre><code>valid：输入access token是否有效
+remainingtime：剩余有效期。可能的结果："33h3m0.5s", "3m2s", "0"
+</code></pre><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "valid":true
+    "remainingtime":"33h3m0.5s"
+  }
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="ep" class="panel-title">/ep</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_ep"><span class="parent"></span>/ep</a> <span class="methods"><a href="#ep_get"><span class="badge badge_get">get</span></a> <a href="#ep_post"><span class="badge badge_post">post</span></a> <a href="#ep_delete"><span class="badge badge_delete">delete</span></a></span></h4></div><div id="panel_ep" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#ep_get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查询本机datahub-daemon的entrypoint</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#ep_post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>声明本机datahub-daemon的entrypoint</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#ep_delete'" class="list-group-item"><span class="badge badge_delete">delete</span><div class="method_description"><p>删除entrypoint</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="ep_get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent"></span>/ep</h4></div><div class="modal-body"><div class="alert alert-info"><p>查询本机datahub-daemon的entrypoint</p></div><ul class="nav nav-tabs"><li><a href="#ep_get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane" id="ep_get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+   "msg": "http://172.19.18.1:35800 available",
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="ep_post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent"></span>/ep</h4></div><div class="modal-body"><div class="alert alert-info"><p>声明本机datahub-daemon的entrypoint</p></div><ul class="nav nav-tabs"><li class="active"><a href="#ep_post_request" data-toggle="tab">Request</a></li><li><a href="#ep_post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="ep_post_request"><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+   "entrypoint": "http://172.19.18.1:35800"
+}
+</code></pre></div><div class="tab-pane" id="ep_post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "msg": "OK. your entrypoint is: http://172.19.18.1:35800"
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="ep_delete"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_delete">delete</span> <span class="parent"></span>/ep</h4></div><div class="modal-body"><div class="alert alert-info"><p>删除entrypoint</p></div><ul class="nav nav-tabs"><li><a href="#ep_delete_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane" id="ep_delete_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "msg": "OK. your entrypoint has been removed"
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="job" class="panel-title">/job</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_job"><span class="parent"></span>/job</a> <span class="methods"><a href="#job_get"><span class="badge badge_get">get</span></a> <a href="#job_delete"><span class="badge badge_delete">delete</span></a></span></h4></div><div id="panel_job" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#job_get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查看job信息列表 id: jobid tag: tag全称 path: 存储路径 stat: 状态 dlsize: 已下载大小 srcsize: 提供方数据大小</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#job_delete'" class="list-group-item"><span class="badge badge_delete">delete</span><div class="method_description"><p>删除所有job信息</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="job_get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent"></span>/job</h4></div><div class="modal-body"><div class="alert alert-info"><p>查看job信息列表 id: jobid tag: tag全称 path: 存储路径 stat: 状态 dlsize: 已下载大小 srcsize: 提供方数据大小</p></div><ul class="nav nav-tabs"><li><a href="#job_get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane" id="job_get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+            {
+                "id": "3d462eff",
+                "tag": "Transportation_of_beijing/Law-enforcing_department:entrypointstation",
+                "path": "/var/lib/datahub/entrypointstation",
+                "stat": "downloaded",
+                "dlsize": "5422",
+                "srcsize": "5422"
+            }
+          ]
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="job_delete"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_delete">delete</span> <span class="parent"></span>/job</h4></div><div class="modal-body"><div class="alert alert-info"><p>删除所有job信息</p></div><ul class="nav nav-tabs"><li><a href="#job_delete_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane" id="job_delete_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{ 
+  "msg":"Remove all jobs OK."
+}
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_job__jobid_"><span class="parent">/job</span>/{jobid}</a> <span class="methods"><a href="#job__jobid__get"><span class="badge badge_get">get</span></a> <a href="#job__jobid__delete"><span class="badge badge_delete">delete</span></a></span></h4></div><div id="panel_job__jobid_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#job__jobid__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>获取job信息</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#job__jobid__delete'" class="list-group-item"><span class="badge badge_delete">delete</span><div class="method_description"><p>删除job</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="job__jobid__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/job</span>/{jobid}</h4></div><div class="modal-body"><div class="alert alert-info"><p>获取job信息</p></div><ul class="nav nav-tabs"><li class="active"><a href="#job__jobid__get_request" data-toggle="tab">Request</a></li><li><a href="#job__jobid__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="job__jobid__get_request"><h3>URI Parameters</h3><ul><li><strong>jobid</strong>: <em>required (string)</em><p>jobid</p><p><strong>Example</strong>:</p><pre>3d462eff</pre></li></ul></div><div class="tab-pane" id="job__jobid__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+            {
+                "id": "3d462eff",
+                "tag": "Transportation_of_beijing/Law-enforcing_department:entrypointstation",
+                "path": "/var/lib/datahub/entrypointstation",
+                "stat": "downloaded",
+                "dlsize": "5422",
+                "srcsize": "5422"
+            }
+          ]
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="job__jobid__delete"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_delete">delete</span> <span class="parent">/job</span>/{jobid}</h4></div><div class="modal-body"><div class="alert alert-info"><p>删除job</p></div><ul class="nav nav-tabs"><li class="active"><a href="#job__jobid__delete_request" data-toggle="tab">Request</a></li><li><a href="#job__jobid__delete_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="job__jobid__delete_request"><h3>URI Parameters</h3><ul><li><strong>jobid</strong>: <em>required (string)</em><p>jobid</p><p><strong>Example</strong>:</p><pre>3d462eff</pre></li></ul></div><div class="tab-pane" id="job__jobid__delete_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+  "msg":"job 3d462eff deleted."
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div><div class="panel panel-default"><div class="panel-heading"><h3 id="datapools" class="panel-title">/datapools</h3></div><div class="panel-body"><div class="panel-group"><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_datapools"><span class="parent"></span>/datapools</a> <span class="methods"><a href="#datapools_get"><span class="badge badge_get">get</span></a> <a href="#datapools_post"><span class="badge badge_post">post</span></a></span></h4></div><div id="panel_datapools" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#datapools_get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查询本人创建datapools dpname: 数据仓库的名字 dptype: 数据仓库的类型</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#datapools_post'" class="list-group-item"><span class="badge badge_post">post</span><div class="method_description"><p>创建datapool</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="datapools_get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent"></span>/datapools</h4></div><div class="modal-body"><div class="alert alert-info"><p>查询本人创建datapools dpname: 数据仓库的名字 dptype: 数据仓库的类型</p></div><ul class="nav nav-tabs"><li><a href="#datapools_get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane" id="datapools_get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+      "code": 0,
+      "msg": "ok",
+      "data"：[
+                 {
+                     "dpname": "mydp1",
+                     "dptype": "file"
+                 }，
+                 {
+                     "dpname": "mydp2",
+                     "dptype"："file",
+                 },
+                 {
+                     "dpname": "dptest3",
+                     "dptype": "s3"
+                 }
+              ]
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="datapools_post"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_post">post</span> <span class="parent"></span>/datapools</h4></div><div class="modal-body"><div class="alert alert-info"><p>创建datapool</p></div><ul class="nav nav-tabs"><li class="active"><a href="#datapools_post_request" data-toggle="tab">Request</a></li><li><a href="#datapools_post_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="datapools_post_request"><h3>Body</h3><p><strong>Type: description</strong></p><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+      "dpname": "mydp1",
+      "dptype": "file",
+      "dpconn": "/home/data/mydp1"
+}
+</code></pre></div><div class="tab-pane" id="datapools_post_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+    "msg": "Datapool create success, name:mydp1 type:file path:/home/data/mydp1"
+}
+</code></pre></div></div></div></div></div></div></div><div class="panel panel-white"><div class="panel-heading"><h4 class="panel-title"><a class="collapsed" data-toggle="collapse" href="#panel_datapools__dpname_"><span class="parent">/datapools</span>/{dpname}</a> <span class="methods"><a href="#datapools__dpname__get"><span class="badge badge_get">get</span></a> <a href="#datapools__dpname__delete"><span class="badge badge_delete">delete</span></a></span></h4></div><div id="panel_datapools__dpname_" class="panel-collapse collapse"><div class="panel-body"><div class="list-group"><div onclick="window.location.href = '#datapools__dpname__get'" class="list-group-item"><span class="badge badge_get">get</span><div class="method_description"><p>查询datapool详情</p></div><div class="clearfix"></div></div><div onclick="window.location.href = '#datapools__dpname__delete'" class="list-group-item"><span class="badge badge_delete">delete</span><div class="method_description"><p>【任意】删除datapool</p></div><div class="clearfix"></div></div></div></div></div><div class="modal fade" tabindex="0" id="datapools__dpname__get"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_get">get</span> <span class="parent">/datapools</span>/{dpname}</h4></div><div class="modal-body"><div class="alert alert-info"><p>查询datapool详情</p></div><ul class="nav nav-tabs"><li class="active"><a href="#datapools__dpname__get_request" data-toggle="tab">Request</a></li><li><a href="#datapools__dpname__get_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="datapools__dpname__get_request"><h3>URI Parameters</h3><ul><li><strong>dpname</strong>: <em>required (string)</em><p>datapool名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li></ul></div><div class="tab-pane" id="datapools__dpname__get_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><p>dpname dptype dpconn items.repository repository名称 items.dataitem dataitem名称 items.tag tag名称 items.time 创建时间 items.publish 是否是发布的，Y表示发布，N表示下载 items.detail tag对应文件的文件名 items.itemdesc dataitem在datapool中的子路径</p><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+   "code": 0,
+   "msg": "ok",
+   "data": {
+              "dpname": "mydp1",
+              "dptype": "file",
+              "dpconn": "/home/data/mydp1",
+              "items":[
+                          {
+                              "repository": "Internet_stats",
+                              "dataitem": "Film_and_television",
+                              "tag": "movie_mtimemovie_5603",
+                              "time": "2016-02-02 09:50:10",
+                              "publish": "N",
+                              "detail": "movie_mtimemovie_5603.txt",
+                              "itemdesc": "item-movie" 
+                          },
+                          {
+                              "repository": "Meteorological",
+                              "dataitem": "Synthetic_pollution_index",
+                              "tag": "2015chengshikongqi",
+                              "time": "2016-02-01 09:50:10",
+                              "publish": "Y",
+                              "detail": "2015chengshikongqi.txt",
+                              "itemdesc": "Meteorological_Synthetic_pollution_index"
+                          }
+                      ]   
+           }
+}
+</code></pre></div></div></div></div></div></div><div class="modal fade" tabindex="0" id="datapools__dpname__delete"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title" id="myModalLabel"><span class="badge badge_delete">delete</span> <span class="parent">/datapools</span>/{dpname}</h4></div><div class="modal-body"><div class="alert alert-info"><p>【任意】删除datapool</p></div><ul class="nav nav-tabs"><li class="active"><a href="#datapools__dpname__delete_request" data-toggle="tab">Request</a></li><li><a href="#datapools__dpname__delete_response" data-toggle="tab">Response</a></li></ul><div class="tab-content"><div class="tab-pane active" id="datapools__dpname__delete_request"><h3>URI Parameters</h3><ul><li><strong>dpname</strong>: <em>required (string)</em><p>datapool名称</p><p><strong>Example</strong>:</p><pre>Intenet_stats</pre></li></ul></div><div class="tab-pane" id="datapools__dpname__delete_response"><h2>HTTP status code <a href="http://httpstatus.es/200" target="_blank">200</a></h2><h3>Body</h3><p><strong>Type: application/json</strong></p><p><strong>Example</strong>:</p><pre><code>{
+    "code": 0,
+    "msg": "Datapool mydp with type:file removed successfully!",
+    "data": null
+}
+</code></pre></div></div></div></div></div></div></div></div></div></div></div><div class="col-md-3"><div id="sidebar" class="hidden-print affix" role="complementary"><ul class="nav nav-pills nav-stacked"><li><a href="#repositories">/repositories</a></li><li><a href="#subscriptions">/subscriptions</a></li><li><a href="#transaction">/transaction</a></li><li><a href="#ep">/ep</a></li><li><a href="#job">/job</a></li><li><a href="#datapools">/datapools</a></li></ul></div></div></div></div></body></html>
