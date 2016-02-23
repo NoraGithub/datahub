@@ -50,7 +50,7 @@ func RunClient() {
 		commandFound = true
 	}
 	if !commandFound {
-		fmt.Printf("datahub: '%s' not found, see 'datahub --help'.\n", command)
+		fmt.Printf("datahub: '%s' is not a datahub command . See 'datahub --help'.\n", command)
 	}
 
 	return

@@ -49,7 +49,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("The datapool %s is already exist, please use another name!", struDp.Name)
+			msg.Msg = fmt.Sprintf("datahub:'%s' has been created already.", struDp.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
 			return
@@ -68,7 +68,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			logq.LogPutqueue(l)
 			msg.Msg = err.Error()
 		} else {
-			msg.Msg = fmt.Sprintf("Datapool create success, name:%s type:%s path:%s", struDp.Name, struDp.Type, sdpDirName)
+			msg.Msg = fmt.Sprintf("datahub:datapool has been created successfully. Name:%s Type:%s Path:%s", struDp.Name, struDp.Type, sdpDirName)
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
@@ -137,8 +137,9 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	var total int
 	row.Scan(&total)
 	if total == 0 {
-		msg := fmt.Sprintf("Datapool %v not found.", dpname)
+		msg := fmt.Sprintf("datapool '%v' not found.", dpname)
 		SqlExecError(rw, result, msg)
+		log.Error("Error:", result.Code, "Msg:", result.Msg)
 		return
 	}
 
@@ -244,7 +245,8 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		rw.Write(resp)
 	}
 	if bresultflag == false {
-		msg.Msg = fmt.Sprintf("Datapool %s not found.", dpname)
+		msg.Msg = fmt.Sprintf("Erorr:datapool '%s' does not exist.", dpname)
+		log.Error("DELETE:datapool", dpname, "does not exist.")
 		resp, _ := json.Marshal(msg)
 		rw.Write(resp)
 	}
