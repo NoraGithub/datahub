@@ -55,7 +55,7 @@ var con = []Context{
 			Conn: "/var/lib/datahub/datahub-Unit-Test",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test"}},
-		out: "Datapool create success, name:datahub_unit_test type:file path:/var/lib/datahub/datahub-Unit-Test",
+		out: "datahub:datapool has been created successfully. Name:datahub_unit_test Type:file Path:/var/lib/datahub/datahub-Unit-Test",
 	},
 	Context{
 		desc: "2.create dup datapool err--------",
@@ -70,7 +70,7 @@ var con = []Context{
 			Conn: "/var/lib/datahub/datahub-Unit-Test",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test"}},
-		out: "The datapool datahub_unit_test is already exist, please use another name!",
+		out: "datahub:'datahub_unit_test' has been created already.",
 	},
 	Context{
 		desc: "3.create datapool with err json format--------",
@@ -102,7 +102,7 @@ var con = []Context{
 			Type: "file",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test2"}},
-		out: "Datapool create success, name:datahub_unit_test2 type:file path:/var/lib/datahub",
+		out: "datahub:datapool has been created successfully. Name:datahub_unit_test2 Type:file Path:/var/lib/datahub",
 	},
 	Context{
 		desc: "6.create datapool with relative path--------",
@@ -117,7 +117,7 @@ var con = []Context{
 			Conn: "/var/lib/datahub/datahub-Unit-Test-6",
 		},
 		ps:  httprouter.Params{{"dpname", "datahub_unit_test_6"}},
-		out: "Datapool create success, name:datahub_unit_test_6 type:file path:/var/lib/datahub/datahub-Unit-Test-6",
+		out: "datahub:datapool has been created successfully. Name:datahub_unit_test_6 Type:file Path:/var/lib/datahub/datahub-Unit-Test-6",
 	},
 }
 
