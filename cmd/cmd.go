@@ -56,6 +56,7 @@ const (
 	ErrorDatapoolNotExits
 	ErrorRemoveAllJobs
 	ErrorUnAuthorization
+	ErrorOverLength
 )
 
 var Cmd = []Command{
@@ -207,7 +208,8 @@ func showError(resp *http.Response) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
+		//fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
+		fmt.Printf(result.Msg)
 	}
 
 }

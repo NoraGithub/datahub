@@ -125,7 +125,7 @@ func dpResp(bDetail bool, RespBody []byte) {
 			}
 			printDash(n)
 		} else {
-			fmt.Println("ERROR:", result.Code, " Msg:", result.Msg)
+			fmt.Println("ERROR:", result.Msg)
 		}
 	}
 }

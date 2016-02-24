@@ -27,8 +27,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
-		fmt.Print("datahub:are you sure to create the datapool", args[0],
-			"with default type 'file' and path '/var/lib/datahub' ?\n[Y or N]:")
+		fmt.Print("datahub:are you sure to create the datapool ", args[0],
+			" with default type 'file' and path '/var/lib/datahub' ?\n[Y or N]:")
 		if GetEnsure() == true {
 			d.Name = args[0]
 			d.Conn = GstrDpPath
@@ -59,12 +59,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
 			if sp[0][0] != '/' {
-				fmt.Println("Please input absolute path , e.g. /home/user/mydp")
+				fmt.Printf("datahub:Please input path for '%s'.\n", args[0])
 				return
 			}
 			d.Conn = "/" + strings.Trim(sp[0], "/")
 		} else {
-			fmt.Printf("Invalid argument.\nSee '%s --help'.\n", f.Name())
+			fmt.Printf("'datahub:'datahub dp create' is not a datahub command .See 'datahub --help'.\n", f.Name())
 			return
 		}
 	}
