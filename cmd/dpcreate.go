@@ -64,7 +64,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 			}
 			d.Conn = "/" + strings.Trim(sp[0], "/")
 		} else {
-			fmt.Printf("'datahub:'datahub dp create' is not a datahub command .See 'datahub --help'.\n", f.Name())
+			fmt.Printf("Error: invalid argument.\nSee '%s --help'.\n", f.Name())
 			return
 		}
 	}

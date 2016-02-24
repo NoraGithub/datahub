@@ -68,7 +68,7 @@ func Pub(needlogin bool, args []string) (err error) {
 			err = PubItem(repo, item, pub, args)
 		} else {
 			fmt.Println("Error:please input a valid datapool and path.")
-			err = errors.New("Error:please input a valid datapool and path.d")
+			err = errors.New("Error:please input a valid datapool and path.")
 		}
 	} else if l == 2 {
 		item = sptag[0]
