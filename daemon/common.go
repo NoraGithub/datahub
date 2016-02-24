@@ -21,6 +21,15 @@ func Env(name string, required bool) string {
 	return s
 }
 
+func EnvDebug(name string, required bool) string {
+	s := os.Getenv(name)
+	if required && s == "" {
+		panic("env variable required, " + name)
+	}
+	log.Debugf("[env][%s] %s\n", name, s)
+	return s
+}
+
 func CheckDataPoolExist(datapoolname string) (bexist bool) {
 	sqlcheck := fmt.Sprintf("SELECT COUNT(1) FROM DH_DP WHERE DPNAME='%s' AND STATUS='A'", datapoolname)
 	row, err := g_ds.QueryRow(sqlcheck)

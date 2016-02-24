@@ -371,10 +371,12 @@ func init() {
 		DefaultServer = srv
 	}
 
-	tr := &http.Transport{
+	/*tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	http.DefaultClient.Transport = tr
+	http.DefaultClient.Transport = tr*/
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
 }

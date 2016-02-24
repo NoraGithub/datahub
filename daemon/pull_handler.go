@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	//gourl "net/url"
 	"os"
 	"strconv"
 	"sync"
@@ -215,10 +216,13 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	//job := DatahubJob[jobid]
 
+	log.Debug(EnvDebug("http_proxy", false))
+
 	resp, err := http.DefaultClient.Do(req)
 
 	/*Save response body to file only when HTTP 2xx received. TODO*/
 	if err != nil || (resp != nil && resp.StatusCode/100 != 2) {
+		log.Error("http error", err)
 		if resp != nil {
 			body, _ := ioutil.ReadAll(resp.Body)
 			l := log.Error("http status code:", resp.StatusCode, "response Body:", string(body), err)

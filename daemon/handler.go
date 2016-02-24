@@ -102,6 +102,7 @@ func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (re
 	}
 
 	//req.Header.Set("User", "admin")
+
 	if resp, err = http.DefaultClient.Do(req); err != nil {
 		log.Error(err)
 		d := ds.Result{Code: cmd.ErrorServiceUnavailable, Msg: err.Error()}
