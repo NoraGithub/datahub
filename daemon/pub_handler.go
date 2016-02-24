@@ -28,7 +28,6 @@ var MaxItemLength = 100
 var MaxTagLength = 100
 var MaxCommentLength = 600
 
-
 type Sys struct {
 	Supplystyle string `json:"supply_style"`
 }
@@ -195,7 +194,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	//get DpFullPath and check whether repo/dataitem has been published
 	DpItemFullPath, err := CheckTagAndGetDpPath(repo, item, tag)
 	if err != nil || len(DpItemFullPath) == 0 {
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, err.Error()+"  Datapool+Itemdesc Path: "+DpItemFullPath)
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorTagAlreadyExist, err.Error()+"  Datapool+Itemdesc Path: "+DpItemFullPath)
 		return
 	}
 	splits := strings.Split(pub.Detail, "/")
@@ -552,8 +551,7 @@ func ComputeMd5(filePath string) ([]byte, error) {
 	return hash.Sum(result), nil
 }
 
-
-func CheckLength(w http.ResponseWriter, data string, length int) (bool) {
+func CheckLength(w http.ResponseWriter, data string, length int) bool {
 	if len(data) > length {
 		m := fmt.Sprintf("length of %s can't over %d bytes", data, length)
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorOverLength, m)
@@ -563,4 +561,3 @@ func CheckLength(w http.ResponseWriter, data string, length int) (bool) {
 
 	return true
 }
-
