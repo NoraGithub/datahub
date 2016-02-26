@@ -29,9 +29,9 @@ type MessageData struct {
 }
 
 type Messages struct {
-	Messageid int         `json:messageid,omitempty`
-	Type      string      `json:type,omitempty`
-	Data      MessageData `json:data,omitempty`
+	Messageid int         `json:"messageid,omitempty"`
+	Type      string      `json:"type,omitempty"`
+	Data      MessageData `json:"data,omitempty"`
 }
 
 var (
