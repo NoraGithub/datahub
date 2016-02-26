@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	//gourl "net/url"
 	"os"
 	"strconv"
 	"sync"
@@ -157,29 +156,21 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	var out *os.File
 	var err error
 	var destfilename, tmpdestfilename, tmpdir, dpconn, dptype string
-	dpexist := CheckDataPoolExist(p.Datapool)
-	if dpexist == false {
-		e := fmt.Sprintf("datapool:%s not exist!", p.Datapool)
+
+	dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
+	if len(dpconn) == 0 {
+		e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
 		l := log.Error(e)
 		logq.LogPutqueue(l)
 		err = errors.New(e)
 		c <- -1
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, e)
 		return 0, err
 	} else {
-		dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
-		if len(dpconn) == 0 {
-			e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
-			l := log.Error(e)
-			logq.LogPutqueue(l)
-			err = errors.New(e)
-			c <- -1
-			return 0, err
-		} else {
-			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
-			//first tmpdir, then tmpdestfilename
-			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
-			tmpdestfilename = tmpdir + "/" + p.DestName
-		}
+		destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
+		//first tmpdir, then tmpdestfilename
+		tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+		tmpdestfilename = tmpdir + "/" + p.DestName
 	}
 
 	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
@@ -197,6 +188,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	if err != nil {
 		c <- -1
 		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorOpenFile, err.Error())
 		return 0, err
 	}
 
@@ -205,6 +197,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		out.Close()
 		c <- -1
 		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorStatFile, err.Error())
 		return 0, err
 	}
 	out.Seek(stat.Size(), 0)
@@ -231,10 +224,12 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			if resp.StatusCode == 416 {
 				msg = tmpdestfilename + " has already been downloaded."
 			}
-			r, _ := buildResp(7000+resp.StatusCode, msg, nil)
+			r, _ := buildResp(resp.StatusCode, msg, nil)
 
 			w.WriteHeader(resp.StatusCode)
 			w.Write(r)
+		} else {
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorOtherError, err.Error())
 		}
 		filesize := stat.Size()
 		out.Close()
@@ -246,9 +241,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	}
 	defer resp.Body.Close()
 
-	r, _ := buildResp(7000, strret, nil)
-	w.WriteHeader(http.StatusOK)
-	w.Write(r)
+	HttpNoData(w, http.StatusOK, cmd.ResultOK, strret)
+
 	//write channel
 	c <- 1
 
@@ -313,7 +307,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		UploadtoS3(destfilename, dpconn, jobid, p)
 	}
 
-	InsertTagToDb(dpexist, p)
+	InsertTagToDb(true, p)
 	return n, nil
 }
 
