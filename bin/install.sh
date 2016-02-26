@@ -19,8 +19,8 @@ daemonid=$1
 
 url='https://hub.dataos.io'
 
-deb_package='datahub_1.0.0-1_amd64.deb'
-rpm_x86_64_package='datahub-1.0.0-1.x86_64.rpm'
+deb_package='datahub_1.1.0-1_amd64.deb'
+rpm_x86_64_package='datahub-1.1.0-1.x86_64.rpm'
 
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
