@@ -57,6 +57,10 @@ const (
 	ErrorRemoveAllJobs
 	ErrorUnAuthorization
 	ErrorOverLength
+	ErrorOpenFile
+	ErrorStatFile
+	ErrorOtherError
+	ErrorUnknowError
 )
 
 var Cmd = []Command{
@@ -209,7 +213,7 @@ func showError(resp *http.Response) {
 		fmt.Println(err)
 	} else {
 		//fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
-		fmt.Printf(result.Msg)
+		fmt.Println(result.Msg)
 	}
 
 }

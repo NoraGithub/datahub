@@ -59,7 +59,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		e := fmt.Sprintf("Error:datapool '%s' does not exist.\n", p.Datapool)
 		l := log.Error(e)
 		logq.LogPutqueue(l)
-		msgret := ds.Result{Msg: e}
+		msgret := ds.Result{Code: cmd.ErrorDatapoolNotExits, Msg: e}
 		log.Error("Code:", cmd.ErrorDatapoolNotExits, "datapool '%s' does not exist.", p.Datapool)
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusBadRequest)
@@ -156,29 +156,21 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	var out *os.File
 	var err error
 	var destfilename, tmpdestfilename, tmpdir, dpconn, dptype string
-	dpexist := CheckDataPoolExist(p.Datapool)
-	if dpexist == false {
-		e := fmt.Sprintf("datapool:%s not exist!", p.Datapool)
+
+	dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
+	if len(dpconn) == 0 {
+		e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
 		l := log.Error(e)
 		logq.LogPutqueue(l)
 		err = errors.New(e)
 		c <- -1
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, e)
 		return 0, err
 	} else {
-		dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
-		if len(dpconn) == 0 {
-			e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
-			l := log.Error(e)
-			logq.LogPutqueue(l)
-			err = errors.New(e)
-			c <- -1
-			return 0, err
-		} else {
-			destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
-			//first tmpdir, then tmpdestfilename
-			tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
-			tmpdestfilename = tmpdir + "/" + p.DestName
-		}
+		destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
+		//first tmpdir, then tmpdestfilename
+		tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+		tmpdestfilename = tmpdir + "/" + p.DestName
 	}
 
 	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
@@ -196,6 +188,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	if err != nil {
 		c <- -1
 		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorOpenFile, err.Error())
 		return 0, err
 	}
 
@@ -204,6 +197,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		out.Close()
 		c <- -1
 		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorStatFile, err.Error())
 		return 0, err
 	}
 	out.Seek(stat.Size(), 0)
@@ -215,10 +209,13 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	//job := DatahubJob[jobid]
 
+	log.Debug(EnvDebug("http_proxy", false))
+
 	resp, err := http.DefaultClient.Do(req)
 
 	/*Save response body to file only when HTTP 2xx received. TODO*/
 	if err != nil || (resp != nil && resp.StatusCode/100 != 2) {
+		log.Error("http error", err)
 		if resp != nil {
 			body, _ := ioutil.ReadAll(resp.Body)
 			l := log.Error("http status code:", resp.StatusCode, "response Body:", string(body), err)
@@ -227,10 +224,12 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			if resp.StatusCode == 416 {
 				msg = tmpdestfilename + " has already been downloaded."
 			}
-			r, _ := buildResp(7000+resp.StatusCode, msg, nil)
+			r, _ := buildResp(resp.StatusCode, msg, nil)
 
 			w.WriteHeader(resp.StatusCode)
 			w.Write(r)
+		} else {
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorOtherError, err.Error())
 		}
 		filesize := stat.Size()
 		out.Close()
@@ -242,9 +241,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	}
 	defer resp.Body.Close()
 
-	r, _ := buildResp(7000, strret, nil)
-	w.WriteHeader(http.StatusOK)
-	w.Write(r)
+	HttpNoData(w, http.StatusOK, cmd.ResultOK, strret)
+
 	//write channel
 	c <- 1
 
@@ -309,7 +307,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		UploadtoS3(destfilename, dpconn, jobid, p)
 	}
 
-	InsertTagToDb(dpexist, p)
+	InsertTagToDb(true, p)
 	return n, nil
 }
 
