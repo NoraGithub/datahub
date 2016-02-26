@@ -641,3 +641,25 @@ func buildResp(code int, msg string, data interface{}) (body []byte, err error) 
 	return json.Marshal(r)
 
 }
+
+func GetDatapoolNameAndConn() (dpnc map[string]string) {
+	sqlgetdpnameandconn := `SELECT DPNAME, DPCONN FROM DH_DP A, DH_DP_RPDM_MAP B
+							WHERE A.DPID=B.DPID AND A.DPTYPE='file'
+									    AND A.STATUS='A'
+									    AND B.PUBLISH='Y'
+									    AND B.STATUS='A';`
+	var dpname string
+	var dpconn string
+	rows, err := g_ds.QueryRows(sqlgetdpnameandconn)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return nil
+	} else {
+		for rows.Next() {
+			rows.Scan(&dpname, &dpconn)
+			dpnc[dpname] = dpconn
+		}
+		return dpnc
+	}
+}

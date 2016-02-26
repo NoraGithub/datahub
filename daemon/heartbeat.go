@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"path/filepath"
 )
 
 type Beatbody struct {
@@ -18,6 +19,7 @@ type Beatbody struct {
 	Entrypoint []string `json:"entrypoint"`
 	Log        []string `json:"log,omitempty"`
 	Role       int      `json:"role"` //0 puller, 1 publisher
+	Errortag   []string `json:"error,omitempty"`
 }
 
 type MessageData struct {
@@ -79,6 +81,9 @@ func HeartBeat() {
 		if len(logQueue) > 0 {
 			heartbeatbody.Log = logQueue
 		}
+
+		ErrorTags := CheckHealth()
+		heartbeatbody.Errortag = ErrorTags
 
 		jsondata, err := json.Marshal(heartbeatbody)
 		if err != nil {
@@ -219,4 +224,66 @@ func GetMessages() {
 			}
 		}
 	}
+}
+
+func ScanLocalFile(path string) ([]string) {
+	log.Info("--------------------------------->Into ScanLocalFile().....................................")
+	localfiles := make([]string, 0)
+
+	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		if ( f == nil ) {return err}
+		if f.IsDir() {
+			return nil
+		}
+
+		localfiles = append(localfiles, path)
+		return nil
+	})
+	if err != nil {
+		log.Error("filepath.Walk() returned %v\n", err)
+	}
+
+	for _, localfile := range localfiles {
+		//fmt.Println(localfile)
+		log.Info("--------------------------------------------------------->", localfile)
+	}
+
+	return localfiles
+}
+
+func CheckHealth() []string {
+	log.Info("---------------------------------->Into CheckHealth()............................................")
+	errortags := make([]string, 0)
+	localfiles := make([]string, 0)
+	dpnc := GetDatapoolNameAndConn();
+	for _, dpconn := range dpnc {
+		//dppath := GetDataPoolDpconn(dpname)
+		localfiles = ScanLocalFile(dpconn)
+	}
+	var tagDetails map[string] string
+
+	err := GetAllTagDetails(&tagDetails)
+	if err != nil {
+		log.Error(err)
+	}
+
+	var i int
+	j := 0
+	for file, tag := range tagDetails {
+		for i = 0; i <len(localfiles); i++ {
+			if file == localfiles[i] {
+				continue
+			}
+		}
+		if i >= len(localfiles) {
+			errortags[j] = tag
+		}
+	}
+
+	for _, errortag := range errortags {
+		//fmt.Println(errortag)
+		log.Info("-------------------------------------------------------->", errortag)
+	}
+
+	return errortags
 }
