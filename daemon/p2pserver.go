@@ -101,19 +101,20 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	tokenValid := false
+	retmsg := ""
 	token := r.Form.Get("token")
 	username := r.Form.Get("username")
 	if len(token) > 0 && len(username) > 0 {
 		log.Println(r.URL.Path, "token:", token, "username:", username)
 		url := "/transaction/" + sRepoName + "/" + sDataItem + "/" + sTag +
 			"?cypt_accesstoken=" + token + "&username=" + username
-		tokenValid = checkAccessToken(url)
+		tokenValid, retmsg = checkAccessToken(url)
 	}
 
 	if !tokenValid {
-		l := log.Warn("Access token not valid.", token, username)
+		l := log.Warn(retmsg, token, username)
 		logq.LogPutqueue(l)
-		http.Error(rw, "Bad Request", http.StatusBadRequest)
+		http.Error(rw, retmsg, http.StatusBadRequest)
 		return
 	}
 
@@ -150,7 +151,7 @@ func sayhello(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	fmt.Fprintf(rw, "%s \n", string(body))
 }
 
-func checkAccessToken(tokenUrl string) bool {
+func checkAccessToken(tokenUrl string) (bool, string) {
 	log.Println("daemon: connecting to", DefaultServer+tokenUrl)
 	req, err := http.NewRequest("GET", DefaultServer+tokenUrl, nil)
 	if len(loginAuthStr) > 0 {
@@ -159,7 +160,7 @@ func checkAccessToken(tokenUrl string) bool {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return false
+		return false, ""
 	}
 	defer resp.Body.Close()
 
@@ -172,9 +173,9 @@ func checkAccessToken(tokenUrl string) bool {
 	result := &ds.Result{Data: &tkresp}
 	if err = json.Unmarshal(body, &result); err != nil {
 		log.Println(err)
-		return false
+		return false, ""
 	}
 	log.Trace(string(body))
 
-	return tkresp.Valid
+	return tkresp.Valid, result.Msg
 }
