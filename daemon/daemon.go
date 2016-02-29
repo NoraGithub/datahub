@@ -32,6 +32,8 @@ var (
 	AWS_REGION            string
 )
 
+
+
 const (
 	g_dbfile    string = "/var/lib/datahub/datahub.db"
 	g_strDpPath string = cmd.GstrDpPath
@@ -337,6 +339,7 @@ func RunDaemon() {
 	if len(DaemonID) > 0 {
 		go startP2PServer()
 		go HeartBeat()
+		go CheckHealthClock()
 		go datapoolMonitor()
 		go GetMessages()
 		go PullTagAutomatic()

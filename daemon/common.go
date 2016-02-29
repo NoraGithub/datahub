@@ -452,6 +452,7 @@ func GetAllTagDetails(monitList *map[string]string) (e error) {
 				rTags.Scan(&tagname, &detail)
 				tag := k + tagname
 				file := v + detail
+				//log.Info("--------------->", tag, "----------------->", file)
 				(*monitList)[file] = tag
 			}
 		}
@@ -642,24 +643,26 @@ func buildResp(code int, msg string, data interface{}) (body []byte, err error) 
 
 }
 
-func GetDatapoolNameAndConn() (dpnc map[string]string) {
-	sqlgetdpnameandconn := `SELECT DPNAME, DPCONN FROM DH_DP A, DH_DP_RPDM_MAP B
+func GetDatapoolNameAndConn() (dpnc map[string] string, dataitem string) {
+	sqlgetdpnameandconn := `SELECT DPNAME, DPCONN, ITEMDESC FROM DH_DP A, DH_DP_RPDM_MAP B
 							WHERE A.DPID=B.DPID AND A.DPTYPE='file'
 									    AND A.STATUS='A'
 									    AND B.PUBLISH='Y'
 									    AND B.STATUS='A';`
+	dpnc = make(map[string] string)
 	var dpname string
 	var dpconn string
-	rows, err := g_ds.QueryRows(sqlgetdpnameandconn)
+ 	rows, err := g_ds.QueryRows(sqlgetdpnameandconn)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
-		return nil
+		return nil, ""
 	} else {
 		for rows.Next() {
-			rows.Scan(&dpname, &dpconn)
+			rows.Scan(&dpname, &dpconn, &dataitem)
+			log.Info("-------------->",dpname,"-------------->",dpconn)
 			dpnc[dpname] = dpconn
 		}
-		return dpnc
+		return dpnc, dataitem
 	}
 }

@@ -41,6 +41,7 @@ var (
 	EntryPointStatus = "not available"
 	DaemonID         string
 	heartbeatTimeout = 5 * time.Second
+        Errortagsmap = make(map[string] string)
 )
 
 var (
@@ -82,8 +83,10 @@ func HeartBeat() {
 			heartbeatbody.Log = logQueue
 		}
 
-		ErrorTags := CheckHealth()
-		heartbeatbody.Errortag = ErrorTags
+		errortags := checkErrortagsmap(&Errortagsmap)
+		if len(errortags) != 0 {
+			heartbeatbody.Errortag = errortags
+		}
 
 		jsondata, err := json.Marshal(heartbeatbody)
 		if err != nil {
@@ -226,8 +229,85 @@ func GetMessages() {
 	}
 }
 
+func checkErrortagsmap(errortagsmap *map[string] string) (errortags []string) {
+
+	errortags = make([]string, 0)
+	for errortagfile, errortag := range *errortagsmap {
+		f, err := os.Open(errortagfile)
+		if err != nil && os.IsNotExist(err) {
+			log.Error("------>file:", errortagfile, "不存在")
+			errortags = append(errortags, errortag)
+		} else {
+			delete(*errortagsmap, errortagfile)
+		}
+		defer f.Close()
+	}
+	//log.Info("----------->errortags:",errortags)
+	//for _, errortag := range errortags {
+	//	log.Info("------------>errortag:", errortag)
+	//}
+	return
+}
+
+func CheckHealthClock() {
+	log.Debug("--------->BEGIN")
+
+	checkHealth(&Errortagsmap)
+
+	timer := time.NewTicker(10 * time.Minute)
+	for {
+		select {
+		case <-timer.C:
+			now := time.Now()
+			if now.Hour()%6 == 0 {
+				log.Info("Time:", now)
+				checkHealth(&Errortagsmap)
+			}
+		}
+	}
+	log.Debug("---------->END")
+}
+
+func checkHealth(errorTagsMap *map[string] string) {
+
+	localfiles := make([]string, 0)
+	dpnc, dataitem := GetDatapoolNameAndConn();
+	log.Info(dpnc)
+	for _, dpconn := range dpnc {
+		path := dpconn + "/" + dataitem
+		localfiles = ScanLocalFile(path)
+	}
+	log.Info(localfiles)
+	var tagDetails map[string] string
+	tagDetails = make(map[string] string)
+
+	err := GetAllTagDetails(&tagDetails)
+	if err != nil {
+		log.Error(err)
+	}
+
+	var i int
+	for file, tag := range tagDetails {
+		for i = 0; i <len(localfiles); i++ {
+			//log.Info("--------->tag:", tag)
+			//log.Info("--------->tagfile:",file)
+			//log.Info("--------->localfile:",localfiles[i])
+			if file == localfiles[i] {
+				break
+			}
+		}
+		if i >= len(localfiles) {
+			(*errorTagsMap)[file] = tag
+		}
+	}
+
+	//for errortagfile, errortag := range *errorTagsMap {
+	//	log.Info("------->errortag:", errortag, "-------->", errortagfile)
+	//}
+}
+
 func ScanLocalFile(path string) ([]string) {
-	log.Info("--------------------------------->Into ScanLocalFile().....................................")
+
 	localfiles := make([]string, 0)
 
 	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
@@ -243,47 +323,10 @@ func ScanLocalFile(path string) ([]string) {
 		log.Error("filepath.Walk() returned %v\n", err)
 	}
 
-	for _, localfile := range localfiles {
-		//fmt.Println(localfile)
-		log.Info("--------------------------------------------------------->", localfile)
-	}
+	//for _, localfile := range localfiles {
+	//	//fmt.Println(localfile)
+	//	log.Info("--------------------------------------------------------->localfile:", localfile)
+	//}
 
 	return localfiles
-}
-
-func CheckHealth() []string {
-	log.Info("---------------------------------->Into CheckHealth()............................................")
-	errortags := make([]string, 0)
-	localfiles := make([]string, 0)
-	dpnc := GetDatapoolNameAndConn();
-	for _, dpconn := range dpnc {
-		//dppath := GetDataPoolDpconn(dpname)
-		localfiles = ScanLocalFile(dpconn)
-	}
-	var tagDetails map[string] string
-
-	err := GetAllTagDetails(&tagDetails)
-	if err != nil {
-		log.Error(err)
-	}
-
-	var i int
-	j := 0
-	for file, tag := range tagDetails {
-		for i = 0; i <len(localfiles); i++ {
-			if file == localfiles[i] {
-				continue
-			}
-		}
-		if i >= len(localfiles) {
-			errortags[j] = tag
-		}
-	}
-
-	for _, errortag := range errortags {
-		//fmt.Println(errortag)
-		log.Info("-------------------------------------------------------->", errortag)
-	}
-
-	return errortags
 }
