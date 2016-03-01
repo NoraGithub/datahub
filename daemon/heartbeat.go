@@ -19,7 +19,7 @@ type Beatbody struct {
 	Entrypoint []string `json:"entrypoint"`
 	Log        []string `json:"log,omitempty"`
 	Role       int      `json:"role"` //0 puller, 1 publisher
-	Errortag   []string `json:"error,omitempty"`
+	Errortag   []string `json:"errortag,omitempty"`
 }
 
 type MessageData struct {

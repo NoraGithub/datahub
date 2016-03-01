@@ -660,7 +660,6 @@ func GetDatapoolNameAndConn() (dpnc map[string] string, dataitem string) {
 	} else {
 		for rows.Next() {
 			rows.Scan(&dpname, &dpconn, &dataitem)
-			log.Info("-------------->",dpname,"-------------->",dpconn)
 			dpnc[dpname] = dpconn
 		}
 		return dpnc, dataitem
