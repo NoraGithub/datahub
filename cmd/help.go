@@ -28,7 +28,7 @@ func Help(login bool, args []string) (err error) {
 				return
 			}
 		}
-		fmt.Printf("datahub: '%s' not found, see 'datahub --help'.\n", args[0])
+		fmt.Printf("DataHub : '%s' not found ,see 'datahub --help'.\n", args[0])
 	} else {
 		ShowUsage()
 	}

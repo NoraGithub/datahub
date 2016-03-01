@@ -67,8 +67,8 @@ func Pub(needlogin bool, args []string) (err error) {
 			pub.ItemDesc = strings.Trim(se[1], "/")
 			err = PubItem(repo, item, pub, args)
 		} else {
-			fmt.Println("Error:please input a valid datapool and path.")
-			err = errors.New("Error:please input a valid datapool and path.")
+			fmt.Println("Error : Please input a valid datapool and path.")
+			err = errors.New("Error : Please input a valid datapool and path.")
 		}
 	} else if l == 2 {
 		item = sptag[0]
@@ -141,7 +141,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 			return err
 		} else {
 			if result.Code == 0 {
-				fmt.Println("datahub:successed in publishing.")
+				fmt.Println("DataHub : Successed in publishing.")
 			} else {
 				fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
 			}

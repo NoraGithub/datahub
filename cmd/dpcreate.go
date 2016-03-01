@@ -27,8 +27,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
-		fmt.Print("datahub:are you sure to create the datapool ", args[0],
-			" with default type 'file' and path '/var/lib/datahub' ?\n[Y or N]:")
+		fmt.Print("DataHub : Are you sure to create a datapool ",
+			" with default type 'file' and path \"/var/lib/datahub\" ?\n[Y or N]:")
 		if GetEnsure() == true {
 			d.Name = args[0]
 			d.Conn = GstrDpPath
@@ -38,7 +38,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		}
 	} else {
 		if len(args) != 2 || len(args[0]) == 0 {
-			fmt.Printf("invalid argument.\nSee '%s --help'.\n", f.Name())
+			fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
 			return
 		}
 		d.Name = args[0]
@@ -47,7 +47,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		if len(sp) > 1 && len(sp[1]) > 0 {
 			d.Type = strings.ToLower(sp[0])
 			if sp[1][0] != '/' && d.Type == "file" {
-				fmt.Println("Please input absolute path after 'file://', e.g. file:///home/user/mydp")
+				fmt.Println("DataHub : Please input absolute path after 'file://', e.g. file:///home/user/mydp")
 				return
 			}
 			if d.Type == "file" {
@@ -59,12 +59,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
 			if sp[0][0] != '/' {
-				fmt.Printf("datahub:Please input path for '%s'.\n", args[0])
+				fmt.Printf("DataHub : Please input path for '%s'.\n", args[0])
 				return
 			}
 			d.Conn = "/" + strings.Trim(sp[0], "/")
 		} else {
-			fmt.Printf("Error: invalid argument.\nSee '%s --help'.\n", f.Name())
+			fmt.Printf("Error : Invalid argument.\nSee '%s --help'.\n", f.Name())
 			return
 		}
 	}
@@ -76,7 +76,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		}
 	}
 	if !allowtype {
-		fmt.Println("Datapool type need to be:", DataPoolTypes)
+		fmt.Println("DataHub : Datapool type need to be:", DataPoolTypes)
 		return
 	}
 
