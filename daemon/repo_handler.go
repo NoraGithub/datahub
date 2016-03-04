@@ -1,17 +1,14 @@
 package daemon
 
 import (
+	"encoding/json"
+	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
-	"fmt"
-	"strings"
-	"encoding/json"
-	"github.com/asiainfoLDP/datahub/ds"
-	"bufio"
-	"os"
-	"github.com/asiainfoLDP/datahub/cmd"
+	"strconv"
 )
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -48,120 +45,93 @@ func repoTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
 	repository := ps.ByName("repo")
 	dataitem := ps.ByName("item")
-	path := "/subscriptions/push/"+repository+"/"+dataitem+"?phase=1"
 
+	r.ParseForm()
+	ensure, _ := strconv.Atoi(r.Form.Get("ensure"))
 	reqBody, _ := ioutil.ReadAll(r.Body)
 
-	msg := ds.Response{}
-	Pages := ds.ResultPages{}
-	msg.Data = &Pages
+	if ensure == 0 {
+		path := "/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
 
-	respbody, err := commToServer("get", path, reqBody, w)
-	if err != nil {
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorServiceUnavailable, "commToServer err")
-		return
-	}
-	HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
+		retResp := ds.Response{}
+		Pages := ds.ResultPages{}
+		retResp.Data = &Pages
 
-	unmarshalerr := json.Unmarshal(respbody, &msg)
-	if unmarshalerr != nil {
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "error while unmarshal respBody")
-		return
-	}
-
-	if msg.Code == 0 && Pages.Total != 0 {
-		fmt.Print("DataHub : Order not completed, if deleted,the deposit will return to the subscribers. "+
-		"DataItem deleted, and you could not be recovery, and all tags would be deleted either."+
-		"Are you sure to delete the current DataItem?[Y or N]:")
-		if GetEnsure() == true {
-			//fmt.Println("item delete...")
-			err := delItem(repository, dataitem)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorSqlExec, "error while delete item")
-				return
-			}
-			err = delTagsForDelItem(repository, dataitem)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorSqlExec, "error while delete tags")
-				return
-			}
-			respbody, err = commToServer("delete", r.URL.Path, reqBody, w)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorServiceUnavailable, "commToServer err")
-				return
-			}
-			HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
-
-			unmarshalerr = json.Unmarshal(respbody, &msg)
+		resp, err := commToServerGetRsp("get", path, reqBody)
+		defer resp.Body.Close()
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+			return
+		}
+		respbody, _ := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusOK {
+			unmarshalerr := json.Unmarshal(respbody, &retResp)
 			if unmarshalerr != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+				log.Error(unmarshalerr)
+				HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
 				return
 			}
+			log.Info(string(respbody))
+			if Pages.Total > 0 {
 
-			if msg.Code != 0 {
-				fmt.Println("Error :",msg.Msg)
-				rollbackDelItem(repository, dataitem)
-				rollbackDelTags(repository, dataitem)
+				HttpNoData(w, http.StatusOK, cmd.ExitsConsumingPlan, "Exist consuming subscription plan")
+				return
+			} else {
+
+				HttpNoData(w, http.StatusOK, cmd.NoConsumingPlan, "No consuming subscription plan")
 				return
 			}
 		} else {
+			HttpNoData(w, resp.StatusCode, cmd.ErrorUnknowError, "")
+			log.Error(string(respbody))
 			return
 		}
-	} else if msg.Code == 0 && Pages.Total == 0 {
-		fmt.Print("Datahub : After you delete the DataItem, data could not be recovery, and all tags would be deleted either."+
-		"Are you sure to delete the current DataItem?[Y or N]:")
-		if GetEnsure() == true {
-			//fmt.Println("item delete...")
-			err := delItem(repository, dataitem)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorSqlExec, "error while delete item")
-				return
-			}
-			err = delTagsForDelItem(repository, dataitem)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorSqlExec, "error while delete tags")
-				return
-			}
-			respbody, err = commToServer("delete", r.URL.Path, reqBody, w)
-			if err != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorServiceUnavailable, "commToServer err")
-				return
-			}
-			HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
 
-			unmarshalerr = json.Unmarshal(respbody, &msg)
-			if unmarshalerr != nil {
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "error while unmarshal respBody")
-				return
-			}
+	} else if ensure == 1 {
+		err := delItem(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete item")
+			return
+		}
+		err = delTagsForDelItem(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tags")
+			return
+		}
+		resp, err := commToServerGetRsp("delete", r.URL.Path, reqBody)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer err")
+			return
+		}
+		defer resp.Body.Close()
 
-			if msg.Code != 0 {
-				fmt.Println("Error :",msg.Msg)
-				rollbackDelItem(repository, dataitem)
-				rollbackDelTags(repository, dataitem)
-				return
-			}
+		respbody, _ := ioutil.ReadAll(resp.Body)
+		retResp := ds.Response{}
+		unmarshalerr := json.Unmarshal(respbody, &retResp)
+		if unmarshalerr != nil {
+			log.Error(unmarshalerr)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+			return
+		}
+		if resp.StatusCode == http.StatusOK {
+			HttpNoData(w, http.StatusOK, cmd.ResultOK, retResp.Msg)
+			log.Info("Msg :", retResp.Msg, "HttpCode :", resp.StatusCode)
 		} else {
-			return
+			HttpNoData(w, resp.StatusCode, retResp.Code, retResp.Msg)
+			log.Error("Error :", retResp.Msg, "HttpCode :", resp.StatusCode)
+			rollbackDelItem(repository, dataitem)
+			rollbackDelTags(repository, dataitem)
 		}
-	} else {
-		fmt.Println("Error :", msg.Msg)
-		return
 	}
-}
 
-func GetEnsure() bool {
-	reader := bufio.NewReader(os.Stdin)
-	en, _ := reader.ReadBytes('\n')
-	ens := strings.Trim(string(en), "\n")
-	ens = strings.ToLower(ens)
-	Yes := []string{"y", "yes"}
-	for _, y := range Yes {
-		if ens == y {
-			return true
-		}
-	}
-	return false
 }
