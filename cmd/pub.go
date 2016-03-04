@@ -76,7 +76,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		pub.Detail = args[1]
 		err = PubTag(repo, item, tag, pub, args)
 	} else {
-		fmt.Printf("invalid argument.\nSee '%s --help'.\n", f.Name())
+		fmt.Printf("DataHub : invalid argument.\nSee '%s --help'.\n", f.Name())
 		return errors.New("invalid argument")
 	}
 
@@ -89,13 +89,18 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 	if len(p.Accesstype) == 0 {
 		p.Accesstype = PRIVATE
 	}
+	p.Accesstype = strings.ToLower(p.Accesstype)
+	if p.Accesstype != PRIVATE && p.Accesstype != PUBLIC {
+		fmt.Println("Error : Invalid accesstype, e.g accesstype=public, private")
+		return
+	}
 	if len(p.Datapool) == 0 {
-		fmt.Println("Publishing dataitem requires a parameter \"--datapool=???\" .")
+		fmt.Println("DataHub : Publishing dataitem requires a parameter \"--datapool=???\" .")
 		return
 	}
 	jsonData, err := json.Marshal(p)
 	if err != nil {
-		fmt.Println("Mrashal pubdata error while publishing dateitem.")
+		fmt.Println("Error : Mrashal pubdata error while publishing dateitem.")
 		return err
 	}
 	err = pubResp(url, jsonData, args)
@@ -105,7 +110,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 	url := repo + "/" + item + "/" + tag
 	if len(p.Detail) == 0 {
-		fmt.Println("Publishing tag requires a parameter \"--detail=???\" ")
+		fmt.Println("DataHub : Publishing tag requires a parameter \"--detail=???\" ")
 		return
 	}
 	if p.Detail[0] != '/' && strings.Contains(p.Detail, "/") {
@@ -117,7 +122,7 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 	}
 	jsonData, err := json.Marshal(p)
 	if err != nil {
-		fmt.Println("Mrashal pubdata error while publishing tag.")
+		fmt.Println("Error : Mrashal pubdata error while publishing tag.")
 		return err
 	}
 	err = pubResp(url, jsonData, args)
@@ -137,13 +142,13 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
 		if err != nil {
-			fmt.Println("Pub error.", err) //todo add http code
+			fmt.Println("Error : Pub error.", err) //todo add http code
 			return err
 		} else {
 			if result.Code == 0 {
 				fmt.Println("DataHub : Successed in publishing.")
 			} else {
-				fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
+				fmt.Printf("Error : %v\n", result.Msg)
 			}
 		}
 	} else if resp.StatusCode == http.StatusUnauthorized {
@@ -156,10 +161,10 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
 		if err != nil {
-			fmt.Println("Pub error.", err)
+			fmt.Println("Error : Pub error.", err)
 			return err
 		} else {
-			fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
+			fmt.Printf("Error : %v\n", result.Msg)
 		}
 	}
 	return err

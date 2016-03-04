@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
-	"path/filepath"
 )
 
 type Beatbody struct {
@@ -19,7 +19,7 @@ type Beatbody struct {
 	Entrypoint []string `json:"entrypoint"`
 	Log        []string `json:"log,omitempty"`
 	Role       int      `json:"role"` //0 puller, 1 publisher
-	Errortag   []string `json:"errortag,omitempty"`
+	Errortag   []string `json:"abnormaltags,omitempty"`
 }
 
 type MessageData struct {
@@ -41,7 +41,7 @@ var (
 	EntryPointStatus = "not available"
 	DaemonID         string
 	heartbeatTimeout = 5 * time.Second
-        Errortagsmap = make(map[string] string)
+	Errortagsmap     = make(map[string]string)
 )
 
 var (
@@ -229,7 +229,7 @@ func GetMessages() {
 	}
 }
 
-func checkErrortagsmap(errortagsmap *map[string] string) (errortags []string) {
+func checkErrortagsmap(errortagsmap *map[string]string) (errortags []string) {
 
 	errortags = make([]string, 0)
 	for errortagfile, errortag := range *errortagsmap {
@@ -268,18 +268,18 @@ func CheckHealthClock() {
 	log.Debug("---------->END")
 }
 
-func checkHealth(errorTagsMap *map[string] string) {
+func checkHealth(errorTagsMap *map[string]string) {
 
 	localfiles := make([]string, 0)
-	dpnc, dataitem := GetDatapoolNameAndConn();
+	dpnc, dataitem := GetDatapoolNameAndConn()
 	log.Info(dpnc)
 	for _, dpconn := range dpnc {
 		path := dpconn + "/" + dataitem
 		localfiles = ScanLocalFile(path)
 	}
 	log.Info(localfiles)
-	var tagDetails map[string] string
-	tagDetails = make(map[string] string)
+	var tagDetails map[string]string
+	tagDetails = make(map[string]string)
 
 	err := GetAllTagDetails(&tagDetails)
 	if err != nil {
@@ -288,7 +288,7 @@ func checkHealth(errorTagsMap *map[string] string) {
 
 	var i int
 	for file, tag := range tagDetails {
-		for i = 0; i <len(localfiles); i++ {
+		for i = 0; i < len(localfiles); i++ {
 			//log.Info("--------->tag:", tag)
 			//log.Info("--------->tagfile:",file)
 			//log.Info("--------->localfile:",localfiles[i])
@@ -306,12 +306,14 @@ func checkHealth(errorTagsMap *map[string] string) {
 	//}
 }
 
-func ScanLocalFile(path string) ([]string) {
+func ScanLocalFile(path string) []string {
 
 	localfiles := make([]string, 0)
 
 	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
-		if ( f == nil ) {return err}
+		if f == nil {
+			return err
+		}
 		if f.IsDir() {
 			return nil
 		}

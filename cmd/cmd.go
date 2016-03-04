@@ -77,7 +77,7 @@ var Cmd = []Command{
 				Handler: DpRm,
 			},
 		},
-		Desc: "datapools management",
+		Desc: "Datapool management",
 	},
 	{
 		Name:    "ep",
@@ -88,7 +88,7 @@ var Cmd = []Command{
 				Handler: EpRm,
 			},
 		},
-		Desc: "entrypoint management",
+		Desc: "Entrypoint management",
 	},
 	{
 		Name:    "job",
@@ -99,26 +99,26 @@ var Cmd = []Command{
 				Handler: JobRm,
 			},
 		},
-		Desc: "datahub transfer job management",
+		Desc: "Job management",
 	},
 	{
 		Name:      "login",
 		Handler:   Login,
-		Desc:      "login to hub.dataos.io",
+		Desc:      "Login to hub.dataos.io",
 		NeedLogin: true,
 	},
 
 	{
 		Name:      "pub",
 		Handler:   Pub,
-		Desc:      "publish dataitem or tag",
+		Desc:      "Publish a dataitem or tag",
 		NeedLogin: true,
 	},
 
 	{
 		Name:      "pull",
 		Handler:   Pull,
-		Desc:      "pull dataitem from peer",
+		Desc:      "Pull the data subscribed",
 		NeedLogin: true,
 	},
 	{
@@ -130,19 +130,19 @@ var Cmd = []Command{
 				Handler: ItemOrTagRm,
 			},
 		},
-		Desc:      "repostories mangement",
+		Desc:      "Repository mangement",
 		NeedLogin: true,
 	},
 	{
 		Name:      "subs",
 		Handler:   Subs,
-		Desc:      "subscription of items",
+		Desc:      "Subscription of the dataitem",
 		NeedLogin: true,
 	},
 	{
 		Name:    "version",
 		Handler: Version,
-		Desc:    "datahub version infomation",
+		Desc:    "Datahub version infomation",
 	},
 }
 
@@ -206,7 +206,7 @@ func showResponse(resp *http.Response) {
 	if err := json.Unmarshal(body, &msg); err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(msg.Msg)
+		fmt.Printf("DataHub : %v\n", msg.Msg)
 	}
 }
 
@@ -218,8 +218,7 @@ func showError(resp *http.Response) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		//fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
-		fmt.Println(result.Msg)
+		fmt.Printf("Error : %v\n", result.Msg)
 	}
 
 }

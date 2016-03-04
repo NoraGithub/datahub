@@ -18,7 +18,7 @@ func Subs(login bool, args []string) (err error) {
 	}
 	itemDetail := false
 	if len(args) > 1 {
-		fmt.Println("invalid argument..")
+		fmt.Println("DataHub : Invalid argument.")
 		subsUsage()
 		return
 	}
@@ -58,8 +58,6 @@ func Subs(login bool, args []string) (err error) {
 		if err := Login(false, nil); err == nil {
 			Subs(login, args)
 		} else {
-			//fmt.Println(string(body))
-			//fmt.Println(resp.StatusCode ,err)
 			fmt.Println(err)
 		}
 	} else {
