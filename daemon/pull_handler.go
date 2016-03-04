@@ -56,11 +56,10 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
-		e := fmt.Sprintf("Error : Datapool '%s' does not exist.", p.Datapool)
-		l := log.Error(e)
+		e := fmt.Sprintf("Datapool '%s' does not exist.", p.Datapool)
+		l := log.Error("Code:", cmd.ErrorDatapoolNotExits, e)
 		logq.LogPutqueue(l)
 		msgret := ds.Result{Code: cmd.ErrorDatapoolNotExits, Msg: e}
-		log.Error("Code:", cmd.ErrorDatapoolNotExits, " Datapool '%s' does not exist.", p.Datapool)
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(resp)

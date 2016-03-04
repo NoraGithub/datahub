@@ -24,12 +24,12 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		l := log.Error("Invalid argument. json.Unmarshal error", err)
 		logq.LogPutqueue(l)
-		rw.Write([]byte(`{"Msg":"Invalid argument."}`))
+		rw.Write([]byte(`{"msg":"Invalid argument."}`))
 		return
 	}
 	if len(struDp.Name) == 0 {
 		log.Println("Invalid argument")
-		rw.Write([]byte(`{"Msg":"Invalid argument"}`))
+		rw.Write([]byte(`{"msg":"Invalid argument"}`))
 		return
 	} else {
 		log.Println("Creating datapool with name:", struDp.Name)
@@ -49,7 +49,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("DataHub : '%s' has been created already.", struDp.Name)
+			msg.Msg = fmt.Sprintf("'%s' has been created already.", struDp.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
 			return
@@ -68,7 +68,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			logq.LogPutqueue(l)
 			msg.Msg = err.Error()
 		} else {
-			msg.Msg = fmt.Sprintf("DataHub : Datapool has been created successfully.Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
+			msg.Msg = fmt.Sprintf("Datapool has been created successfully.Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
@@ -138,8 +138,8 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	row.Scan(&total)
 	if total == 0 {
 		msg := fmt.Sprintf("Datapool '%v' not found.", dpname)
-		SqlExecError(rw, result, msg)
-		log.Error("Error:", result.Code, "Msg:", result.Msg)
+		WriteResp(rw, result, msg)
+		log.Error("Datahub:", result.Code, "Msg:", result.Msg)
 		return
 	}
 
@@ -189,6 +189,14 @@ func SqlExecError(rw http.ResponseWriter, result *ds.Result, msg string) {
 	result.Msg = msg
 	result.Code = cmd.ErrorSqlExec
 	resp, _ := json.Marshal(result)
+	rw.WriteHeader(http.StatusInternalServerError)
+	rw.Write(resp)
+}
+
+func WriteResp(rw http.ResponseWriter, result *ds.Result, msg string) {
+	result.Msg = msg
+	resp, _ := json.Marshal(result)
+	rw.WriteHeader(http.StatusOK)
 	rw.Write(resp)
 }
 
@@ -245,9 +253,10 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		rw.Write(resp)
 	}
 	if bresultflag == false {
-		msg.Msg = fmt.Sprintf("Erorr : Datapool '%s' does not exist.", dpname)
-		log.Error("DELETE:datapool", dpname, "does not exist.")
+		msg.Msg = fmt.Sprintf("Datapool '%s' does not exist.", dpname)
+		log.Error("DELETE : datapool", dpname, "does not exist.")
 		resp, _ := json.Marshal(msg)
+		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write(resp)
 	}
 }

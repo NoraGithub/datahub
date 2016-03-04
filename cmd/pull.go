@@ -39,7 +39,7 @@ func Pull(login bool, args []string) (err error) {
 	source := strings.Trim(u.Path, "/")
 
 	if url := strings.Split(source, "/"); len(url) != 2 {
-		fmt.Println("invalid argument..")
+		fmt.Println("Datahub : Invalid argument.")
 		pullUsage()
 		return
 	} else {
@@ -66,7 +66,7 @@ func Pull(login bool, args []string) (err error) {
 		dstruc.Datapool = store[0]
 		dstruc.ItemDesc = strings.Trim(store[1], "/")
 		if len(dstruc.Datapool) == 0 {
-			fmt.Println("DATAPOOL://LOCATION are required!")
+			fmt.Println("Datahub : DATAPOOL://LOCATION are required!")
 			pullUsage()
 			return
 		}
@@ -74,7 +74,7 @@ func Pull(login bool, args []string) (err error) {
 			dstruc.ItemDesc = repo + "_" + item
 		}
 	} else {
-		fmt.Println("DATAPOOL://LOCATION format error!")
+		fmt.Println("Error : DATAPOOL://LOCATION format error!")
 		pullUsage()
 		return
 	}
@@ -96,7 +96,6 @@ func Pull(login bool, args []string) (err error) {
 		//body, _ := ioutil.ReadAll(resp.Body)
 		//ShowMsgResp(body, true)
 		showResponse(resp)
-		//fmt.Printf("%s/%s:%s will be download to %s\n.", repo, item, ds.Tag, ds.Datapool)
 
 	} else if resp.StatusCode == http.StatusUnauthorized {
 		if err := Login(false, nil); err == nil {

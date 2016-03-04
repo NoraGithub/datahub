@@ -83,7 +83,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 	if CheckDataPoolExist(pub.Datapool) == false {
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal,
-			fmt.Sprintf("Datapool %s not exist, please check.", pub.Datapool))
+			fmt.Sprintf("Datapool %s not found", pub.Datapool))
 		return
 	}
 
@@ -151,7 +151,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		result := ds.Result{}
 		err = json.Unmarshal(rbody, &result)
 		if err != nil {
-			s := "pub dataitem error while unmarshal server response"
+			s := "Pub dataitem error while unmarshal server response"
 			log.Println(s, err)
 			HttpNoData(w, resp.StatusCode, cmd.ErrorUnmarshal, s)
 			return
@@ -194,7 +194,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	//get DpFullPath and check whether repo/dataitem has been published
 	DpItemFullPath, err := CheckTagAndGetDpPath(repo, item, tag)
 	if err != nil || len(DpItemFullPath) == 0 {
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorTagAlreadyExist, err.Error()+"  Datapool+Itemdesc Path: "+DpItemFullPath)
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorTagAlreadyExist, err.Error())
 		return
 	}
 	splits := strings.Split(pub.Detail, "/")
@@ -202,7 +202,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	DestFullPathFileName := DpItemFullPath + "/" + FileName
 
 	if isFileExists(DestFullPathFileName) == false {
-		errlog := fmt.Sprintf("%s is not found, please ensure %s is in dir:%s", DestFullPathFileName, FileName, DpItemFullPath)
+		errlog := fmt.Sprintf("File %v not found", DestFullPathFileName)
 		l := log.Error(errlog)
 		logq.LogPutqueue(l)
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorFileNotExist, errlog)
@@ -222,7 +222,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}{pub.Comment})
 
 	if err != nil {
-		s := "pub tag error while marshal struct"
+		s := "Pub tag error while marshal struct"
 		log.Println(s)
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorMarshal, s)
 		return
@@ -236,7 +236,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		s := "pub tag service unavailable"
+		s := "Pub tag service unavailable"
 		HttpNoData(w, http.StatusServiceUnavailable, cmd.ErrorServiceUnavailable, s)
 		return
 	}
@@ -281,7 +281,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		result := ds.Result{}
 		err = json.Unmarshal(rbody, &result)
 		if err != nil {
-			s := "pub dataitem error while unmarshal server response"
+			s := "Pub dataitem error while unmarshal server response"
 			log.Println(s)
 			HttpNoData(w, resp.StatusCode, cmd.ErrorUnmarshal, s)
 			return
@@ -444,9 +444,12 @@ func CheckTagAndGetDpPath(repo, item, tag string) (dppath string, err error) {
 		return "", errors.New("Tag already exist.")
 	}
 	dpname, dpconn, ItemDesc := GetDpnameDpconnItemdesc(repo, item)
-	if len(dpname) == 0 || len(dpconn) == 0 || len(ItemDesc) == 0 {
-		log.Println("dpname, dpconn, ItemDesc: ", dpname, dpconn, ItemDesc)
-		return "", errors.New("dpname or dpconn not found.")
+	if len(dpname) == 0 || len(dpconn) == 0 {
+		log.Println("dpname, dpconn, ItemDesc:", dpname, dpconn, ItemDesc)
+		return "", errors.New(fmt.Sprintf("Datapool %v not found.", dpname))
+	} else if len(ItemDesc) == 0 {
+		log.Println("dpname, dpconn:", dpname, dpconn)
+		return "", errors.New(fmt.Sprintf("Dataitem %v/%v not found.", repo, item))
 	}
 	dppath = dpconn + "/" + ItemDesc
 	return
