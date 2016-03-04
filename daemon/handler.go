@@ -92,7 +92,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (resp *http.Response, err error) {
+func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (body []byte, err error) {
 	//Trace()
 	s := log.Info("daemon: connecting to", DefaultServer+path)
 	logq.LogPutqueue(s)
@@ -102,23 +102,23 @@ func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (re
 	}
 
 	//req.Header.Set("User", "admin")
-
-	if resp, err = http.DefaultClient.Do(req); err != nil {
+	resp, err := http.DefaultClient.Do(req)
+	if  err != nil {
 		log.Error(err)
 		d := ds.Result{Code: cmd.ErrorServiceUnavailable, Msg: err.Error()}
 		body, e := json.Marshal(d)
 		if e != nil {
 			log.Error(e)
-			return resp, e
+			return body, e
 		}
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write(body)
-		return resp, err
+		return body, err
 	}
 	defer resp.Body.Close()
 
 	w.WriteHeader(resp.StatusCode)
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err = ioutil.ReadAll(resp.Body)
 	w.Write(body)
 	log.Info(resp.StatusCode, string(body))
 	return

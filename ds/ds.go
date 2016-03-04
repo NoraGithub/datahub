@@ -39,8 +39,8 @@ type Result struct {
 }
 
 type ResultPages struct {
-	Total   int         `json:total`
-	Results interface{} `json:results`
+	Total   int         `json:"total"`
+	Results interface{} `json:"results"`
 }
 
 type MsgResp struct {

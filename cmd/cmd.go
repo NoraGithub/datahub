@@ -124,6 +124,12 @@ var Cmd = []Command{
 	{
 		Name:      "repo",
 		Handler:   Repo,
+		SubCmd: []Command{
+			{
+				Name:    "rm",
+				Handler: ItemOrTagRm,
+			},
+		},
 		Desc:      "repostories mangement",
 		NeedLogin: true,
 	},
