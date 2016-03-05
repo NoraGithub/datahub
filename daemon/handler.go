@@ -103,7 +103,7 @@ func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (bo
 
 	//req.Header.Set("User", "admin")
 	resp, err := http.DefaultClient.Do(req)
-	if  err != nil {
+	if err != nil {
 		log.Error(err)
 		d := ds.Result{Code: cmd.ErrorServiceUnavailable, Msg: err.Error()}
 		body, e := json.Marshal(d)
@@ -122,4 +122,22 @@ func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (bo
 	w.Write(body)
 	log.Info(resp.StatusCode, string(body))
 	return
+}
+
+func commToServerGetRsp(method string, path string, buffer []byte) (resp *http.Response, err error) {
+
+	s := log.Info("daemon: connecting to", DefaultServer+path)
+	logq.LogPutqueue(s)
+	req, err := http.NewRequest(strings.ToUpper(method), DefaultServer+path, bytes.NewBuffer(buffer))
+	if len(loginAuthStr) > 0 {
+		req.Header.Set("Authorization", loginAuthStr)
+	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		log.Error(err)
+		return resp, err
+	}
+
+	return resp, nil
 }

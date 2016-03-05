@@ -63,6 +63,11 @@ const (
 	ErrorUnknowError
 )
 
+const (
+	NoConsumingPlan    = 0
+	ExitsConsumingPlan = 1
+)
+
 var Cmd = []Command{
 	{
 		Name:    "dp",
@@ -122,8 +127,8 @@ var Cmd = []Command{
 		NeedLogin: true,
 	},
 	{
-		Name:      "repo",
-		Handler:   Repo,
+		Name:    "repo",
+		Handler: Repo,
 		SubCmd: []Command{
 			{
 				Name:    "rm",

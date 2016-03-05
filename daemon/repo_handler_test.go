@@ -1,14 +1,14 @@
 package daemon
 
 import (
-	"net/http/httptest"
-	"net/http"
-	log "github.com/asiainfoLDP/datahub/utils/clog"
-	"fmt"
-	"testing"
 	"bytes"
 	"encoding/json"
+	"fmt"
+	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/julienschmidt/httprouter"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func Test_repoDelOneItemHandler(t *testing.T) {
@@ -19,8 +19,9 @@ func Test_repoDelOneItemHandler(t *testing.T) {
 	DefaultServer = server.URL
 	defer func() { DefaultServer = tmp }()
 
+	loginAuthStr = "sssssdfkjlsdjfoiejfoiejfoi=="
 	jsondata, _ := json.Marshal(PubData)
-	req, _ := http.NewRequest("GET", "/subscriptions/push/testpubRepo/testpubItem?phase=1", bytes.NewBuffer(jsondata))
+	req, _ := http.NewRequest("DELETE", "/repositories/testpubRepo/testpubItem", bytes.NewBuffer(jsondata))
 	w := httptest.NewRecorder()
 	repoDelOneItemHandler(w, req, httprouter.Params{{"repo", PubRepo}, {"item", PubItem}})
 	if w.Code != http.StatusOK {
@@ -37,8 +38,7 @@ func mockServerFor_DelItem() *httptest.Server {
 		}
 
 		fmt.Fprintln(rsp, `{ 	"code":0,
-					"msg":"OK",
-					"data":""
+					"msg":"OK"
 				   }`)
 	}
 
