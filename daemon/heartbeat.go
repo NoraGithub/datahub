@@ -271,13 +271,17 @@ func CheckHealthClock() {
 func checkHealth(errorTagsMap *map[string]string) {
 
 	localfiles := make([]string, 0)
-	dpnc, dataitem := GetDatapoolNameAndConn()
-	log.Info(dpnc)
-	for _, dpconn := range dpnc {
-		path := dpconn + "/" + dataitem
+	alllocalfiles := make([]string, 0)
+	localfilepath := GetLocalfilePath()
+
+	for _, path := range localfilepath {
 		localfiles = ScanLocalFile(path)
+		for _, localfile := range localfiles {
+			alllocalfiles = append(alllocalfiles, localfile)
+		}
 	}
-	log.Info(localfiles)
+
+	log.Info(alllocalfiles)
 	var tagDetails map[string]string
 	tagDetails = make(map[string]string)
 
@@ -288,15 +292,15 @@ func checkHealth(errorTagsMap *map[string]string) {
 
 	var i int
 	for file, tag := range tagDetails {
-		for i = 0; i < len(localfiles); i++ {
+		for i = 0; i < len(alllocalfiles); i++ {
 			//log.Info("--------->tag:", tag)
 			//log.Info("--------->tagfile:",file)
 			//log.Info("--------->localfile:",localfiles[i])
-			if file == localfiles[i] {
+			if file == alllocalfiles[i] {
 				break
 			}
 		}
-		if i >= len(localfiles) {
+		if i >= len(alllocalfiles) {
 			(*errorTagsMap)[file] = tag
 		}
 	}
@@ -331,4 +335,15 @@ func ScanLocalFile(path string) []string {
 	//}
 
 	return localfiles
+}
+
+func RemoveDuplicatesAndEmpty(a []string) (ret []string){
+	a_len := len(a)
+	for i:=0; i < a_len; i++{
+		if (i > 0 && a[i-1] == a[i]) || len(a[i])==0{
+			continue;
+		}
+		ret = append(ret, a[i])
+	}
+	return
 }

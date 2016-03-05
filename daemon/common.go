@@ -643,26 +643,29 @@ func buildResp(code int, msg string, data interface{}) (body []byte, err error) 
 
 }
 
-func GetDatapoolNameAndConn() (dpnc map[string] string, dataitem string) {
-	sqlgetdpnameandconn := `SELECT DPNAME, DPCONN, ITEMDESC FROM DH_DP A, DH_DP_RPDM_MAP B
+func GetLocalfilePath() (localfilepath []string) {
+	sql := `SELECT DISTINCT DPCONN, ITEMDESC FROM DH_DP A, DH_DP_RPDM_MAP B
 							WHERE A.DPID=B.DPID AND A.DPTYPE='file'
 									    AND A.STATUS='A'
 									    AND B.PUBLISH='Y'
 									    AND B.STATUS='A';`
-	dpnc = make(map[string] string)
-	var dpname string
-	var dpconn string
- 	rows, err := g_ds.QueryRows(sqlgetdpnameandconn)
+	//dpci = make(map[string] string)
+
+	var conn string
+	var desc string
+	localfilepath = make([]string, 0)
+ 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
-		return nil, ""
+		return
 	} else {
 		for rows.Next() {
-			rows.Scan(&dpname, &dpconn, &dataitem)
-			dpnc[dpname] = dpconn
+			rows.Scan(&conn, &desc)
+			path := conn+"/"+desc
+			localfilepath = append(localfilepath, path)
 		}
-		return dpnc, dataitem
+		return
 	}
 }
 
