@@ -135,3 +135,55 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 }
+
+func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
+
+	repository := ps.ByName("repo")
+	dataitem := ps.ByName("item")
+	tag := ps.ByName("tag")
+
+	err := delTag(tag)
+	if err != nil {
+		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
+		return
+	}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	path := "repositories/" + repository + "/" +dataitem + "/" + tag
+	resp, err := commToServerGetRsp("delete", path, reqBody)
+	if err != nil {
+		log.Error(err)
+		HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+		return
+	}
+	defer resp.Body.Close()
+
+	result := ds.Response{}
+
+	respbody, err := ioutil.ReadAll(resp.Body)
+
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+		return
+	}
+	if resp.StatusCode == http.StatusOK && result.Code == 0 {
+		HttpNoData(w, http.StatusOK, cmd.ResultOK, result.Msg)
+		log.Info("Msg :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+	} else if resp.StatusCode == http.StatusOK && result.Code != 0 {
+		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+		rollbackDelTag(tag)
+	} else {
+		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+	}
+
+}

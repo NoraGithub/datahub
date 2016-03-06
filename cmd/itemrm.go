@@ -13,19 +13,20 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 
 	if len(args) > 1 {
 		fmt.Println("DataHub : Invalid argument.")
-		itemrmUsage()
+		itemortagrmUsage()
 		return nil
 	}
 
 	arg := args[0]
 	var repository string
 	var dataitem string
-	//var tag string
+	var tag string
 
-	splitStr := strings.Split(arg, "/")
-	if len(splitStr) == 2 {
-		repository = splitStr[0]
-		dataitem = splitStr[1]
+	splitStr := strings.Split(arg, ":")
+	if len(splitStr) == 1 {
+		splitStr2 := strings.Split(splitStr[0], "/")
+		repository = splitStr2[0]
+		dataitem = splitStr2[1]
 		uri := "/repositories/" + repository + "/" + dataitem
 		resp, err := commToDaemon("DELETE", uri, nil)
 		if err != nil {
@@ -55,12 +56,40 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		}
 
 		return err
-	} else if len(splitStr) == 3 {
-		return nil
+	} else if len(splitStr) == 2 {
+		fmt.Print("DataHub : After you delete the Tag, data could not be recovery,"+
+		"Are you sure to delete the current Tag?[Y or N]:")
+		if GetEnsure() == true {
+			splitStr2 := strings.Split(splitStr[0], "/")
+			repository = splitStr2[0]
+			dataitem = splitStr2[1]
+			tag = splitStr[1]
+			uri := "/repositories/" + repository + "/" + dataitem + "/" + tag
+			resp, err := commToDaemon("DELETE", uri, nil)
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			defer resp.Body.Close()
 
+			if resp.StatusCode == http.StatusOK {
+				showResponse(resp)
+
+			} else if resp.StatusCode == http.StatusUnauthorized {
+				if err = Login(false, nil); err == nil {
+					err = ItemOrTagRm(needLogin, args)
+				} else {
+					fmt.Println(err)
+				}
+			} else {
+				showError(resp)
+			}
+
+			return err
+		}
 	} else {
-		fmt.Println("invalid argument..")
-		tagrmUsage()
+		fmt.Println("DataHub : Invalid argument.")
+		itemortagrmUsage()
 		return nil
 	}
 	return nil
@@ -92,17 +121,15 @@ func ensureRm(code int, uri string) {
 
 		}
 	} else {
-
+		return
 	}
 
 }
 
-func tagrmUsage() {
-	fmt.Printf("Usage: datahub repo rm [REPO]/[ITEM]:[tag]\n")
-	fmt.Println("Remove a tag")
-}
-
-func itemrmUsage() {
+func itemortagrmUsage() {
 	fmt.Printf("Usage: datahub repo rm [REPO]/[ITEM]\n")
-	fmt.Println("Remove a item")
+	fmt.Println("Remove a item.")
+	fmt.Println("Or")
+	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]:[tag]")
+	fmt.Println("Remove a tag.")
 }
