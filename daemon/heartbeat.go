@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -18,6 +19,7 @@ type Beatbody struct {
 	Entrypoint []string `json:"entrypoint"`
 	Log        []string `json:"log,omitempty"`
 	Role       int      `json:"role"` //0 puller, 1 publisher
+	Errortag   []string `json:"abnormaltags,omitempty"`
 }
 
 type MessageData struct {
@@ -39,6 +41,7 @@ var (
 	EntryPointStatus = "not available"
 	DaemonID         string
 	heartbeatTimeout = 5 * time.Second
+	Errortagsmap     = make(map[string]string)
 )
 
 var (
@@ -78,6 +81,11 @@ func HeartBeat() {
 		logQueue := logq.LogGetqueue()
 		if len(logQueue) > 0 {
 			heartbeatbody.Log = logQueue
+		}
+
+		errortags := checkErrortagsmap(&Errortagsmap)
+		if len(errortags) != 0 {
+			heartbeatbody.Errortag = errortags
 		}
 
 		jsondata, err := json.Marshal(heartbeatbody)
@@ -219,4 +227,123 @@ func GetMessages() {
 			}
 		}
 	}
+}
+
+func checkErrortagsmap(errortagsmap *map[string]string) (errortags []string) {
+
+	errortags = make([]string, 0)
+	for errortagfile, errortag := range *errortagsmap {
+		f, err := os.Open(errortagfile)
+		if err != nil && os.IsNotExist(err) {
+			log.Error("------>file:", errortagfile, "不存在")
+			errortags = append(errortags, errortag)
+		} else {
+			delete(*errortagsmap, errortagfile)
+		}
+		defer f.Close()
+	}
+	//log.Info("----------->errortags:",errortags)
+	//for _, errortag := range errortags {
+	//	log.Info("------------>errortag:", errortag)
+	//}
+	return
+}
+
+func CheckHealthClock() {
+	log.Debug("--------->BEGIN")
+
+	checkHealth(&Errortagsmap)
+
+	timer := time.NewTicker(10 * time.Minute)
+	for {
+		select {
+		case <-timer.C:
+			now := time.Now()
+			if now.Hour()%6 == 0 {
+				log.Info("Time:", now)
+				checkHealth(&Errortagsmap)
+			}
+		}
+	}
+	log.Debug("---------->END")
+}
+
+func checkHealth(errorTagsMap *map[string]string) {
+
+	localfiles := make([]string, 0)
+	alllocalfiles := make([]string, 0)
+	localfilepath := GetLocalfilePath()
+
+	for _, path := range localfilepath {
+		localfiles = ScanLocalFile(path)
+		for _, localfile := range localfiles {
+			alllocalfiles = append(alllocalfiles, localfile)
+		}
+	}
+
+	log.Info(alllocalfiles)
+	var tagDetails map[string]string
+	tagDetails = make(map[string]string)
+
+	err := GetAllTagDetails(&tagDetails)
+	if err != nil {
+		log.Error(err)
+	}
+
+	var i int
+	for file, tag := range tagDetails {
+		for i = 0; i < len(alllocalfiles); i++ {
+			//log.Info("--------->tag:", tag)
+			//log.Info("--------->tagfile:",file)
+			//log.Info("--------->localfile:",localfiles[i])
+			if file == alllocalfiles[i] {
+				break
+			}
+		}
+		if i >= len(alllocalfiles) {
+			(*errorTagsMap)[file] = tag
+		}
+	}
+
+	//for errortagfile, errortag := range *errorTagsMap {
+	//	log.Info("------->errortag:", errortag, "-------->", errortagfile)
+	//}
+}
+
+func ScanLocalFile(path string) []string {
+
+	localfiles := make([]string, 0)
+
+	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			return nil
+		}
+
+		localfiles = append(localfiles, path)
+		return nil
+	})
+	if err != nil {
+		log.Error("filepath.Walk() returned %v\n", err)
+	}
+
+	//for _, localfile := range localfiles {
+	//	//fmt.Println(localfile)
+	//	log.Info("--------------------------------------------------------->localfile:", localfile)
+	//}
+
+	return localfiles
+}
+
+func RemoveDuplicatesAndEmpty(a []string) (ret []string){
+	a_len := len(a)
+	for i:=0; i < a_len; i++{
+		if (i > 0 && a[i-1] == a[i]) || len(a[i])==0{
+			continue;
+		}
+		ret = append(ret, a[i])
+	}
+	return
 }

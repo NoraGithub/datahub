@@ -452,6 +452,7 @@ func GetAllTagDetails(monitList *map[string]string) (e error) {
 				rTags.Scan(&tagname, &detail)
 				tag := k + tagname
 				file := v + detail
+				//log.Info("--------------->", tag, "----------------->", file)
 				(*monitList)[file] = tag
 			}
 		}
@@ -640,4 +641,143 @@ func buildResp(code int, msg string, data interface{}) (body []byte, err error) 
 
 	return json.Marshal(r)
 
+}
+
+func GetLocalfilePath() (localfilepath []string) {
+	sql := `SELECT DISTINCT DPCONN, ITEMDESC FROM DH_DP A, DH_DP_RPDM_MAP B
+							WHERE A.DPID=B.DPID AND A.DPTYPE='file'
+									    AND A.STATUS='A'
+									    AND B.PUBLISH='Y'
+									    AND B.STATUS='A';`
+	//dpci = make(map[string] string)
+
+	var conn string
+	var desc string
+	localfilepath = make([]string, 0)
+ 	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return
+	} else {
+		for rows.Next() {
+			rows.Scan(&conn, &desc)
+			path := conn+"/"+desc
+			localfilepath = append(localfilepath, path)
+		}
+		return
+	}
+}
+
+func delItem(reponame, itemname string) (err error) {
+	log.Println("TODO remove item from db")
+	sql := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS = 'N' WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
+	if _, err := g_ds.Update(sql); err != nil {
+		l := log.Error("delete item error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
+}
+
+func delTagsForDelItem(reponame, itemname string) error {
+	log.Println("TODO remove tags for remove item from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sqldeltag := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE RPDMID='%d'`, rpdmId)
+	_, err = g_ds.Update(sqldeltag)
+	if err != nil {
+		l := log.Error("delete tag error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
+}
+
+func rollbackDelItem(reponame, itemname string) error {
+	log.Println("TODO rollback delete item from db")
+	sql := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS='A' WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
+	if _, err := g_ds.Update(sql); err != nil {
+		l := log.Error("rollback delete item error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
+}
+
+func rollbackDelTags(reponame, itemname string) error {
+	log.Println("TODO rollback delete tags for item from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
+	var rpdmId int
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sqlrollback := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='A' WHERE RPDMID='%d'`, rpdmId)
+	_, err = g_ds.Update(sqlrollback)
+	if err != nil {
+		l := log.Error("rollback delete tags error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
+}
+
+func delTag(reponame, itemname, tagname string) error {
+	log.Println("TODO  delete tag from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE TAGNAME='%s' AND RPDMID='%d'`, tagname, rpdmId)
+	_, err = g_ds.Update(sql)
+	if err != nil {
+		l := log.Error("delete tag from DH_RPDM_TAG_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	return nil
+}
+
+func rollbackDelTag(reponame, itemname, tagname string) error {
+	log.Println("TODO rollback delete tag from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='A' WHERE TAGNAME='%s' AND RPDMID='%d'`, tagname, rpdmId)
+	_, err = g_ds.Update(sql)
+	if err != nil {
+		l := log.Error("rollback delete tag error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	return nil
 }

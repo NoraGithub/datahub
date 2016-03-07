@@ -34,7 +34,7 @@ func Job(needLogin bool, args []string) (err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		showResponse(resp)
+		showError(resp)
 	} else {
 		//body, _ := ioutil.ReadAll(resp.Body)
 		//fmt.Println(string(body))

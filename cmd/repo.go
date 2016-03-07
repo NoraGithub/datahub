@@ -28,7 +28,7 @@ func Repo(login bool, args []string) (err error) {
 	}
 	var icmd int
 	if len(args) > 1 {
-		fmt.Println("invalid argument..")
+		fmt.Println("DataHub : Invalid argument.")
 		repoUsage()
 		return
 	}
@@ -76,7 +76,7 @@ func Repo(login bool, args []string) (err error) {
 				//fmt.Println(uri, icmd)
 			}
 		} else {
-			fmt.Println("The parameter after repo is in wrong format!")
+			fmt.Println("Error : The parameter after repo is in wrong format!")
 			return errors.New("The parameter after repo is in wrong format!")
 		}
 	}
@@ -96,7 +96,7 @@ func Repo(login bool, args []string) (err error) {
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
 		if err != nil {
-			fmt.Println("http StatusCode:", resp.StatusCode, "Json format error!")
+			fmt.Println("Error : http StatusCode:", resp.StatusCode, "Json format error!")
 			return err
 		}
 		if result.Code == 1400 {
@@ -106,7 +106,7 @@ func Repo(login bool, args []string) (err error) {
 				fmt.Println(err)
 			}
 		} else {
-			fmt.Printf("ERROR[%v] %v\n", result.Code, result.Msg)
+			fmt.Printf("Error : %v\n", result.Msg)
 			return nil
 		}
 		//fmt.Println(resp.StatusCode, "returned....")
@@ -175,3 +175,4 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		fmt.Printf("%s/%s:%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment)
 	}
 }
+

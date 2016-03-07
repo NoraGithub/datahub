@@ -92,7 +92,7 @@ func dpResp(bDetail bool, RespBody []byte) {
 		result := &ds.Result{Data: &strcDps}
 		err := json.Unmarshal(RespBody, result)
 		if err != nil {
-			fmt.Println("ERROR:", err)
+			fmt.Println("Error :", err)
 			return
 		}
 
@@ -103,14 +103,14 @@ func dpResp(bDetail bool, RespBody []byte) {
 				fmt.Printf("%-16s    %-8s\n", dp.Name, dp.Type)
 			}
 		} else {
-			fmt.Println("ERROR:", result.Code, " Msg:", result.Msg)
+			fmt.Println("Error :", result.Msg)
 		}
 	} else {
 		strcDp := FormatDpDetail{}
 		result := ds.Result{Data: &strcDp}
 		err := json.Unmarshal(RespBody, &result)
 		if err != nil {
-			fmt.Println("ERROR: dpname ", err)
+			fmt.Println("Error : dpname ", err)
 			return
 		}
 		if result.Code == ResultOK {
@@ -125,7 +125,7 @@ func dpResp(bDetail bool, RespBody []byte) {
 			}
 			printDash(n)
 		} else {
-			fmt.Println("Error:", result.Msg)
+			fmt.Println("Error : ", result.Msg)
 		}
 	}
 }
@@ -136,7 +136,7 @@ func GetResultMsg(RespBody []byte, bprint bool) (sMsgResp string) {
 	if err != nil {
 		sMsgResp = "Get /datapools  dpResp json.Unmarshal error!"
 	} else {
-		sMsgResp = "Result code:" + string(result.Code) + " Msg:" + string(result.Msg)
+		sMsgResp = "DataHub :" + string(result.Msg)
 		if bprint == true {
 			fmt.Println(sMsgResp)
 		}

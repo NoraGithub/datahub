@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
+	"net/http"
 )
 
 func DpRm(needLogin bool, args []string) (err error) {
@@ -22,7 +23,11 @@ func DpRm(needLogin bool, args []string) (err error) {
 					fmt.Println(err)
 					return err
 				}
-				showResponse(resp)
+				if resp.StatusCode == http.StatusOK {
+					showResponse(resp)
+				} else {
+					showError(resp)
+				}
 				resp.Body.Close()
 			}
 		}
