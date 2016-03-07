@@ -738,10 +738,20 @@ func rollbackDelTags(reponame, itemname string) error {
 	return nil
 }
 
-func delTag(tagname string) error {
+func delTag(reponame, itemname, tagname string) error {
 	log.Println("TODO  delete tag from db")
-	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE TAGNAME='%s'`, tagname)
-	_, err := g_ds.Update(sql)
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE TAGNAME='%s' AND RPDMID='%d'`, tagname, rpdmId)
+	_, err = g_ds.Update(sql)
 	if err != nil {
 		l := log.Error("delete tag from DH_RPDM_TAG_MAP error:", err)
 		logq.LogPutqueue(l)
@@ -750,10 +760,20 @@ func delTag(tagname string) error {
 	return nil
 }
 
-func rollbackDelTag(tagname string) error {
+func rollbackDelTag(reponame, itemname, tagname string) error {
 	log.Println("TODO rollback delete tag from db")
-	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='A' WHERE TAGNAME='%s'`, tagname)
-	_, err := g_ds.Update(sql)
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
+	if err != nil {
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+	sql := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='A' WHERE TAGNAME='%s' AND RPDMID='%d'`, tagname, rpdmId)
+	_, err = g_ds.Update(sql)
 	if err != nil {
 		l := log.Error("rollback delete tag error:", err)
 		logq.LogPutqueue(l)

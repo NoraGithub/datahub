@@ -147,7 +147,7 @@ func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	dataitem := ps.ByName("item")
 	tag := ps.ByName("tag")
 
-	err := delTag(tag)
+	err := delTag(repository, dataitem, tag)
 	if err != nil {
 		log.Error(err)
 		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
@@ -180,7 +180,7 @@ func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	} else if resp.StatusCode == http.StatusOK && result.Code != 0 {
 		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
 		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
-		rollbackDelTag(tag)
+		rollbackDelTag(repository, dataitem, tag)
 	} else {
 		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
 		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
