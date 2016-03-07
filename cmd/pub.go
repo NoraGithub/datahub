@@ -76,7 +76,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		pub.Detail = args[1]
 		err = PubTag(repo, item, tag, pub, args)
 	} else {
-		fmt.Printf("DataHub : invalid argument.\nSee '%s --help'.\n", f.Name())
+		fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
 		return errors.New("invalid argument")
 	}
 
