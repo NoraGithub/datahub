@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/daemon/dpdriver"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
@@ -166,18 +167,23 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, e)
 		return 0, err
 	} else {
-		destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
+		datapool, e := dpdriver.New(dptype)
+		if e != nil {
+			return 0, errors.New(fmt.Sprintf("no datapool of %v\n", dptype))
+		}
+		destfilename, tmpdir, tmpdestfilename = datapool.GetDestFileName(dpconn, p.ItemDesc, p.DestName)
+		//destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
 		//first tmpdir, then tmpdestfilename
-		tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
-		tmpdestfilename = tmpdir + "/" + p.DestName
+		//tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
+		//tmpdestfilename = tmpdir + "/" + p.DestName
 	}
 
 	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
-	if dptype == DPS3 {
+	/*if dptype == DPS3 {
 		destfilename = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/" + p.DestName
 		tmpdir = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/tmp"
 		tmpdestfilename = tmpdir + "/" + p.DestName
-	}
+	}*/
 
 	os.MkdirAll(tmpdir, 0777)
 

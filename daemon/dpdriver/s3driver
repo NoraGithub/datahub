@@ -1,0 +1,20 @@
+package dpdriver
+
+import (
+	"fmt"
+)
+
+type s3driver struct {
+}
+
+func (fs *fsdriver) GetDestFileName(dpconn, itemlocation, filename string) (destfilename, tmpdir, tmpfile string) {
+	destfilename = g_strDpPath + "/"+ dpconn + "/" + itemlocation + "/" + filename
+	tmpdir = g_strDpPath + "/" + dpconn + "/" + itemlocation + "/tmp"
+	tmpfile = tmpdir + "/" + filename
+	return
+}
+
+func init() {
+	fmt.Println("s3")
+	register("file", &s3driver{})
+}

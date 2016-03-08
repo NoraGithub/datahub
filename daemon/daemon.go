@@ -32,8 +32,6 @@ var (
 	AWS_REGION            string
 )
 
-
-
 const (
 	g_dbfile    string = "/var/lib/datahub/datahub.db"
 	g_strDpPath string = cmd.GstrDpPath
@@ -375,11 +373,6 @@ func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
 	}
-
-	/*tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	http.DefaultClient.Transport = tr*/
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
