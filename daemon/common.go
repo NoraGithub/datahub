@@ -228,19 +228,39 @@ func GetDpnameDpconnByDpidAndStatus(dpid int, status string) (dpname, dpconn str
 	return
 }
 
-func InsertPubTagToDb(repo, item, tag, FileName string) (err error) {
+func InsertPubTagToDb(repo, item, tag, FileName string) (tagid int, err error) {
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
-		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
+		return 0, errors.New("Dataitem is not found which need to be published before publishing tag. ")
 	}
-	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A')",
-		tag, rpdmid, FileName)
+	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A');", tag, rpdmid, FileName)
 	log.Println(sqlInsertTag)
-	_, err = g_ds.Insert(sqlInsertTag)
+	_, err = g_ds.Update(sqlInsertTag)
 	if err != nil {
-		return err
+		l := log.Error("insert tag into db error:", err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	sql := "SELECT MAX(TAGID) from DH_RPDM_TAG_MAP;"
+	row, _ := g_ds.QueryRow(sql)
+	row.Scan(&tagid)
+	if err != nil {
+		return tagid, err
 	}
 	return
+}
+
+func rollbackInsertPubTagToDb(tagid int) error {
+	sql := fmt.Sprintf("DELETE FROM DH_RPDM_TAG_MAP WHERE TAGID=%d ", tagid)
+	_, err := g_ds.Delete(sql)
+	if err != nil {
+		l := log.Error("rollback InsertPubTagToDb error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
 }
 
 func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {
