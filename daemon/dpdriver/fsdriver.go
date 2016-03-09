@@ -1,7 +1,7 @@
 package dpdriver
 
 import (
-	"fmt"
+//"fmt"
 )
 
 type fsdriver struct {
@@ -14,7 +14,10 @@ func (fs *fsdriver) GetDestFileName(dpconn, itemlocation, filename string) (dest
 	return
 }
 
+func (fs *fsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string {
+	return status
+}
 func init() {
-	fmt.Println("fs")
+	//fmt.Println("fs")
 	register("file", &fsdriver{})
 }

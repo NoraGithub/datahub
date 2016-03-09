@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"compress/gzip"
 	"container/list"
 	"encoding/json"
 	"errors"
@@ -11,9 +10,6 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"io/ioutil"
@@ -159,51 +155,29 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 
 	dpconn, dptype = GetDataPoolDpconnAndDptype(p.Datapool)
 	if len(dpconn) == 0 {
-		e := fmt.Sprintf("dpconn is null! datapool:%s ", p.Datapool)
-		l := log.Error(e)
-		logq.LogPutqueue(l)
-		err = errors.New(e)
-		c <- -1
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, e)
-		return 0, err
-	} else {
-		datapool, e := dpdriver.New(dptype)
-		if e != nil {
-			return 0, errors.New(fmt.Sprintf("no datapool of %v\n", dptype))
-		}
-		destfilename, tmpdir, tmpdestfilename = datapool.GetDestFileName(dpconn, p.ItemDesc, p.DestName)
-		//destfilename = dpconn + "/" + p.ItemDesc + "/" + p.DestName
-		//first tmpdir, then tmpdestfilename
-		//tmpdir = dpconn + "/" + p.ItemDesc + "/tmp"
-		//tmpdestfilename = tmpdir + "/" + p.DestName
+		err = fmt.Errorf("dpconn is null! datapool:%s ", p.Datapool)
+		return ErrLogAndResp(c, w, http.StatusBadRequest, cmd.ErrorNoRecord, err)
 	}
 
-	//for s3 dp , use /var/lib/datahub/:BUCKET as the dpconn
-	/*if dptype == DPS3 {
-		destfilename = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/" + p.DestName
-		tmpdir = g_strDpPath + "/" + dpconn + "/" + p.ItemDesc + "/tmp"
-		tmpdestfilename = tmpdir + "/" + p.DestName
-	}*/
+	//New a datapool object
+	datapool, err := dpdriver.New(dptype)
+	if err != nil {
+		return ErrLogAndResp(c, w, http.StatusInternalServerError, cmd.ErrorNoDatapoolDriver, err)
+	}
+	destfilename, tmpdir, tmpdestfilename = datapool.GetDestFileName(dpconn, p.ItemDesc, p.DestName)
 
 	os.MkdirAll(tmpdir, 0777)
 
-	log.Info("tmpdestfilename:", tmpdestfilename)
+	log.Info("open tmp destfile name:", tmpdestfilename)
 	out, err = os.OpenFile(tmpdestfilename, os.O_RDWR|os.O_CREATE, 0644)
 
 	if err != nil {
-		c <- -1
-		log.Error(err)
-		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorOpenFile, err.Error())
-		return 0, err
+		return ErrLogAndResp(c, w, http.StatusInternalServerError, cmd.ErrorOpenFile, err)
 	}
 
 	stat, err := out.Stat()
 	if err != nil {
-		out.Close()
-		c <- -1
-		log.Error(err)
-		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorStatFile, err.Error())
-		return 0, err
+		return ErrLogAndResp(c, w, http.StatusInternalServerError, cmd.ErrorStatFile, err)
 	}
 	out.Seek(stat.Size(), 0)
 	req, err := http.NewRequest("GET", url, nil)
@@ -211,8 +185,6 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	/* Set download starting position with 'Range' in HTTP header*/
 	req.Header.Set("Range", "bytes="+strconv.FormatInt(stat.Size(), 10)+"-")
 	log.Printf("%v bytes had already been downloaded.\n", stat.Size())
-
-	//job := DatahubJob[jobid]
 
 	log.Debug(EnvDebug("http_proxy", false))
 
@@ -303,52 +275,19 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		logq.LogPutqueue(l)
 	}
 
-	switch dptype {
-	case "file":
-		updateJobQueue(jobid, status, dlsize)
-	case "s3":
-		updateJobQueue(jobid, "putting to s3", dlsize)
-
-		UploadtoS3(destfilename, dpconn, jobid, p)
-	}
+	status = datapool.StoreFile(status, destfilename, dpconn, p.Datapool, p.ItemDesc, p.DestName)
+	updateJobQueue(jobid, status, dlsize)
 
 	InsertTagToDb(true, p)
 	return n, nil
 }
 
-func UploadtoS3(filename, bucket, jobid string, p ds.DsPull) {
-	file, err := os.Open(filename)
-	if err != nil {
-		l := log.Error("Failed to open file", err)
-		logq.LogPutqueue(l)
-		return
-	}
-
-	// Not required, but you could zip the file before uploading it
-	// using io.Pipe read/writer to stream gzip'd file contents.
-	reader, writer := io.Pipe()
-	go func() {
-		gw := gzip.NewWriter(writer)
-		io.Copy(writer, file)
-
-		file.Close()
-		gw.Close()
-		writer.Close()
-
-		updateJobQueueStatus(jobid, "puttos3ok")
-	}()
-	uploader := s3manager.NewUploader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
-	//uploader := s3manager.NewUploader(session.New(aws.NewConfig()))
-	result, err := uploader.Upload(&s3manager.UploadInput{
-		Body:   reader,
-		Bucket: aws.String(bucket),
-		Key:    aws.String(p.Datapool + "/" + p.ItemDesc + "/" + p.DestName + ".gz"),
-	})
-	if err != nil {
-		log.Error("Failed to upload", err)
-	}
-
-	log.Info("Successfully uploaded to", result.Location)
+func ErrLogAndResp(c chan int, w http.ResponseWriter, httpcode, errorcode int, err error) (int64, error) {
+	l := log.Error(err)
+	logq.LogPutqueue(l)
+	c <- -1
+	HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, err.Error())
+	return 0, err
 }
 
 func MoveFromTmp(src, dest string) (err error) {
