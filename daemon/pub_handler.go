@@ -81,9 +81,10 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "pub dataitem error while unmarshal reqBody")
 		return
 	}
+
 	if CheckDataPoolExist(pub.Datapool) == false {
-		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal,
-			fmt.Sprintf("Datapool %s not found", pub.Datapool))
+		HttpNoData(w, http.StatusBadRequest, cmd.ErrorDatapoolNotExits,
+			fmt.Sprintf("Datapool '%s' not found", pub.Datapool))
 		return
 	}
 
@@ -191,6 +192,31 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	path := "/repositories/" + repo
+	resp, commToServerErr := commToServerGetRsp("get", path, nil)
+	if commToServerErr != nil {
+		log.Error(commToServerErr)
+		HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+		return
+	}
+	defer resp.Body.Close()
+
+	result := ds.Response{}
+
+	respbody, err := ioutil.ReadAll(resp.Body)
+
+	if err := json.Unmarshal(respbody, &result); err != nil {
+		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+		return
+	}
+
+	if resp.StatusCode == http.StatusBadRequest {
+		log.Println(result.Msg)
+		HttpNoData(w, http.StatusBadRequest, result.Code, result.Msg)
+		return
+	}
+
 	//get DpFullPath and check whether repo/dataitem has been published
 	DpItemFullPath, err := CheckTagAndGetDpPath(repo, item, tag)
 	if err != nil || len(DpItemFullPath) == 0 {
@@ -202,7 +228,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	DestFullPathFileName := DpItemFullPath + "/" + FileName
 
 	if isFileExists(DestFullPathFileName) == false {
-		errlog := fmt.Sprintf("File %v not found", DestFullPathFileName)
+		errlog := fmt.Sprintf("File '%v' not found.", DestFullPathFileName)
 		l := log.Error(errlog)
 		logq.LogPutqueue(l)
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorFileNotExist, errlog)
@@ -234,7 +260,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		req.Header.Set("Authorization", loginAuthStr)
 	} //todo
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		s := "Pub tag service unavailable"
 		HttpNoData(w, http.StatusServiceUnavailable, cmd.ErrorServiceUnavailable, s)
@@ -429,10 +455,10 @@ func CheckTagAndGetDpPath(repo, item, tag string) (dppath string, err error) {
 	dpname, dpconn, ItemDesc := GetDpnameDpconnItemdesc(repo, item)
 	if len(dpname) == 0 || len(dpconn) == 0 {
 		log.Println("dpname, dpconn, ItemDesc:", dpname, dpconn, ItemDesc)
-		return "", errors.New(fmt.Sprintf("Datapool %v not found.", dpname))
+		return "", errors.New(fmt.Sprintf("Datapool '%v' not found.", dpname))
 	} else if len(ItemDesc) == 0 {
 		log.Println("dpname, dpconn:", dpname, dpconn)
-		return "", errors.New(fmt.Sprintf("Dataitem %v/%v not found.", repo, item))
+		return "", errors.New(fmt.Sprintf("Dataitem '%v' not found.", item))
 	}
 	dppath = dpconn + "/" + ItemDesc
 	return
