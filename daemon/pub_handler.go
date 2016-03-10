@@ -188,7 +188,6 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	tag := ps.ByName("tag")
 	log.Println("repo", repo, "item", item, "tag", tag)
 
-
 	if !CheckLength(w, repo, MaxRepoLength) || !CheckLength(w, item, MaxItemLength) || !CheckLength(w, tag, MaxTagLength) {
 		return
 	}
@@ -226,8 +225,6 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	splits := strings.Split(pub.Detail, "/")
 	FileName := splits[len(splits)-1]
-
-
 
 	DestFullPathFileName := DpItemFullPath + "/" + FileName
 
@@ -302,20 +299,6 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		//if err != nil {
 		//	log.Error(DestFullPathFileName, err, fmt.Sprintf("%x", bmd5))
 		//}
-
-
-		err = InsertPubTagToDb(repo, item, tag, FileName)
-		if err != nil {
-			RollBackTag(repo, item, tag)
-			HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,
-				"Insert dataitem to datapool error, please check it immediately!")
-		} else {
-			AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
-			HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
-
-			g_DaemonRole = PUBLISHER
-		}
-
 
 		AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
 		HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")

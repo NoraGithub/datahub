@@ -45,11 +45,6 @@ type StoppabletcpListener struct {
 	stop             chan int //Channel used only to indicate listener should shutdown
 }
 
-type strc_dp struct {
-	Dpid   int
-	Dptype string
-}
-
 func dbinit() {
 	log.Println("connect to db sqlite3")
 	db, err := sql.Open("sqlite3", g_dbfile)
@@ -293,7 +288,9 @@ func RunDaemon() {
 	router.GET("/repositories", repoHandler)
 	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
 	router.DELETE("/repositories/:repo/:item/:tag", repoDelOneTagHandler)
+
 	router.GET("/subscriptions/dataitems", subsHandler)
+	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
 
 	router.POST("/repositories/:repo/:item", pubItemHandler)
 	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)

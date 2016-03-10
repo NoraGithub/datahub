@@ -170,7 +170,7 @@ func Test_dpDeleteOneHandler(t *testing.T) {
 			req, _ := http.NewRequest("DELETE", fmt.Sprintf("/datapools/%s", dpc.Name), strings.NewReader(""))
 			rw := httptest.NewRecorder()
 			dpDeleteOneHandler(rw, req, v.ps)
-			if !Expect(t, rw, fmt.Sprintf("Datapool %s with type:%s removed successfully!", dpc.Name, dpc.Type)) {
+			if !Expect(t, rw, fmt.Sprintf("Datapool %s removed successfully!", dpc.Name)) {
 				t.Logf("delete dp %s fail!", dpc.Name)
 			} else {
 				t.Logf("delete dp %s success.", dpc.Name)
