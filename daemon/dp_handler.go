@@ -206,7 +206,7 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 	dpname := ps.ByName("dpname")
 	msg := &ds.MsgResp{}
 
-	sqlDpRm := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME ='%s' AND STATUS='A'`, dpname)
+	sqlDpRm := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME ='%s' AND STATUS='A';`, dpname)
 	dprow, err := g_ds.QueryRow(sqlDpRm)
 	if err != nil {
 		msg.Msg = err.Error()
@@ -227,8 +227,8 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		rw.Write(resp)
 		return
 	} else {
-		sql_dp_item := fmt.Sprintf("SELECT PUBLISH FROM DH_DP_RPDM_MAP WHERE DPID = %v ", dpid)
-		row, err := g_ds.QueryRow(sql_dp_item)
+		sqldpitem := fmt.Sprintf("SELECT COUNT(1) FROM DH_DP_RPDM_MAP WHERE DPID = %v AND PUBLISH='Y'; ", dpid)
+		row, err := g_ds.QueryRow(sqldpitem)
 		if err != nil {
 			msg.Msg = err.Error()
 			b, _ := json.Marshal(msg)
@@ -236,12 +236,12 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 			return
 		}
 
-		var sPublish string
-		row.Scan(&sPublish)
-		if sPublish == "Y" {
+		var pubCount int
+		row.Scan(&pubCount)
+		if pubCount > 0 {
 			msg.Msg = fmt.Sprintf(`Datapool %s with can't be removed , it contains published DataItem !`, dpname)
 		} else {
-			sqlUpdate := fmt.Sprintf("UPDATE DH_DP SET STATUS = 'N' WHERE DPID = %v", dpid)
+			sqlUpdate := fmt.Sprintf("UPDATE DH_DP SET STATUS = 'N' WHERE DPID = %v;", dpid)
 			_, err := g_ds.Update(sqlUpdate)
 			if err != nil {
 				msg.Msg = err.Error()
