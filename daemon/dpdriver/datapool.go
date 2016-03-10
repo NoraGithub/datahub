@@ -12,6 +12,7 @@ import (
 type DatapoolDriver interface {
 	GetDestFileName(dpconn, itemlocation, filename string) (destfilename, tmpdir, tmpfile string)
 	StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string
+	GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string)
 }
 
 type Datapool struct {
@@ -51,6 +52,10 @@ func (datapool *Datapool) GetDestFileName(dpconn, itemlocation, filename string)
 
 func (datapool *Datapool) StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string {
 	return datapool.driver.StoreFile(status, filename, dpconn, dp, itemlocation, destfile)
+}
+
+func (datapool *Datapool) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
+	return datapool.driver.GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail)
 }
 
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
