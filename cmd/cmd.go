@@ -59,6 +59,7 @@ const (
 	ErrorOverLength
 	ErrorOpenFile
 	ErrorStatFile
+	ErrorNoDatapoolDriver
 	ErrorOtherError
 	ErrorUnknowError
 )

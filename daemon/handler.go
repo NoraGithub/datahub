@@ -124,7 +124,7 @@ func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (bo
 	return
 }
 
-func commToServerGetRsp(method string, path string, buffer []byte) (resp *http.Response, err error) {
+func commToServerGetRsp(method, path string, buffer []byte) (resp *http.Response, err error) {
 
 	s := log.Info("daemon: connecting to", DefaultServer+path)
 	logq.LogPutqueue(s)

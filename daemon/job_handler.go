@@ -60,7 +60,7 @@ func jobRmHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params
 	log.Trace("from", req.RemoteAddr, req.Method, req.URL.RequestURI(), req.Proto)
 
 	jobid := ps.ByName("id")
-	msg, code, httpcode := fmt.Sprintf("job %s not found.", jobid), 4404, http.StatusNotFound
+	msg, code, httpcode := fmt.Sprintf("job '%s' not found.", jobid), 4404, http.StatusNotFound
 	for idx, v := range DatahubJob {
 		if v.ID == jobid {
 			removeJobDB(&DatahubJob[idx])

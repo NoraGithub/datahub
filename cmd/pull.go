@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"io/ioutil"
 )
 
 func Pull(login bool, args []string) (err error) {
@@ -105,16 +106,35 @@ func Pull(login bool, args []string) (err error) {
 			return err
 		}
 	} else {
-		showError(resp)
+		result := ds.Response{}
+		respbody, _ := ioutil.ReadAll(resp.Body)
+		//fmt.Println(string(respbody))
+		unmarshalerr := json.Unmarshal(respbody, &result)
+		if unmarshalerr != nil {
+			fmt.Println("Error : Pull error.",unmarshalerr)
+			return unmarshalerr
+		}
+		if result.Code == 5009 {
+			fmt.Println("DataHub : Failed to get subscription")
+		} else if result.Code == 5012 {
+			fmt.Println("DataHub : Permission denied,you have not subscribed current repo yet.")
+		} else if result.Code == 5023 {
+			fmt.Println("DataHub : Currently the data is unavaliable.")
+		} else {
+			//showError(resp)
+			fmt.Println(result.Msg)
+		}
+	}
+		//showError(resp)
 
 		return nil
-	}
+}
 	//body, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println(body)
 
-	return nil // dl(uri)
+	//return nil // dl(uri)
 	//return nil
-}
+//}
 
 func pullUsage() {
 	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [--destname] [--automatic] [--cancel]\n", os.Args[0])
