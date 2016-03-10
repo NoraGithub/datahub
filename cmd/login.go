@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils"
@@ -66,6 +67,7 @@ func Login(login bool, args []string) (err error) {
 		result.Data = objloginerr
 		body, _ := ioutil.ReadAll(resp.Body)
 		if err = json.Unmarshal(body, result); err != nil {
+			fmt.Println("Error :", err)
 			return err
 		} else {
 			retrytimes, _ := strconv.Atoi(objloginerr.Retrytimes)
@@ -79,7 +81,7 @@ func Login(login bool, args []string) (err error) {
 				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
 			}
 			fmt.Println("Error : login failed.")
-			return
+			return errors.New("Error : login failed.")
 		}
 	} else {
 		if /*resp.StatusCode == 401 &&*/ login {
@@ -87,7 +89,7 @@ func Login(login bool, args []string) (err error) {
 			fmt.Println("login failed. ", string(body))
 		}
 		fmt.Println("Error : login failed.")
-		return
+		return errors.New("Error : login failed.")
 	}
 	/*
 		body, _ := ioutil.ReadAll(resp.Body)

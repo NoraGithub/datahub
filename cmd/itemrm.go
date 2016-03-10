@@ -17,7 +17,10 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	if err := f.Parse(args); err != nil {
 		return err
 	}
-	if len(args) > 1 {
+	if len(args) == 0 {
+		itemortagrmUsage()
+		return nil
+	} else if len(args) > 1 {
 		fmt.Println(ErrMsgArgument)
 		itemortagrmUsage()
 		return errors.New(ErrMsgArgument)
@@ -138,8 +141,8 @@ func ensureRm(code int, uri string) {
 
 func itemortagrmUsage() {
 	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]")
-	fmt.Println("Remove a item.")
-	fmt.Println("Or")
+	fmt.Println("Remove a item.\n")
+
 	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]:[tag]")
 	fmt.Println("Remove a tag.")
 }

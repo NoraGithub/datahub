@@ -293,7 +293,9 @@ func RunDaemon() {
 	router.GET("/repositories", repoHandler)
 	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
 	router.DELETE("/repositories/:repo/:item/:tag", repoDelOneTagHandler)
+
 	router.GET("/subscriptions/dataitems", subsHandler)
+	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
 
 	router.POST("/repositories/:repo/:item", pubItemHandler)
 	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)

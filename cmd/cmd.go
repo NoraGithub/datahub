@@ -226,7 +226,7 @@ func showError(resp *http.Response) {
 	result := ds.Result{}
 	err := json.Unmarshal(body, &result)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error : Unknown error. Http response code :", resp.StatusCode)
 	} else {
 		fmt.Printf("Error : %v\n", result.Msg)
 	}
