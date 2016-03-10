@@ -53,7 +53,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
-		e := fmt.Sprintf("Datapool '%s' does not exist.", p.Datapool)
+		e := fmt.Sprintf("Error : Datapool '%s' does not exist.", p.Datapool)
 		l := log.Error("Code:", cmd.ErrorDatapoolNotExits, e)
 		logq.LogPutqueue(l)
 		msgret := ds.Result{Code: cmd.ErrorDatapoolNotExits, Msg: e}
@@ -79,7 +79,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if dpconn := GetDataPoolDpconn(p.Datapool); len(dpconn) == 0 {
 		strret = p.Datapool + " not found. " + p.Tag + " will be pulled into " + g_strDpPath + "/" + p.ItemDesc
 	} else {
-		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled into " + dpconn + "/" + p.ItemDesc
+		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found in " + dpconn + "/" + p.ItemDesc + "/" + p.Tag
 	}
 
 	//add to automatic pull list

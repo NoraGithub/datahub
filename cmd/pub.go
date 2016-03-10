@@ -67,7 +67,7 @@ func Pub(needlogin bool, args []string) (err error) {
 			pub.ItemDesc = strings.Trim(se[1], "/")
 			err = PubItem(repo, item, pub, args)
 		} else {
-			fmt.Println("Error : Please input a valid datapool and path.")
+			fmt.Println("DataHub : Please input a valid datapool and path.")
 			err = errors.New("Error : Please input a valid datapool and path.")
 		}
 	} else if l == 2 {
@@ -77,7 +77,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		err = PubTag(repo, item, tag, pub, args)
 	} else {
 		fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
-		return errors.New("invalid argument")
+		return errors.New("Invalid argument.")
 	}
 
 	return err
@@ -103,7 +103,51 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 		fmt.Println("Error : Mrashal pubdata error while publishing dateitem.")
 		return err
 	}
-	err = pubResp(url, jsonData, args)
+
+	resp, err := commToDaemon("POST", "/repositories/"+url, jsonData)
+	if err != nil {
+		fmt.Println("Error :",err)
+		return err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode == http.StatusOK {
+		result := ds.Result{}
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Println("Error : Pub error.", err) //todo add http code
+			return err
+		} else {
+			if result.Code == 0 {
+				fmt.Println("DataHub : Successed in publishing.")
+			} else {
+				fmt.Printf("Error : %v\n", result.Msg)
+			}
+		}
+	} else if resp.StatusCode == http.StatusUnauthorized {
+		if err = Login(false, nil); err == nil {
+			Pub(true, args)
+		} else {
+			fmt.Println(err)
+		}
+	} else {
+		result := ds.Result{}
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Println("Error : Pub error.", err)
+			return err
+		}
+		if result.Code == 1008 {
+			fmt.Printf("Error : Dataitem '%s' already exists.\n", item)
+		} else if result.Code == 4010 {
+			fmt.Printf("Error : Datapool '%s' not found.\n", p.Datapool)
+		} else if result.Code == 1011 {
+			fmt.Println("Error : Only 50 items should be included within each repository.")
+		} else {
+			fmt.Println("Error :", result.Msg)
+		}
+	}
+	//err = pubResp(url, jsonData, args)
 	return err
 }
 
@@ -125,6 +169,8 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 		fmt.Println("Error : Mrashal pubdata error while publishing tag.")
 		return err
 	}
+
+
 	err = pubResp(url, jsonData, args)
 
 	return err
@@ -164,8 +210,12 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 			fmt.Println("Error : Pub error.", err)
 			return err
 		} else {
-			fmt.Printf("Error : %v\n", result.Msg)
+			fmt.Println("Error :", result.Msg)
 		}
+
+		/*else {
+			fmt.Printf("Error : %v\n", result.Msg)
+		}*/
 	}
 	return err
 }
