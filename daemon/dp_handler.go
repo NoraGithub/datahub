@@ -206,57 +206,51 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 	dpname := ps.ByName("dpname")
 	msg := &ds.MsgResp{}
 
-	sql_dp_rm := fmt.Sprintf(`SELECT DPID, DPTYPE FROM DH_DP WHERE DPNAME ='%s' AND STATUS='A'`, dpname)
-	dprows, err := g_ds.QueryRows(sql_dp_rm)
+	sqlDpRm := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME ='%s' AND STATUS='A'`, dpname)
+	dprow, err := g_ds.QueryRow(sqlDpRm)
 	if err != nil {
 		msg.Msg = err.Error()
-		resp, _ := json.Marshal(msg)
-		rw.Write(resp)
+		b, _ := json.Marshal(msg)
+		rw.Write(b)
+		log.Error(err)
 		return
 	}
-	defer dprows.Close()
 
-	bresultflag := false
+	var dpid int
+	dprow.Scan(&dpid)
 
-	dpid_type := make([]strc_dp, 0, 8)
-	strcone := strc_dp{}
-	for dprows.Next() {
-		dprows.Scan(&strcone.Dpid, &strcone.Dptype)
-		dpid_type = append(dpid_type, strcone)
-	}
-
-	for _, v := range dpid_type {
-		var dpid = v.Dpid
-		var dptype = v.Dptype
-		bresultflag = true
-		//dprow.Scan(&dpid, &dptype)
-		sql_dp_item := fmt.Sprintf("SELECT PUBLISH FROM DH_DP_RPDM_MAP WHERE DPID = %v ", dpid)
-		row, err := g_ds.QueryRow(sql_dp_item)
-		if err != nil {
-			msg.Msg = err.Error()
-		}
-		//time.Sleep(60*time.Second)
-		var sPublish string
-		row.Scan(&sPublish)
-		if sPublish == "Y" {
-			msg.Msg = fmt.Sprintf(`Datapool %s with type:%s can't be removed , it contains published DataItem !`, dpname, dptype)
-		} else {
-			sql_update := fmt.Sprintf("UPDATE DH_DP SET STATUS = 'N' WHERE DPID = %v", dpid)
-			_, err := g_ds.Update(sql_update)
-			if err != nil {
-				msg.Msg = err.Error()
-			} else {
-				msg.Msg = fmt.Sprintf("Datapool %s with type:%s removed successfully!", dpname, dptype)
-			}
-		}
-		resp, _ := json.Marshal(msg)
-		rw.Write(resp)
-	}
-	if bresultflag == false {
+	if dpid == 0 {
 		msg.Msg = fmt.Sprintf("Datapool '%s' does not exist.", dpname)
 		log.Error("DELETE : datapool", dpname, "does not exist.")
 		resp, _ := json.Marshal(msg)
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write(resp)
+		return
+	} else {
+		sql_dp_item := fmt.Sprintf("SELECT PUBLISH FROM DH_DP_RPDM_MAP WHERE DPID = %v ", dpid)
+		row, err := g_ds.QueryRow(sql_dp_item)
+		if err != nil {
+			msg.Msg = err.Error()
+			b, _ := json.Marshal(msg)
+			rw.Write(b)
+			return
+		}
+
+		var sPublish string
+		row.Scan(&sPublish)
+		if sPublish == "Y" {
+			msg.Msg = fmt.Sprintf(`Datapool %s with can't be removed , it contains published DataItem !`, dpname)
+		} else {
+			sqlUpdate := fmt.Sprintf("UPDATE DH_DP SET STATUS = 'N' WHERE DPID = %v", dpid)
+			_, err := g_ds.Update(sqlUpdate)
+			if err != nil {
+				msg.Msg = err.Error()
+			} else {
+				msg.Msg = fmt.Sprintf("Datapool %s removed successfully!", dpname)
+			}
+		}
+		resp, _ := json.Marshal(msg)
+		rw.Write(resp)
 	}
+
 }

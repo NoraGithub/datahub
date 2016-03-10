@@ -45,11 +45,6 @@ type StoppabletcpListener struct {
 	stop             chan int //Channel used only to indicate listener should shutdown
 }
 
-type strc_dp struct {
-	Dpid   int
-	Dptype string
-}
-
 func dbinit() {
 	log.Println("connect to db sqlite3")
 	db, err := sql.Open("sqlite3", g_dbfile)
