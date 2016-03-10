@@ -69,6 +69,10 @@ const (
 	ExitsConsumingPlan = 1
 )
 
+var (
+	ErrMsgArgument string = "DataHub : Invalid argument."
+)
+
 var Cmd = []Command{
 	{
 		Name:    "dp",

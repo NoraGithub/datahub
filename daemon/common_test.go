@@ -153,7 +153,7 @@ func TestGetDpnameDpconnItemdesc(t *testing.T) {
 func TestInsertPubTagToDb(t *testing.T) {
 	tag := "tagTest2"
 	file := "tagTest2file.csv"
-	e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file)
+	_, e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file)
 	if e == nil {
 		t.Log("1.InsertPubTagToDb success--------")
 	} else {
@@ -163,7 +163,7 @@ func TestInsertPubTagToDb(t *testing.T) {
 		t.Errorf("Recover db for InsertPubTagToDb test fail. Delete %s error, %v", tag, e)
 	}
 
-	e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file)
+	_, e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file)
 	if e != nil {
 		t.Log("2.InsertPubTagToDb with a non-existent repository success--------")
 	} else {
