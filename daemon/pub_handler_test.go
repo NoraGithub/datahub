@@ -122,7 +122,7 @@ func Test_recoverdata(t *testing.T) {
 // *********************** Mock Pub Server ********************* //
 func mockServerFor_Pub() *httptest.Server {
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
+		if req.Method != "POST" && req.Method != "GET" {
 			log.Fatalf("Expecting Request.Method POST, but got %v", req.Method)
 		}
 

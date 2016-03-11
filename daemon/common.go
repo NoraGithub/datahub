@@ -75,15 +75,15 @@ func GetDataPoolDpconnAndDptype(datapoolname string) (dpconn, dptype string) {
 	}
 }
 
-func GetDpconnByDpid(dpid int) (dpconn string) {
-	sSqlGetDpconn := fmt.Sprintf(`SELECT DPCONN FROM DH_DP WHERE DPID='%d'`, dpid)
+func GetDpconnDpnameDptypeByDpid(dpid int) (dpconn, dpname, dptype string) {
+	sSqlGetDpconn := fmt.Sprintf(`SELECT DPCONN, DPNAME, DPTYPE FROM DH_DP WHERE DPID='%d' AND STATUS='A';`, dpid)
 	row, err := g_ds.QueryRow(sSqlGetDpconn)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
-		return ""
+		return
 	}
-	row.Scan(&dpconn)
+	row.Scan(&dpconn, &dpname, &dptype)
 	return
 }
 
@@ -192,7 +192,7 @@ func CheckTagExist(repo, item, tag string) (exits bool, err error) {
 	if rpdmid == 0 || dpid == 0 {
 		l := log.Errorf("dataitem is not exist, %s/%s, rpdmid:%d, dpid:%d", repo, item, rpdmid, dpid)
 		logq.LogPutqueue(l)
-		return false, errors.New(fmt.Sprintf("dataitem is not exist, %s/%s, rpdmid:%d, dpid:%d", repo, item, rpdmid, dpid))
+		return false, errors.New(fmt.Sprintf("Dataitem '%s' not found.", item))
 	}
 	sqlCheckTag := fmt.Sprintf("SELECT COUNT(1) FROM DH_RPDM_TAG_MAP WHERE RPDMID='%d' AND TAGNAME='%s' AND STATUS='A'", rpdmid, tag)
 	row, err := g_ds.QueryRow(sqlCheckTag)
@@ -228,19 +228,39 @@ func GetDpnameDpconnByDpidAndStatus(dpid int, status string) (dpname, dpconn str
 	return
 }
 
-func InsertPubTagToDb(repo, item, tag, FileName string) (err error) {
+func InsertPubTagToDb(repo, item, tag, FileName string) (tagid int, err error) {
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
-		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
+		return 0, errors.New("Dataitem is not found which need to be published before publishing tag. ")
 	}
-	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A')",
-		tag, rpdmid, FileName)
+	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A');", tag, rpdmid, FileName)
 	log.Println(sqlInsertTag)
-	_, err = g_ds.Insert(sqlInsertTag)
+	_, err = g_ds.Update(sqlInsertTag)
 	if err != nil {
-		return err
+		l := log.Error("insert tag into db error:", err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	sql := "SELECT MAX(TAGID) from DH_RPDM_TAG_MAP;"
+	row, _ := g_ds.QueryRow(sql)
+	row.Scan(&tagid)
+	if err != nil {
+		return tagid, err
 	}
 	return
+}
+
+func rollbackInsertPubTagToDb(tagid int) error {
+	sql := fmt.Sprintf("DELETE FROM DH_RPDM_TAG_MAP WHERE TAGID=%d ", tagid)
+	_, err := g_ds.Delete(sql)
+	if err != nil {
+		l := log.Error("rollback InsertPubTagToDb error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return nil
 }
 
 func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {
@@ -654,7 +674,7 @@ func GetLocalfilePath() (localfilepath []string) {
 	var conn string
 	var desc string
 	localfilepath = make([]string, 0)
- 	rows, err := g_ds.QueryRows(sql)
+	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
@@ -662,7 +682,7 @@ func GetLocalfilePath() (localfilepath []string) {
 	} else {
 		for rows.Next() {
 			rows.Scan(&conn, &desc)
-			path := conn+"/"+desc
+			path := conn + "/" + desc
 			localfilepath = append(localfilepath, path)
 		}
 		return

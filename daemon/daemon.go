@@ -26,13 +26,7 @@ var (
 	g_ds = new(ds.Ds)
 
 	wg sync.WaitGroup
-
-	AWS_SECRET_ACCESS_KEY string
-	AWS_ACCESS_KEY_ID     string
-	AWS_REGION            string
 )
-
-
 
 const (
 	g_dbfile    string = "/var/lib/datahub/datahub.db"
@@ -49,11 +43,6 @@ type StoppableListener struct {
 type StoppabletcpListener struct {
 	*net.TCPListener          //Wrapped listener
 	stop             chan int //Channel used only to indicate listener should shutdown
-}
-
-type strc_dp struct {
-	Dpid   int
-	Dptype string
 }
 
 func dbinit() {
@@ -256,10 +245,6 @@ func RunDaemon() {
 
 	dbinit()
 
-	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
-	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
-	AWS_REGION = Env("AWS_REGION", false)
-
 	if len(DaemonID) == 40 {
 		log.Println("daemonid", DaemonID)
 		saveDaemonID(DaemonID)
@@ -303,7 +288,9 @@ func RunDaemon() {
 	router.GET("/repositories", repoHandler)
 	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
 	router.DELETE("/repositories/:repo/:item/:tag", repoDelOneTagHandler)
+
 	router.GET("/subscriptions/dataitems", subsHandler)
+	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
 
 	router.POST("/repositories/:repo/:item", pubItemHandler)
 	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)
@@ -375,11 +362,6 @@ func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
 	}
-
-	/*tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	http.DefaultClient.Transport = tr*/
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 

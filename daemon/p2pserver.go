@@ -3,6 +3,8 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/daemon/dpdriver"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
@@ -64,7 +66,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Info(sRepoName, sDataItem, sTag)
 	jobtag := fmt.Sprintf("%s/%s:%s", sRepoName, sDataItem, sTag)
 	var irpdmid, idpid int
-	var stagdetail, sdpconn, itemdesc string
+	var stagdetail, itemdesc, dpconn, dpname, dptype string
 	msg := &ds.MsgResp{}
 	msg.Msg = "OK."
 
@@ -83,10 +85,17 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	sdpconn = GetDpconnByDpid(idpid)
-	log.Debug("dpconn:", sdpconn)
+	dpconn, dpname, dptype = GetDpconnDpnameDptypeByDpid(idpid)
+	log.Debug("dpconn:", dpconn, "dpname:", dpname, "dptype:", dptype)
 
-	filepathname := sdpconn + "/" + itemdesc + "/" + stagdetail
+	datapool, err := dpdriver.New(dptype)
+	if err != nil {
+		WriteErrLogAndResp(rw, http.StatusInternalServerError, cmd.ErrorNoDatapoolDriver, err)
+		return
+	}
+
+	filepathname := datapool.GetFileTobeSend(dpconn, dpname, itemdesc, stagdetail)
+	//filepathname := dpconn + "/" + itemdesc + "/" + stagdetail
 	log.Println("filename:", filepathname)
 	if exists := isFileExists(filepathname); !exists {
 		l := log.Error(filepathname, "not found")
@@ -178,4 +187,11 @@ func checkAccessToken(tokenUrl string) (bool, string) {
 	log.Trace(string(body))
 
 	return tkresp.Valid, result.Msg
+}
+
+func WriteErrLogAndResp(w http.ResponseWriter, httpcode, errorcode int, err error) error {
+	l := log.Error(err)
+	logq.LogPutqueue(l)
+	HttpNoData(w, http.StatusBadRequest, cmd.ErrorNoRecord, err.Error())
+	return err
 }

@@ -59,13 +59,24 @@ const (
 	ErrorOverLength
 	ErrorOpenFile
 	ErrorStatFile
+	ErrorNoDatapoolDriver
 	ErrorOtherError
 	ErrorUnknowError
 )
 
 const (
+	ServerErrResultCode5009 = 5009
+	ServerErrResultCode5012 = 5012
+	ServerErrResultCode5023 = 5023
+)
+
+const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
+)
+
+var (
+	ErrMsgArgument string = "DataHub : Invalid argument."
 )
 
 var Cmd = []Command{
@@ -221,7 +232,7 @@ func showError(resp *http.Response) {
 	result := ds.Result{}
 	err := json.Unmarshal(body, &result)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error : Unknown error. Http response code :", resp.StatusCode)
 	} else {
 		fmt.Printf("Error : %v\n", result.Msg)
 	}

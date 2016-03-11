@@ -14,7 +14,7 @@ import (
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(repo)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	commToServer("get", r.URL.Path+"?size=100", reqBody, w)
+	commToServer("get", r.URL.Path+"?size=-1", reqBody, w)
 
 	return
 
@@ -31,7 +31,7 @@ func repoRepoNameHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 func repoItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(repo/item)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	commToServer("get", r.URL.Path+"?size=100", reqBody, w)
+	commToServer("get", r.URL.Path+"?size=-1", reqBody, w)
 
 	return
 }
@@ -155,7 +155,7 @@ func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	path := "repositories/" + repository + "/" +dataitem + "/" + tag
+	path := "repositories/" + repository + "/" + dataitem + "/" + tag
 	resp, err := commToServerGetRsp("delete", path, reqBody)
 	if err != nil {
 		log.Error(err)

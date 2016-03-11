@@ -72,7 +72,6 @@ func Dp(needLogin bool, args []string) (err error) {
 					fmt.Println(err)
 					return err
 				}
-				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 				if resp.StatusCode == http.StatusOK {
 					dpResp(true, body)
@@ -80,6 +79,7 @@ func Dp(needLogin bool, args []string) (err error) {
 					fmt.Println(resp.StatusCode)
 					err = errors.New(string(resp.StatusCode))
 				}
+				resp.Body.Close()
 			}
 		}
 	}

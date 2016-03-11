@@ -103,7 +103,7 @@ func Repo(login bool, args []string) (err error) {
 			if err = Login(false, nil); err == nil {
 				err = Repo(login, args)
 			} else {
-				fmt.Println(err)
+				//fmt.Println(err)
 			}
 		} else {
 			fmt.Printf("Error : %v\n", result.Msg)
@@ -175,4 +175,3 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		fmt.Printf("%s/%s:%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment)
 	}
 }
-

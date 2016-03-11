@@ -2,19 +2,28 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
+	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
 func ItemOrTagRm(needLogin bool, args []string) error {
-
-	if len(args) > 1 {
-		fmt.Println("DataHub : Invalid argument.")
+	f := mflag.NewFlagSet("repo rm", mflag.ContinueOnError)
+	f.Usage = itemortagrmUsage
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if len(args) == 0 {
 		itemortagrmUsage()
 		return nil
+	} else if len(args) > 1 {
+		fmt.Println(ErrMsgArgument)
+		itemortagrmUsage()
+		return errors.New(ErrMsgArgument)
 	}
 
 	arg := args[0]
@@ -25,6 +34,10 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	splitStr := strings.Split(arg, ":")
 	if len(splitStr) == 1 {
 		splitStr2 := strings.Split(splitStr[0], "/")
+		if len(splitStr2) != 2 {
+			fmt.Println(ErrMsgArgument)
+			return errors.New(ErrMsgArgument)
+		}
 		repository = splitStr2[0]
 		dataitem = splitStr2[1]
 		uri := "/repositories/" + repository + "/" + dataitem
@@ -57,8 +70,8 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 
 		return err
 	} else if len(splitStr) == 2 {
-		fmt.Print("DataHub : After you delete the Tag, data could not be recovery,"+
-		"Are you sure to delete the current Tag?[Y or N]:")
+		fmt.Print("DataHub : After you delete the Tag, data could not be recovery.\n" +
+			"Are you sure to delete the current Tag?[Y or N]:")
 		if GetEnsure() == true {
 			splitStr2 := strings.Split(splitStr[0], "/")
 			repository = splitStr2[0]
@@ -88,9 +101,9 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			return err
 		}
 	} else {
-		fmt.Println("DataHub : Invalid argument.")
+		fmt.Println(ErrMsgArgument)
 		itemortagrmUsage()
-		return nil
+		return errors.New(ErrMsgArgument)
 	}
 	return nil
 }
@@ -98,11 +111,11 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 func ensureRm(code int, uri string) {
 	uri += "?ensure=1"
 	if code == ExitsConsumingPlan {
-		fmt.Print("DataHub : Order not completed, if deleted,the deposit will return to the subscribers. " +
-			"DataItem deleted, and you could not be recovery, and all tags would be deleted either." +
+		fmt.Print("DataHub : Order not completed, if deleted, the deposit will return to the subscribers.\n" +
+			"DataItem deleted, and you could not be recovery, and all tags would be deleted either.\n" +
 			"Are you sure to delete the current DataItem?[Y or N]:")
 	} else if code == NoConsumingPlan {
-		fmt.Print("Datahub : After you delete the DataItem, data could not be recovery, and all tags would be deleted either." +
+		fmt.Print("Datahub : After you delete the DataItem, data could not be recovery, and all tags would be deleted either.\n" +
 			"Are you sure to delete the current DataItem?[Y or N]:")
 	}
 	if GetEnsure() == true {
@@ -127,9 +140,9 @@ func ensureRm(code int, uri string) {
 }
 
 func itemortagrmUsage() {
-	fmt.Printf("Usage: datahub repo rm [REPO]/[ITEM]\n")
-	fmt.Println("Remove a item.")
-	fmt.Println("Or")
+	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]")
+	fmt.Println("Remove a item.\n")
+
 	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]:[tag]")
 	fmt.Println("Remove a tag.")
 }

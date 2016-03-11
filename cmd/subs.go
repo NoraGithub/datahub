@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
@@ -17,28 +18,46 @@ func Subs(login bool, args []string) (err error) {
 		return err
 	}
 	itemDetail := false
-	if len(args) > 1 {
-		fmt.Println("DataHub : Invalid argument.")
+
+	var uri string
+
+	if len(args) == 0 {
+		uri = "/subscriptions/dataitems?phase=1"
+		err = cmdSubsRepo(itemDetail, uri, args)
+	} else if len(args) == 1 {
+		if false == strings.Contains(args[0], "/") {
+			uri = "/subscriptions/dataitems?phase=1&repname=" + args[0]
+			err = cmdSubsRepo(itemDetail, uri, args)
+		} else {
+			repo, item, err := GetRepoItem(args[0])
+			if err != nil {
+				fmt.Println(ErrMsgArgument)
+				return err
+			}
+			//fmt.Println(repo, item)
+
+			sub, err := itemSubsOrNot(repo, item)
+			if sub == true && err == nil {
+
+				uri = "/repositories/" + args[0]
+				itemDetail = true
+				return Repo(login, args) //deal  repo/item:tag by repo cmd
+
+			}
+		}
+	} else {
+		fmt.Println(ErrMsgArgument)
 		subsUsage()
 		return
 	}
 
-	uri := "/subscriptions/dataitems?phase=1"
+	return err
+}
 
-	if len(args) == 1 {
-		if false == strings.Contains(args[0], "/") {
-			uri = uri + "&repname=" + args[0]
-		} else {
-			uri = "/repositories"
-			uri = uri + "/" + args[0]
-			itemDetail = true
-			return Repo(login, args) //deal  repo/item:tag by repo cmd
-		}
-	}
-
+func cmdSubsRepo(detail bool, uri string, args []string) error {
 	resp, err := commToDaemon("GET", uri, nil)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("DataHub", err)
 		return err
 	}
 
@@ -47,30 +66,81 @@ func Subs(login bool, args []string) (err error) {
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
 
-		if itemDetail {
-			subsResp(itemDetail, body, args[0])
+		if detail {
+			subsResp(detail, body, args[0])
 		} else {
-			subsResp(itemDetail, body, "")
+			subsResp(detail, body, "")
 		}
 
 	} else if resp.StatusCode == 401 {
 
 		if err := Login(false, nil); err == nil {
-			Subs(login, args)
+			Subs(true, args)
 		} else {
 			fmt.Println(err)
 		}
 	} else {
-
 		showError(resp)
 	}
-
 	return err
 }
 
-func subsUsage() {
-	fmt.Printf("Usage: %s subs [URL]/[REPO]/[ITEM]\n", os.Args[0])
-	fmt.Println("\nList the repositories and dataitems which have been subscribed")
+func GetRepoItem(arg string) (repo, item string, err error) {
+	s := strings.Trim(arg, "/")
+
+	if split := strings.Split(s, "/"); len(split) != 2 {
+		err = errors.New("dataitem not found")
+		return
+	} else {
+		repo = split[0]
+		split2 := strings.Split(split[1], ":")
+		item = split2[0]
+
+		if len(repo) == 0 {
+			err = errors.New("Lenth of repository is 0")
+			return
+		} else if len(item) == 0 {
+			err = errors.New("Lenth of dataitem is 0")
+			return
+		}
+	}
+	return repo, item, nil
+}
+
+func itemSubsOrNot(repo, item string) (sub bool, err error) {
+	uri := fmt.Sprintf("/subscriptions/pull/%s/%s?phase=1&size=1", repo, item)
+	resp, err := commToDaemon("GET", uri, nil)
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		pages := &ds.ResultPages{}
+		result := &ds.Result{Data: pages}
+		err := json.Unmarshal(body, &result)
+		if err != nil {
+			panic(err)
+		}
+		//fmt.Println("DataHub : Total price plans:", pages.Total)
+		if pages.Total > 0 {
+			return true, nil
+		} else {
+			fmt.Println("DataHub : You have not subscribed current dataitem yet.")
+			return false, nil
+		}
+	} else if resp.StatusCode == 401 {
+		if err = Login(false, nil); err == nil {
+			return itemSubsOrNot(repo, item)
+		} else {
+			//fmt.Println(err)
+		}
+	} else {
+		showError(resp)
+	}
+	return false, err
 }
 
 func subsResp(detail bool, respbody []byte, repoitem string) {
@@ -95,6 +165,7 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		if err != nil {
 			panic(err)
 		}
+
 		n, _ := fmt.Printf("%s/%-8s\t%s\n", "REPOSITORY", "ITEM", "TYPE")
 		printDash(n + 5)
 		for _, item := range subs {
@@ -103,4 +174,9 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 
 	}
 
+}
+
+func subsUsage() {
+	fmt.Printf("Usage: %s subs [URL]/[REPO]/[ITEM]\n", os.Args[0])
+	fmt.Println("\nList the repositories and dataitems which have been subscribed")
 }
