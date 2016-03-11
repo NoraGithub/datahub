@@ -114,15 +114,15 @@ func Pull(login bool, args []string) (err error) {
 			fmt.Println("Error : Pull error.",unmarshalerr)
 			return unmarshalerr
 		}
-		if result.Code == 5009 {
+		if result.Code == ServerErrResultCode5009 {
 			fmt.Println("DataHub : Failed to get subscription")
-		} else if result.Code == 5012 {
+		} else if result.Code == ServerErrResultCode5012 {
 			fmt.Println("DataHub : Permission denied,you have not subscribed current repo yet.")
-		} else if result.Code == 5023 {
+		} else if result.Code == ServerErrResultCode5023 {
 			fmt.Println("DataHub : Currently the data is unavaliable.")
 		} else {
 			//showError(resp)
-			fmt.Println(result.Msg)
+			fmt.Print("Error : ", result.Msg)
 		}
 	}
 		//showError(resp)
