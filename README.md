@@ -1,5 +1,3 @@
-﻿# datahub-client
-
 # Datahub-Client
 ----------------
 ### 开始
@@ -28,8 +26,6 @@ Datahub CLI是datahub-client的命令行客户端，用来执行datahub相关命
 
 - dp        
     - Datapool管理
-- repo      
-    - Repository管理
 - subs      
     - Subscrption管理
 - login     
@@ -38,6 +34,8 @@ Datahub CLI是datahub-client的命令行客户端，用来执行datahub相关命
     - 下载数据
 - pub
     - 发布数据
+- repo      
+    - Repository管理
 - job
     - 显示任务列表
 - help
@@ -108,14 +106,14 @@ datahub dp create $DPNAME [[file://][ABSOLUTE PATH]] [[s3://][BUCKET]]
 例子 1
 ```
 $ datahub dp create testdp file:///var/lib/datahub/testdp
-dp create success. name:testdp type:file path:/var/lib/datahub/testdp
+DataHub : dp create success. name:testdp type:file path:/var/lib/datahub/testdp
 $
 ```
 
 例子 2
 ```
 $ datahub dp create s3dp s3://mybucket
-dp create success. name:s3dp type:s3 path:mybucket
+DataHub : dp create success. name:s3dp type:s3 path:mybucket
 $
 ```
 
@@ -190,8 +188,6 @@ datahub subs $REPO/$ITEM
 ```
 $ datahub subs cmcc/beijing
 cmcc/beijing    file
-DESCRIPTION:
-移动数据北京地区
 cmcc/beijing:chaoyang    15:34 Oct 12 2015       600M
 cmcc/beijing:daxing  16:40 Oct 13 2015       435M
 cmcc/beijing:shunyi  16:40 Oct 14 2015       324M
@@ -240,7 +236,7 @@ datahub login [--user=user]
 $ datahub login
 login: datahub
 password: *******
-[INFO]Authorization failed.
+Authorization failed.
 $
 ```
 
@@ -295,6 +291,60 @@ REPOSITORY
 Location_information	                
 Internet_stats  
 Base_station_location
+```
+
+##### 6.2. 查询repository的详情
+
+```shell
+datahub repo Internet_stats
+```
+输出
+```
+REPOSITORY/DATAITEM
+--------------------------------
+Internet_stats/Music
+Internet_stats/Books
+Internet_stats/Cars
+Internet_stats/Ecommerce_goods
+Internet_stats/Film_and_television
+```
+##### 6.3. 查询dataitem的详情
+
+```shell
+datahub repo rm Internet_stats/Music
+```
+输出
+```
+REPOSITORY/ITEM:TAG	UPDATETIME	COMMENT
+---------------------------------------------------
+Internet_stats/Music:music_baidumusic_6008	2016-03-04 09:15:18|6天前	百度音乐
+Internet_stats/Music:music_qqmusic_6001		2016-02-03 09:23:30|1个月前	QQ音乐
+Internet_stats/Music:music_kuwomusic_6005	2016-01-06 09:35:44|2个月前	酷我音乐
+```
+
+##### 6.4. 删除自己创建的dataitem
+
+```shell
+datahub repo rm myrepo/myitem
+```
+输出
+```
+Datahub : After you delete the DataItem, data could not be recovery, and all tags would be deleted either.
+Are you sure to delete the current DataItem?[Y or N]:Y
+DataHub : OK
+```
+说明：当此dataitem下有正在生效的订购计划时，会提示资费回退规则。
+
+##### 6.5. 删除自己创建的tag
+
+```shell
+datahub repo rm FavouriteMusic/MusicItem:bingyu
+```
+输出
+```
+DataHub : After you delete the Tag, data could not be recovery.
+Are you sure to delete the current Tag?[Y or N]:y
+DataHub : OK
 ```
 
 #### 7. job命令
