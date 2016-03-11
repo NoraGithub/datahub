@@ -65,6 +65,12 @@ const (
 )
 
 const (
+	ServerErrResultCode5009 = 5009
+	ServerErrResultCode5012 = 5012
+	ServerErrResultCode5023 = 5023
+)
+
+const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
 )
