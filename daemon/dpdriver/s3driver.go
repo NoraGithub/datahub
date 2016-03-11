@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	s3aws "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"os"
@@ -72,6 +73,36 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 	status = "put to s3 ok"
 	log.Info("Successfully uploaded to", result.Location)
 	return status
+}
+
+func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
+
+	filepathname = dpconn + "/" + itemlocation + "/" + tagdetail
+
+	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	AWS_REGION = Env("AWS_REGION", false)
+	file, err := os.Create(filepathname)
+	if err != nil {
+		log.Error("Failed to create file", err)
+		return ""
+		defer file.Close()
+
+		downloader := s3manager.NewDownloader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
+		numBytes, err := downloader.Download(file,
+			&s3aws.GetObjectInput{
+				Bucket: aws.String(dpconn),
+				Key:    aws.String(dpname + "/" + itemlocation + "/" + tagdetail),
+			})
+		if err != nil {
+			log.Info("Failed to download file", err)
+			return
+		}
+
+		log.Println("Downloaded file", file.Name(), numBytes, "bytes")
+		return
+	}
+	return
 }
 
 func init() {

@@ -75,15 +75,15 @@ func GetDataPoolDpconnAndDptype(datapoolname string) (dpconn, dptype string) {
 	}
 }
 
-func GetDpconnByDpid(dpid int) (dpconn string) {
-	sSqlGetDpconn := fmt.Sprintf(`SELECT DPCONN FROM DH_DP WHERE DPID='%d'`, dpid)
+func GetDpconnDpnameDptypeByDpid(dpid int) (dpconn, dpname, dptype string) {
+	sSqlGetDpconn := fmt.Sprintf(`SELECT DPCONN, DPNAME, DPTYPE FROM DH_DP WHERE DPID='%d' AND STATUS='A';`, dpid)
 	row, err := g_ds.QueryRow(sSqlGetDpconn)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
-		return ""
+		return
 	}
-	row.Scan(&dpconn)
+	row.Scan(&dpconn, &dpname, &dptype)
 	return
 }
 
@@ -674,7 +674,7 @@ func GetLocalfilePath() (localfilepath []string) {
 	var conn string
 	var desc string
 	localfilepath = make([]string, 0)
- 	rows, err := g_ds.QueryRows(sql)
+	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error("QueryRow error:", err)
 		logq.LogPutqueue(l)
@@ -682,7 +682,7 @@ func GetLocalfilePath() (localfilepath []string) {
 	} else {
 		for rows.Next() {
 			rows.Scan(&conn, &desc)
-			path := conn+"/"+desc
+			path := conn + "/" + desc
 			localfilepath = append(localfilepath, path)
 		}
 		return
