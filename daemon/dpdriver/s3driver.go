@@ -79,6 +79,10 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 
 	filepathname = dpconn + "/" + itemlocation + "/" + tagdetail
 
+	if true == isFileExists(filepathname) {
+		return
+	}
+
 	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
 	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
 	AWS_REGION = Env("AWS_REGION", false)
@@ -109,4 +113,13 @@ func init() {
 	//fmt.Println("s3")
 
 	register("s3", &s3driver{})
+}
+
+func isFileExists(file string) bool {
+	fi, err := os.Stat(file)
+	if err == nil {
+		log.Println("exist", file)
+		return !fi.IsDir()
+	}
+	return os.IsExist(err)
 }

@@ -106,7 +106,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 
 	resp, err := commToDaemon("POST", "/repositories/"+url, jsonData)
 	if err != nil {
-		fmt.Println("Error :",err)
+		fmt.Println("Error :", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -169,7 +169,6 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 		fmt.Println("Error : Mrashal pubdata error while publishing tag.")
 		return err
 	}
-
 
 	err = pubResp(url, jsonData, args)
 

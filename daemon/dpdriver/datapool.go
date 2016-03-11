@@ -36,7 +36,7 @@ func register(name string, datapooldriver DatapoolDriver) {
 func New(name string) (*Datapool, error) {
 	datapooldriver, ok := datapooldrivers[name]
 	for k, _ := range datapooldrivers {
-		log.Info(k, datapooldrivers[k], reflect.TypeOf(datapooldrivers[k]))
+		log.Debug(k, datapooldrivers[k], reflect.TypeOf(datapooldrivers[k]))
 	}
 	if !ok {
 		s := fmt.Sprintf("Can't find datapooldriver %v", name)

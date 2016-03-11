@@ -281,24 +281,6 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	log.Println(resp.StatusCode, string(rbody))
 
 	if resp.StatusCode == http.StatusOK {
-		/*if NeedCopy {
-			if false == isDirExists(DestFullPath) {
-				log.Println("mkdir ", DestFullPath)
-				os.MkdirAll(DestFullPath, 0755)
-			}
-			count, err := CopyFile(pub.Detail, DestFullPathFileName)
-			if err != nil {
-				RollBackTag(repo, item, tag)
-				HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,
-					fmt.Sprintf(" Copy file to datapool error, permission denied or path '%s' not exist! ", DestFullPath))
-				return
-			}
-			log.Printf("Copy %d bytes from %s to %s", count, pub.Detail, DestFullPathFileName)
-		}*/
-		//bmd5, err := ComputeMd5(DestFullPathFileName)
-		//if err != nil {
-		//	log.Error(DestFullPathFileName, err, fmt.Sprintf("%x", bmd5))
-		//}
 
 		AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
 		HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
