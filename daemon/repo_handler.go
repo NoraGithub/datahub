@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -136,7 +137,7 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 }
 
-func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	if len(loginAuthStr) == 0 {
 		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
@@ -147,43 +148,106 @@ func repoDelOneTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	dataitem := ps.ByName("item")
 	tag := ps.ByName("tag")
 
-	err := delTag(repository, dataitem, tag)
-	if err != nil {
-		log.Error(err)
-		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
-		return
-	}
+	if strings.Contains(tag, "*") {
+		tagnameidmap, err := getBatchDelTagsIdAndName(repository, dataitem, tag)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
+			return
+		}
 
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	path := "repositories/" + repository + "/" + dataitem + "/" + tag
-	resp, err := commToServerGetRsp("delete", path, reqBody)
-	if err != nil {
-		log.Error(err)
-		HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
-		return
-	}
-	defer resp.Body.Close()
+		successflag := true
+		for _, tagname := range tagnameidmap {
+			if successflag {
+				_, err := delTag(repository, dataitem, tagname)
+				if err != nil {
+					log.Error(err)
+					HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
+					return
+				}
 
-	result := ds.Response{}
+				reqBody, _ := ioutil.ReadAll(r.Body)
+				path := "repositories/" + repository + "/" + dataitem + "/" + tagname
+				resp, err := commToServerGetRsp("delete", path, reqBody)
+				if err != nil {
+					log.Error(err)
+					HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+					return
+				}
+				defer resp.Body.Close()
 
-	respbody, err := ioutil.ReadAll(resp.Body)
+				result := ds.Response{}
 
-	unmarshalerr := json.Unmarshal(respbody, &result)
-	if unmarshalerr != nil {
-		log.Error(unmarshalerr)
-		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
-		return
-	}
-	if resp.StatusCode == http.StatusOK && result.Code == 0 {
-		HttpNoData(w, http.StatusOK, cmd.ResultOK, result.Msg)
-		log.Info("Msg :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
-	} else if resp.StatusCode == http.StatusOK && result.Code != 0 {
-		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
-		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
-		rollbackDelTag(repository, dataitem, tag)
+				respbody, err := ioutil.ReadAll(resp.Body)
+
+				unmarshalerr := json.Unmarshal(respbody, &result)
+				if unmarshalerr != nil {
+					log.Error(unmarshalerr)
+					HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+					return
+				}
+				if resp.StatusCode == http.StatusOK && result.Code == 0 {
+					continue
+				} else if resp.StatusCode == http.StatusOK && result.Code != 0 {
+					HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+					log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+					successflag = false
+					break
+				} else {
+					HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+					log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+					successflag = false
+					break
+				}
+			}
+
+		}
+		if successflag {
+			log.Info("批量删除tag成功")
+			HttpNoData(w, http.StatusOK, cmd.ResultOK, "ok.")
+		}
 	} else {
-		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
-		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+		tagid, err := delTag(repository, dataitem, tag)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
+			return
+		}
+
+		reqBody, _ := ioutil.ReadAll(r.Body)
+		path := "repositories/" + repository + "/" + dataitem + "/" + tag
+		resp, err := commToServerGetRsp("delete", path, reqBody)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+			return
+		}
+		defer resp.Body.Close()
+
+		result := ds.Response{}
+
+		respbody, err := ioutil.ReadAll(resp.Body)
+
+		unmarshalerr := json.Unmarshal(respbody, &result)
+		if unmarshalerr != nil {
+			log.Error(unmarshalerr)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+			return
+		}
+		if resp.StatusCode == http.StatusOK && result.Code == 0 {
+			HttpNoData(w, http.StatusOK, cmd.ResultOK, result.Msg)
+			log.Info("Msg :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+		} else if resp.StatusCode == http.StatusOK && result.Code != 0 {
+			HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+			log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+			rollbackDelTag(tagid)
+		} else {
+			HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+			log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+		}
+
 	}
+
+
 
 }
