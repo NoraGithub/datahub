@@ -62,7 +62,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		item = sptag[0]
 		argse = strings.Trim(args[1], "/")
 		se := strings.Split(argse, "://")
-		if len(se) == 2 {
+		if len(se) == 2 && len(se[1]) > 0 {
 			pub.Datapool = se[0]
 			pub.ItemDesc = strings.Trim(se[1], "/")
 			err = PubItem(repo, item, pub, args)
