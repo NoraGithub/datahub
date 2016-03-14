@@ -255,8 +255,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	var tagid int
-	tagid, err = InsertPubTagToDb(repo, item, tag, FileName)
+	err = InsertPubTagToDb(repo, item, tag, FileName)
 
 	if err != nil {
 		log.Error("Insert tag to db error.")
@@ -288,7 +287,11 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		g_DaemonRole = PUBLISHER
 	} else {
 
-		rollbackInsertPubTagToDb(tagid)
+		err = rollbackInsertPubTagToDb(repo, item, tag)
+		if err != nil {
+			log.Error("rollbackInsertPubTagToDb error :",err)
+			return
+		}
 
 		result := ds.Result{}
 		err = json.Unmarshal(rbody, &result)

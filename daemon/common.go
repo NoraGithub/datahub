@@ -228,34 +228,40 @@ func GetDpnameDpconnByDpidAndStatus(dpid int, status string) (dpname, dpconn str
 	return
 }
 
-func InsertPubTagToDb(repo, item, tag, FileName string) (tagid int, err error) {
+func InsertPubTagToDb(repo, item, tag, FileName string) (err error) {
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
-		return 0, errors.New("Dataitem is not found which need to be published before publishing tag. ")
+		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
 	}
 	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A');", tag, rpdmid, FileName)
 	log.Println(sqlInsertTag)
-	_, err = g_ds.Update(sqlInsertTag)
+	_, err = g_ds.Insert(sqlInsertTag)
 	if err != nil {
 		l := log.Error("insert tag into db error:", err)
 		logq.LogPutqueue(l)
-		return 0, err
+		return err
 	}
 
-	sql := "SELECT MAX(TAGID) from DH_RPDM_TAG_MAP;"
-	row, _ := g_ds.QueryRow(sql)
-	row.Scan(&tagid)
-	if err != nil {
-		return tagid, err
-	}
 	return
 }
 
-func rollbackInsertPubTagToDb(tagid int) error {
-	sql := fmt.Sprintf("DELETE FROM DH_RPDM_TAG_MAP WHERE TAGID=%d ", tagid)
-	_, err := g_ds.Delete(sql)
+func rollbackInsertPubTagToDb(reponame, itemname, tagname string) error {
+	log.Println("rollback insert pub tag from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	var rpdmId int
+
+	row, err := g_ds.QueryRow(sqlrpdmid)
 	if err != nil {
-		l := log.Error("rollback InsertPubTagToDb error:", err)
+		l := log.Error("select rpdmid from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&rpdmId)
+
+	sql := fmt.Sprintf(`DELETE FROM DH_RPDM_TAG_MAP WHERE RPDMID=%d AND TAGNAME='%s' AND STATUS='A';`, rpdmId, tagname)
+	_, err = g_ds.Delete(sql)
+	if err != nil {
+		l := log.Error("rollback pub tag delete tag from DH_RPDM_TAG_MAP error:", err)
 		logq.LogPutqueue(l)
 		return err
 	}
