@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils"
+	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,6 +28,8 @@ type Loginerr struct {
 
 func Login(login bool, args []string) (err error) {
 	fmt.Printf("login: ")
+	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
+	f.Usage = loginUsage
 	reader := bufio.NewReader(os.Stdin)
 	//loginName, _ := reader.ReadString('\n')
 	loginName, _ := reader.ReadBytes('\n')
@@ -105,5 +108,5 @@ func Login(login bool, args []string) (err error) {
 	*/
 }
 func loginUsage() {
-	fmt.Printf("Usage: %s no parameter\n\nSend a login request to the datahub server using your user name and password\n", os.Args[0])
+	fmt.Printf("Usage: %s login\n\nSend a login request to the datahub server using your user name and password\n", os.Args[0])
 }

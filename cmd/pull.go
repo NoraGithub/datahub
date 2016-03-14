@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-	"io/ioutil"
 )
 
 func Pull(login bool, args []string) (err error) {
 	var repo, item string
 	dstruc := ds.DsPull{}
 	f := mflag.NewFlagSet("pull", mflag.ContinueOnError)
-	f.StringVar(&dstruc.DestName, []string{"-destname", "d"}, "", "indicates the name that tag will be stored as ")
-	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "pull the new tags of a dataitem automatically")
-	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "cancel the automatical pulling of a dataitem")
+	f.StringVar(&dstruc.DestName, []string{"-destname", "d"}, "", "Indicates the name that tag will be stored as ")
+	pbAutomatic := f.Bool([]string{"-automatic", "a"}, false, "Pull the new tags of a dataitem automatically")
+	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "Cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
 		pullUsage()
@@ -111,7 +111,7 @@ func Pull(login bool, args []string) (err error) {
 		//fmt.Println(string(respbody))
 		unmarshalerr := json.Unmarshal(respbody, &result)
 		if unmarshalerr != nil {
-			fmt.Println("Error : Pull error.",unmarshalerr)
+			fmt.Println("Error : Pull error.", unmarshalerr)
 			return unmarshalerr
 		}
 		if result.Code == ServerErrResultCode5009 {
@@ -125,15 +125,16 @@ func Pull(login bool, args []string) (err error) {
 			fmt.Print("Error : ", result.Msg)
 		}
 	}
-		//showError(resp)
+	//showError(resp)
 
-		return nil
+	return nil
 }
-	//body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println(body)
 
-	//return nil // dl(uri)
-	//return nil
+//body, _ := ioutil.ReadAll(resp.Body)
+//fmt.Println(body)
+
+//return nil // dl(uri)
+//return nil
 //}
 
 func pullUsage() {

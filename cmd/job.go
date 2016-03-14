@@ -13,8 +13,8 @@ import (
 func Job(needLogin bool, args []string) (err error) {
 
 	f := mflag.NewFlagSet("datahub job", mflag.ContinueOnError)
-	fListall := f.Bool([]string{"-all", "a"}, false, "list all jobs")
-
+	//fListall := f.Bool([]string{"-all", "a"}, false, "list all jobs")
+	f.Usage = jobUsage
 	path := "/job"
 	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
 		path += "/" + args[0]
@@ -22,9 +22,9 @@ func Job(needLogin bool, args []string) (err error) {
 		if err := f.Parse(args); err != nil {
 			return err
 		}
-		if *fListall {
-			path += "?opt=all"
-		}
+		//if *fListall {
+		//	path += "?opt=all"
+		//}
 	}
 
 	resp, err := commToDaemon("GET", path, nil)
@@ -89,7 +89,9 @@ func JobRm(needLogin bool, args []string) (err error) {
 
 func jobUsage() {
 	fmt.Println("Usage: datahub job [JOBID]")
-	fmt.Println("Usage: datahub job rm [JOBID][--all]")
+	fmt.Println("List jobs")
+	fmt.Println("\nUsage: datahub job rm [JOBID][--all]")
+	fmt.Println("Remove a job")
 }
 
 func jobResp(resp *http.Response) {

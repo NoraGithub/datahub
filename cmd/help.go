@@ -16,6 +16,7 @@ var cmdhelps = []CmdHelp{
 	{"pub", pubUsage},
 	{"pull", pullUsage},
 	{"repo", repoUsage},
+	{"job", jobUsage},
 	{"subs", subsUsage},
 	{"version", verUsage},
 }

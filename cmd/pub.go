@@ -226,5 +226,5 @@ func pubUsage() {
 	fmt.Println("Publish a tag\n")
 	fmt.Println("Options:\n")
 	fmt.Println("  --accesstype,-t   Specify the access type of the dataitem:public or private, default private")
-	fmt.Println("  --comment,-m      Comments about the item or tag")
+	fmt.Println("  --comment,-m      Comments about the dataitem or tag")
 }

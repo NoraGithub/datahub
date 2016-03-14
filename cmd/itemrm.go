@@ -143,6 +143,6 @@ func itemortagrmUsage() {
 	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]")
 	fmt.Println("Remove a item.\n")
 
-	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]:[tag]")
+	fmt.Println("Usage: datahub repo rm [REPO]/[ITEM]:[TAG]")
 	fmt.Println("Remove a tag.")
 }
