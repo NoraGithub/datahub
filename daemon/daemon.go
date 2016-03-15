@@ -305,6 +305,7 @@ func RunDaemon() {
 	http.Handle("/", router)
 	http.HandleFunc("/stop", stopHttp)
 	http.HandleFunc("/users/auth", loginHandler)
+	http.HandleFunc("/users/logout", logoutHandler)
 
 	server := http.Server{}
 

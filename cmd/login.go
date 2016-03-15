@@ -30,6 +30,15 @@ func Login(login bool, args []string) (err error) {
 	fmt.Printf("login: ")
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if len(args) >= 1 {
+		fmt.Println(ErrMsgArgument)
+		loginUsage()
+		return errors.New(ErrMsgArgument)
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	//loginName, _ := reader.ReadString('\n')
 	loginName, _ := reader.ReadBytes('\n')
@@ -107,6 +116,37 @@ func Login(login bool, args []string) (err error) {
 		return fmt.Errorf("ERROR %d: login failed.", resp.StatusCode)
 	*/
 }
+
+func Logout(login bool, args []string) error {
+	f := mflag.NewFlagSet("logout", mflag.ContinueOnError)
+	f.Usage = logoutUsage
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if len(args) >= 1 {
+		fmt.Println(ErrMsgArgument)
+		logoutUsage()
+		return errors.New(ErrMsgArgument)
+	}
+
+	resp, err := commToDaemon("get", "/users/logout", nil)
+	if err != nil {
+		fmt.Println("Error :", err)
+		return err
+	}
+	if resp.StatusCode == http.StatusUnauthorized {
+		fmt.Println("DataHub : You already logout.")
+	}
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("DataHub : logout success.")
+	}
+	return nil
+}
+
 func loginUsage() {
-	fmt.Printf("Usage: %s login\n\nSend a login request to the datahub server using your user name and password\n", os.Args[0])
+	fmt.Printf("Usage: %s login\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
+}
+
+func logoutUsage() {
+	fmt.Printf("Usage: %s logout\nSend a logout request to the datahub.\n", os.Args[0])
 }

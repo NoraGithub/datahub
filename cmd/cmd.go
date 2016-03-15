@@ -123,6 +123,12 @@ var Cmd = []Command{
 		Desc:      "Login to hub.dataos.io",
 		NeedLogin: true,
 	},
+	{
+		Name:      "logout",
+		Handler:   Logout,
+		Desc:      "Logout to hub.dataos.io",
+		NeedLogin: true,
+	},
 
 	{
 		Name:      "pub",

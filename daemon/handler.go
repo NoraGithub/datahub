@@ -92,6 +92,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request)  {
+	log.Println("logout.")
+	if loginAuthStr == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+	} else {
+		loginAuthStr = ""
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 func commToServer(method, path string, buffer []byte, w http.ResponseWriter) (body []byte, err error) {
 	//Trace()
 	s := log.Info("daemon: connecting to", DefaultServer+path)
