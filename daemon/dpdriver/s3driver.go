@@ -3,6 +3,7 @@ package dpdriver
 import (
 	//"fmt"
 	"compress/gzip"
+	"errors"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/aws/aws-sdk-go/aws"
@@ -63,7 +64,7 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Body:   reader,
 		Bucket: aws.String(dpconn),
-		Key:    aws.String(dp + "/" + itemlocation + "/" + destfile + ".gz"),
+		Key:    aws.String( /*dp + "/" + */ itemlocation + "/" + destfile + ".gz"),
 	})
 	if err != nil {
 		log.Error("Failed to upload", err)
@@ -77,7 +78,7 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 
 func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
 
-	filepathname = dpconn + "/" + itemlocation + "/" + tagdetail
+	filepathname = gDpPath + "/" + dpconn + "/" + itemlocation + "/" + tagdetail
 
 	if true == isFileExists(filepathname) {
 		return
@@ -96,7 +97,7 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 		numBytes, err := downloader.Download(file,
 			&s3aws.GetObjectInput{
 				Bucket: aws.String(dpconn),
-				Key:    aws.String(dpname + "/" + itemlocation + "/" + tagdetail),
+				Key:    aws.String( /*dpname + "/" + */ itemlocation + "/" + tagdetail),
 			})
 		if err != nil {
 			log.Info("Failed to download file", err)
@@ -107,6 +108,34 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 		return
 	}
 	return
+}
+
+func (s3 *s3driver) CheckItemLocation(datapoolname, dpconn, itemlocation string) error {
+	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	AWS_REGION = Env("AWS_REGION", false)
+
+	svc := s3aws.New(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
+	result, err := svc.ListBuckets(&s3aws.ListBucketsInput{})
+	if err != nil {
+		log.Println("Failed to list buckets", err)
+		return err
+	}
+
+	if len(result.Buckets) == 0 {
+		return errors.New("Bucket not exist.")
+	}
+	log.Println("Buckets:")
+	for _, bucket := range result.Buckets {
+		log.Debugf("%s : %s\n", aws.StringValue(bucket.Name), bucket.CreationDate)
+	}
+
+	log.Println(dpconn + "/" + itemlocation)
+	err = os.MkdirAll(dpconn+"/"+itemlocation, 0777)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
 }
 
 func init() {

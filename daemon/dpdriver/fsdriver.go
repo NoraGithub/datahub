@@ -1,7 +1,9 @@
 package dpdriver
 
 import (
-//"fmt"
+	//"fmt"
+	log "github.com/asiainfoLDP/datahub/utils/clog"
+	"os"
 )
 
 type fsdriver struct {
@@ -22,6 +24,16 @@ func (fs *fsdriver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 	filepathname = dpconn + "/" + itemlocation + "/" + tagdetail
 	return
 }
+
+func (fs *fsdriver) CheckItemLocation(datapoolname, dpconn, itemlocation string) error {
+	log.Println(dpconn + "/" + itemlocation)
+	err := os.MkdirAll(dpconn+"/"+itemlocation, 0777)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
+}
+
 func init() {
 	//fmt.Println("fs")
 	register("file", &fsdriver{})
