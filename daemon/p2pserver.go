@@ -101,7 +101,7 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		l := log.Error(filepathname, "not found")
 		logq.LogPutqueue(l)
 		putToJobQueue(jobtag, filepathname, "N/A", -1)
-		msg.Msg = fmt.Sprintf("tag:%s not found", sTag)
+		msg.Msg = fmt.Sprintf("Tag:%s not found", sTag)
 		resp, _ := json.Marshal(msg)
 		respStr := string(resp)
 		rw.WriteHeader(http.StatusNotFound)

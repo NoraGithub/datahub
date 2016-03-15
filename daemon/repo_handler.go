@@ -245,9 +245,5 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
 			log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
 		}
-
 	}
-
-
-
 }

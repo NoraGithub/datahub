@@ -78,6 +78,12 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 
 func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
 
+	e := os.MkdirAll(gDpPath+"/"+dpconn+"/"+itemlocation, 0777)
+	if e != nil {
+		log.Error(e)
+		return
+	}
+
 	filepathname = gDpPath + "/" + dpconn + "/" + itemlocation + "/" + tagdetail
 
 	if true == isFileExists(filepathname) {
@@ -91,22 +97,23 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 	if err != nil {
 		log.Error("Failed to create file", err)
 		return ""
-		defer file.Close()
+	}
+	defer file.Close()
 
-		downloader := s3manager.NewDownloader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
-		numBytes, err := downloader.Download(file,
-			&s3aws.GetObjectInput{
-				Bucket: aws.String(dpconn),
-				Key:    aws.String( /*dpname + "/" + */ itemlocation + "/" + tagdetail),
-			})
-		if err != nil {
-			log.Info("Failed to download file", err)
-			return
-		}
-
-		log.Println("Downloaded file", file.Name(), numBytes, "bytes")
+	downloader := s3manager.NewDownloader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
+	numBytes, err := downloader.Download(file,
+		&s3aws.GetObjectInput{
+			Bucket: aws.String(dpconn),
+			Key:    aws.String( /*dpname + "/" + */ itemlocation + "/" + tagdetail),
+		})
+	if err != nil {
+		log.Info("Failed to download file.", err)
+		os.Remove(filepathname)
 		return
 	}
+
+	log.Println("Downloaded file", file.Name(), numBytes, "bytes")
+
 	return
 }
 
@@ -116,26 +123,66 @@ func (s3 *s3driver) CheckItemLocation(datapoolname, dpconn, itemlocation string)
 	AWS_REGION = Env("AWS_REGION", false)
 
 	svc := s3aws.New(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
-	result, err := svc.ListBuckets(&s3aws.ListBucketsInput{})
+	//result, err := svc.ListBuckets(&s3aws.ListBucketsInput{})
+	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(dpconn),
+		Prefix: aws.String(itemlocation)})
 	if err != nil {
-		log.Println("Failed to list buckets", err)
+		log.Println("Failed to list buckets content", err)
 		return err
 	}
 
-	if len(result.Buckets) == 0 {
-		return errors.New("Bucket not exist.")
+	if len(result.Contents) == 0 {
+		return errors.New("DataItem does not exist in the bucket.")
 	}
 	log.Println("Buckets:")
-	for _, bucket := range result.Buckets {
-		log.Debugf("%s : %s\n", aws.StringValue(bucket.Name), bucket.CreationDate)
+
+	bexist := true
+	for _, objects := range result.Contents {
+		log.Infof("object:%s, %s \n", aws.StringValue(objects.Key), aws.StringValue(objects.ETag))
+		if aws.StringValue(objects.Key) == dpconn {
+			bexist = true
+		}
 	}
 
-	log.Println(dpconn + "/" + itemlocation)
-	err = os.MkdirAll(dpconn+"/"+itemlocation, 0777)
+	if bexist == false {
+		l := log.Infof("Bucket %s does not exist on s3.", dpconn)
+		logq.LogPutqueue(l)
+		return errors.New(l)
+	}
+
+	log.Println(gDpPath + "/" + dpconn + "/" + itemlocation)
+	err = os.MkdirAll(gDpPath+"/"+dpconn+"/"+itemlocation, 0777)
 	if err != nil {
 		log.Error(err)
 	}
 	return err
+}
+
+func (s3 *s3driver) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error) {
+	destFullPathFileName := dpconn + "/" + itemlocation + "/" + fileName
+	log.Info(destFullPathFileName)
+	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	AWS_REGION = Env("AWS_REGION", false)
+
+	svc := s3aws.New(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
+	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(dpconn),
+		Prefix: aws.String(itemlocation + "/" + fileName)})
+	if err != nil {
+		log.Error("Failed to list objects", err)
+		return exist, size, err
+	}
+
+	exist = false
+	for _, v := range result.Contents {
+		log.Infof("Tag:%s, key:%s, size:%v\n", aws.StringValue(v.ETag), aws.StringValue(v.Key), aws.Int64Value(v.Size))
+		if aws.StringValue(v.Key) == fileName {
+			size = aws.Int64Value(v.Size)
+			exist = true
+		}
+	}
+
+	return
 }
 
 func init() {

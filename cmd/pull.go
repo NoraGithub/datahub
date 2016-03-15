@@ -122,7 +122,7 @@ func Pull(login bool, args []string) (err error) {
 			fmt.Println("DataHub : Currently the data is unavaliable.")
 		} else {
 			//showError(resp)
-			fmt.Print("Error : ", result.Msg)
+			fmt.Println("Error : ", result.Msg)
 		}
 	}
 	//showError(resp)
