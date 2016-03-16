@@ -14,6 +14,7 @@ type DatapoolDriver interface {
 	StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string
 	GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string)
 	CheckItemLocation(datapool, dpconn, itemdesc string) error
+	CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error)
 }
 
 type Datapool struct {
@@ -61,6 +62,10 @@ func (datapool *Datapool) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetai
 
 func (datapool *Datapool) CheckItemLocation(datapoolname, dpconn, itemlocation string) error {
 	return datapool.driver.CheckItemLocation(datapoolname, dpconn, itemlocation)
+}
+
+func (datapool *Datapool) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error) {
+	return datapool.driver.CheckDataAndGetSize(dpconn, itemlocation, fileName)
 }
 
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {

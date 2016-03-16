@@ -204,25 +204,25 @@ func CheckTagExist(repo, item, tag string) (exits bool, err error) {
 	return
 }
 
-func GetDpnameDpconnItemdesc(repo, item string) (dpname, dpconn, ItemDesc string) {
-	_, dpid, ItemDesc := GetRpdmidDpidItemdesc(repo, item)
+func GetDpnameDpconnItemdesc(repo, item string) (dpname, dpconn, dptype, itemDesc string) {
+	_, dpid, itemDesc := GetRpdmidDpidItemdesc(repo, item)
 	if dpid == 0 {
 		log.Println(" dpid==0")
-		return "", "", ""
+		return
 	}
-	dpname, dpconn = GetDpnameDpconnByDpidAndStatus(dpid, "A")
+	dpname, dpconn, dptype = GetDpnameDpconnDptypeByDpid(dpid)
 	return
 }
 
-func GetDpnameDpconnByDpidAndStatus(dpid int, status string) (dpname, dpconn string) {
-	sqlgetdpconn := fmt.Sprintf("SELECT DPNAME ,DPCONN FROM DH_DP WHERE DPID=%d  AND STATUS='%s'", dpid, status)
-	//fmt.Println(sqlgetdpconn)
-	row, err := g_ds.QueryRow(sqlgetdpconn)
+func GetDpnameDpconnDptypeByDpid(dpid int) (dpname, dpconn, dptype string) {
+	sqlgetdpcontent := fmt.Sprintf("SELECT DPNAME ,DPCONN, DPTYPE FROM DH_DP WHERE DPID=%d  AND STATUS='A'", dpid)
+
+	row, err := g_ds.QueryRow(sqlgetdpcontent)
 	if err != nil {
-		log.Println("GetDpnameDpconnByDpidAndStatus QueryRow error:", err.Error())
+		log.Println("GetDpnameDpconnDptypeByDpid QueryRow error:", err.Error())
 		return
 	} else {
-		row.Scan(&dpname, &dpconn)
+		row.Scan(&dpname, &dpconn, &dptype)
 		return
 	}
 	return
@@ -791,7 +791,7 @@ func delTag(reponame, itemname, tagname string) (int, error) {
 	if err != nil {
 		l := log.Error("delete tag from DH_RPDM_TAG_MAP error:", err)
 		logq.LogPutqueue(l)
-		return 0,  err
+		return 0, err
 	}
 
 	return tagid, nil
@@ -810,7 +810,7 @@ func rollbackDelTag(tagid int) error {
 	return nil
 }
 
-func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int] string, error) {
+func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int]string, error) {
 	log.Println("Batch delete tags from db")
 	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 	var rpdmId int
@@ -827,7 +827,7 @@ func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int] stri
 	log.Println(tagname)
 	sql := fmt.Sprintf(`SELECT TAGID, TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d`, tagname, rpdmId)
 	//var tagnames []string
-	tagnameidmap := make(map[int] string)
+	tagnameidmap := make(map[int]string)
 	var tagid int
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
@@ -844,7 +844,7 @@ func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int] stri
 
 }
 
-func batchDelTags(reponame, itemname, tagname string) (map[int] string, error) {
+func batchDelTags(reponame, itemname, tagname string) (map[int]string, error) {
 	log.Println("Batch delete tags from db")
 	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 	var rpdmId int
@@ -869,7 +869,7 @@ func batchDelTags(reponame, itemname, tagname string) (map[int] string, error) {
 
 	sql = fmt.Sprintf(`SELECT TAGID, TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d`, tagname, rpdmId)
 	//var tagnames []string
-	tagnameidmap := make(map[int] string)
+	tagnameidmap := make(map[int]string)
 	var tagid int
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
