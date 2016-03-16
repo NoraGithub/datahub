@@ -302,6 +302,11 @@ func RunDaemon() {
 	router.DELETE("/job/:id", jobRmHandler)
 	router.DELETE("/job", jobRmAllHandler)
 
+	router.GET("/daemon/:repo/:item/:tag", tagStatusHandler)
+	router.GET("/daemon/:repo/:item", tagOfItemStatusHandler)
+
+	router.GET("/heartbeat/status/:user", userStatusHandler)
+
 	http.Handle("/", router)
 	http.HandleFunc("/stop", stopHttp)
 	http.HandleFunc("/users/auth", loginHandler)
