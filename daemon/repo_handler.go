@@ -149,15 +149,19 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	tag := ps.ByName("tag")
 
 	if strings.Contains(tag, "*") {
-		tagnameidmap, err := getBatchDelTagsIdAndName(repository, dataitem, tag)
+		tagsname, err := getBatchDelTagsName(repository, dataitem, tag)
 		if err != nil {
 			log.Error(err)
-			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag")
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tag.")
 			return
 		}
-
+		if len(tagsname) == 0 {
+			log.Println("没有匹配的tag")
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "No match tag.")
+			return
+		}
 		successflag := true
-		for _, tagname := range tagnameidmap {
+		for _, tagname := range tagsname {
 			if successflag {
 				_, err := delTag(repository, dataitem, tagname)
 				if err != nil {

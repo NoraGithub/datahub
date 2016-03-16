@@ -810,7 +810,7 @@ func rollbackDelTag(tagid int) error {
 	return nil
 }
 
-func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int]string, error) {
+func getBatchDelTagsName(reponame, itemname, tagname string) ([]string, error) {
 	log.Println("Batch delete tags from db")
 	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 	var rpdmId int
@@ -825,9 +825,9 @@ func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int]strin
 
 	tagname = strings.Replace(tagname, "*", "%", -1)
 	log.Println(tagname)
-	sql := fmt.Sprintf(`SELECT TAGID, TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d`, tagname, rpdmId)
+	sql := fmt.Sprintf(`SELECT TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d AND STATUS='A'`, tagname, rpdmId)
 	//var tagnames []string
-	tagnameidmap := make(map[int]string)
+	tagsname := make([]string, 0)
 	var tagid int
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
@@ -837,10 +837,13 @@ func getBatchDelTagsIdAndName(reponame, itemname, tagname string) (map[int]strin
 	}
 	for rows.Next() {
 		rows.Scan(&tagid, &tagname)
-		tagnameidmap[tagid] = tagname
+		tagsname = append(tagsname, tagname)
 	}
-	log.Println(tagnameidmap)
-	return tagnameidmap, nil
+	log.Println(tagsname)
+	/*if len(tagsname) == 0 {
+		return nil, errors.New("没有匹配的tag")
+	}*/
+	return tagsname, nil
 
 }
 
