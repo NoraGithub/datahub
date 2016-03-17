@@ -825,10 +825,9 @@ func getBatchDelTagsName(reponame, itemname, tagname string) ([]string, error) {
 
 	tagname = strings.Replace(tagname, "*", "%", -1)
 	log.Println(tagname)
-	sql := fmt.Sprintf(`SELECT TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d AND STATUS='A'`, tagname, rpdmId)
+	sql := fmt.Sprintf(`SELECT TAGNAME FROM DH_RPDM_TAG_MAP WHERE TAGNAME LIKE '%s' AND RPDMID=%d AND STATUS='A';`, tagname, rpdmId)
 	//var tagnames []string
 	tagsname := make([]string, 0)
-	var tagid int
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error("batch delete tag from DH_RPDM_TAG_MAP error:", err)
@@ -836,7 +835,7 @@ func getBatchDelTagsName(reponame, itemname, tagname string) ([]string, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		rows.Scan(&tagid, &tagname)
+		rows.Scan(&tagname)
 		tagsname = append(tagsname, tagname)
 	}
 	log.Println(tagsname)

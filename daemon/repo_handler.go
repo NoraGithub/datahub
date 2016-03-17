@@ -171,7 +171,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 				}
 
 				reqBody, _ := ioutil.ReadAll(r.Body)
-				path := "repositories/" + repository + "/" + dataitem + "/" + tagname
+				path := "/repositories/" + repository + "/" + dataitem + "/" + tagname
 				resp, err := commToServerGetRsp("delete", path, reqBody)
 				if err != nil {
 					log.Error(err)
@@ -219,7 +219,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		path := "repositories/" + repository + "/" + dataitem + "/" + tag
+		path := "/repositories/" + repository + "/" + dataitem + "/" + tag
 		resp, err := commToServerGetRsp("delete", path, reqBody)
 		if err != nil {
 			log.Error(err)
