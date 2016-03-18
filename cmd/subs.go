@@ -153,11 +153,13 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 			panic(err)
 		}
 		n, _ := fmt.Printf("%s\t%s\t%s\n", "REPOSITORY/ITEM[:TAG]", "UPDATETIME", "COMMENT")
-		printDash(n + 12)
+
+		printDash(n + 20)
 		for _, tag := range subs.Taglist {
 			fmt.Printf("%s:%-8s\t%s\t%s\n", repoitem, tag.Tag, tag.Optime, tag.Comment)
 		}
 	} else {
+		var itemStatus string
 		subs := []ds.Data{}
 		pages := ds.ResultPages{Results: &subs}
 		result := &ds.Result{Data: &pages}
@@ -165,15 +167,50 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		if err != nil {
 			panic(err)
 		}
-
-		n, _ := fmt.Printf("%s/%-8s\t%s\n", "REPOSITORY", "ITEM", "TYPE")
+		n, _ := fmt.Printf("%s/%-8s\t%s\t\t%s\n", "REPOSITORY", "ITEM", "TYPE", "STATUS")
 		printDash(n + 5)
 		for _, item := range subs {
-			fmt.Printf("%s/%-8s\t%s\n", item.Repository_name, item.Dataitem_name, "file")
+			itemStatus = getItemStatus(item.Repository_name, item.Dataitem_name)
+			fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
 		}
 
 	}
 
+}
+
+func getItemStatus(reponame, itemname string) string {
+	uri := "/repositories/" + reponame + "/" +itemname
+	resp, err := commToDaemon("get", uri, nil)
+	if err != nil {
+		panic(err)
+	}
+	result := ds.Result{}
+	itemInfo := ds.ItemInfo{}
+	result.Data = &itemInfo
+	respbody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(respbody, &result)
+	if err != nil {
+		panic(err)
+	}
+	uri = "/heartbeat/status/" + itemInfo.Create_user
+	resp, err = commToDaemon("get", uri, nil)
+	if err != nil {
+		panic(err)
+	}
+	itemStatus := ds.ItemStatus{}
+	result.Data = &itemStatus
+	respbody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(respbody, &result)
+	if err != nil {
+		panic(err)
+	}
+	return itemStatus.Status
 }
 
 func subsUsage() {

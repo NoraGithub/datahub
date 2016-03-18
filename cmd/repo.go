@@ -152,26 +152,82 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		}
 
 	} else if icmd == ReposReponameDataItem {
+		var tagStatus string
 		repoitemtags := ds.Data{}
 		result.Data = &repoitemtags
 		err := json.Unmarshal(respbody, &result)
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("%s\t%s\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT")
+		abnormalTags := getTagStatusOfItem(repo, item)
+		n, _ := fmt.Printf("%s\t%s\t%s\t\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT", "STATUS")
 		printDash(n + 12)
 		for _, v := range repoitemtags.Taglist {
-			fmt.Printf("%s/%s:%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment)
+			tagStatus = judgeTag(abnormalTags, v.Tag)
+			fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, tagStatus)
 		}
 	} else if icmd == ReposReponameDataItemTag {
+		status := getTagStatus(repo, item, tag)
 		onetag := ds.Tag{}
 		result.Data = &onetag
 		err := json.Unmarshal(respbody, &result)
+		onetag.Status = status
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("%s\t%s\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT")
+		n, _ := fmt.Printf("%s\t%s\t%s\t\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT", "STATUS")
 		printDash(n + 12)
-		fmt.Printf("%s/%s:%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment)
+		fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment, onetag.Status)
 	}
+}
+
+func getTagStatus(reponame, itemname, tagname string) string {
+	uri := "/daemon/" + reponame + "/" + itemname + "/" +tagname
+	resp, err := commToDaemon("get", uri, nil)
+	if err != nil {
+		panic(err)
+	}
+	result := ds.Result{}
+	tagStatus := ds.TagStatus{}
+	result.Data = &tagStatus
+	respbody, err := ioutil.ReadAll(resp.Body)
+	err = json.Unmarshal(respbody, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	return tagStatus.Status
+}
+
+func getTagStatusOfItem(reponame, itemname string) []string {
+	uri := "/daemon/" + reponame + "/" + itemname
+	resp, err := commToDaemon("get", uri, nil)
+	if err != nil {
+		panic(err)
+	}
+	result := ds.Result{}
+	tagStatus := ds.TagStatus{}
+	result.Data = &tagStatus
+	respbody, err := ioutil.ReadAll(resp.Body)
+	err = json.Unmarshal(respbody, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	return tagStatus.Results
+}
+
+func judgeTag(abnormalTags []string, tag string) string {
+	flag := true
+	for _, abnormalTag := range abnormalTags {
+		if abnormalTag == tag && flag {
+			flag = false
+			break
+		}
+	}
+	if flag {
+		return "NORMAL"
+	}
+
+	return "ABNORMAL"
 }

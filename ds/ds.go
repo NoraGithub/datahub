@@ -73,6 +73,21 @@ type Tag struct {
 	Filename    string `json:"filename,omitempty"`
 	Optime      string `json:"optime,omitempty"`
 	Comment     string `json:"comment,omitempty"`
+	Status      string `json:"status,omitempty"`
+}
+
+type TagStatus struct {
+	Status      string `json:"status,omitempty"`
+	Total       int    `json:"total,omitempty"`
+	Results     []string `json:"results,omitempty"`
+}
+
+type ItemInfo struct {
+	Create_user string `json:"create_user,omitempty"`
+}
+
+type ItemStatus struct {
+	Status      string `json:"status,omitempty"`
 }
 
 type Data struct {

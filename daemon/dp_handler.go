@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+var DPTYPES []string = cmd.DataPoolTypes
+
 func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	r.ParseForm()
 	rw.WriteHeader(http.StatusOK)
@@ -27,6 +29,19 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 		rw.Write([]byte(`{"msg":"Invalid argument."}`))
 		return
 	}
+
+	var allowtype bool = false
+	for _, v := range DPTYPES {
+		if struDp.Type == v {
+			allowtype = true
+		}
+	}
+	if !allowtype {
+		fmt.Println("DataHub : Datapool type need to be:", DPTYPES)
+		rw.Write([]byte(fmt.Sprintf(`{"msg":"Datapool type need to be:%s"}`, DPTYPES)))
+		return
+	}
+
 	if len(struDp.Name) == 0 {
 		log.Println("Invalid argument")
 		rw.Write([]byte(`{"msg":"Invalid argument"}`))
@@ -39,7 +54,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			struDp.Conn = g_strDpPath
 			sdpDirName = g_strDpPath
 
-		} else if struDp.Conn[0] != '/' {
+		} else if struDp.Conn[0] != '/' && struDp.Type == DPFILE {
 			sdpDirName = g_strDpPath + "/" + struDp.Conn
 			struDp.Conn = sdpDirName
 
@@ -56,6 +71,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 
 		var err error
+
 		if struDp.Type == DPS3 {
 			struDp.Conn = strings.TrimLeft(struDp.Conn, "/")
 			err = nil

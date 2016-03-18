@@ -135,15 +135,15 @@ func TestCheckTagExist(t *testing.T) {
 }
 
 func TestGetDpnameDpconnItemdesc(t *testing.T) {
-	dpname, dpconn, desc := GetDpnameDpconnItemdesc(testP.Repository, testP.Dataitem)
-	if dpname == testP.Datapool && dpconn == Conn && desc == testP.ItemDesc {
+	dpname, dpconn, dptype, desc := GetDpnameDpconnItemdesc(testP.Repository, testP.Dataitem)
+	if dpname == testP.Datapool && dpconn == Conn && desc == testP.ItemDesc && dptype == Type {
 		t.Log("1.GetDpnameDpconnItemdesc success--------")
 	} else {
 		t.Error("1.GetDpnameDpconnItemdesc fail--------", dpname, dpconn, desc)
 	}
 
-	dpname, dpconn, desc = GetDpnameDpconnItemdesc("No_this_repo", testP.Dataitem)
-	if dpname == "" && dpconn == "" && desc == "" {
+	dpname, dpconn, dptype, desc = GetDpnameDpconnItemdesc("No_this_repo", testP.Dataitem)
+	if dpname == "" && dpconn == "" && desc == "" && dptype == "" {
 		t.Log("2.GetDpnameDpconnItemdesc with a non-existent repository success--------")
 	} else {
 		t.Error("2.GetDpnameDpconnItemdesc with a non-existent repository fail--------", dpname, dpconn, desc)
@@ -153,7 +153,7 @@ func TestGetDpnameDpconnItemdesc(t *testing.T) {
 func TestInsertPubTagToDb(t *testing.T) {
 	tag := "tagTest2"
 	file := "tagTest2file.csv"
-	_, e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file)
+	e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file)
 	if e == nil {
 		t.Log("1.InsertPubTagToDb success--------")
 	} else {
@@ -163,7 +163,7 @@ func TestInsertPubTagToDb(t *testing.T) {
 		t.Errorf("Recover db for InsertPubTagToDb test fail. Delete %s error, %v", tag, e)
 	}
 
-	_, e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file)
+	e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file)
 	if e != nil {
 		t.Log("2.InsertPubTagToDb with a non-existent repository success--------")
 	} else {

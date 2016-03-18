@@ -197,7 +197,9 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 			body, _ := ioutil.ReadAll(resp.Body)
 			l := log.Error("http status code:", resp.StatusCode, "response Body:", string(body), err)
 			logq.LogPutqueue(l)
-			msg := string(body)
+			struMsg := &ds.MsgResp{}
+			json.Unmarshal(body, struMsg)
+			msg := struMsg.Msg
 			if resp.StatusCode == 416 {
 				msg = tmpdestfilename + " has already been downloaded."
 			}

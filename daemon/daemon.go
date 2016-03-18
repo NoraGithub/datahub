@@ -287,7 +287,7 @@ func RunDaemon() {
 	router.GET("/repositories/:repo", repoRepoNameHandler)
 	router.GET("/repositories", repoHandler)
 	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
-	router.DELETE("/repositories/:repo/:item/:tag", repoDelOneTagHandler)
+	router.DELETE("/repositories/:repo/:item/:tag", repoDelTagHandler)
 
 	router.GET("/subscriptions/dataitems", subsHandler)
 	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
@@ -302,9 +302,15 @@ func RunDaemon() {
 	router.DELETE("/job/:id", jobRmHandler)
 	router.DELETE("/job", jobRmAllHandler)
 
+	router.GET("/daemon/:repo/:item/:tag", tagStatusHandler)
+	router.GET("/daemon/:repo/:item", tagOfItemStatusHandler)
+
+	router.GET("/heartbeat/status/:user", userStatusHandler)
+
 	http.Handle("/", router)
 	http.HandleFunc("/stop", stopHttp)
 	http.HandleFunc("/users/auth", loginHandler)
+	http.HandleFunc("/users/logout", logoutHandler)
 
 	server := http.Server{}
 
