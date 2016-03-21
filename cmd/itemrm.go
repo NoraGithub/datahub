@@ -56,7 +56,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 				return err
 			}
 
-			ensureRm(result.Code, uri)
+			ensureRm(result.Code, uri, result.Msg)
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			if err = Login(false, nil); err == nil {
@@ -108,8 +108,12 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	return nil
 }
 
-func ensureRm(code int, uri string) {
+func ensureRm(code int, uri, msg string) {
 	uri += "?ensure=1"
+	/*args := strings.Split(uri, "/")
+	args1 := args[3]
+	args = strings.Split(args1, "?")
+	itemname := args[0]*/
 	if code == ExitsConsumingPlan {
 		fmt.Print("DataHub : Order not completed, if deleted, the deposit will return to the subscribers.\n" +
 			"DataItem deleted, and you could not be recovery, and all tags would be deleted either.\n" +
@@ -117,6 +121,9 @@ func ensureRm(code int, uri string) {
 	} else if code == NoConsumingPlan {
 		fmt.Print("Datahub : After you delete the DataItem, data could not be recovery, and all tags would be deleted either.\n" +
 			"Are you sure to delete the current DataItem?[Y or N]:")
+	} else if code == DataitemNotExist {
+		fmt.Println("Error :", msg)
+		return
 	}
 	if GetEnsure() == true {
 		resp, err := commToDaemon("DELETE", uri, nil)

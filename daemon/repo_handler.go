@@ -57,6 +57,30 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	ensure, _ := strconv.Atoi(r.Form.Get("ensure"))
 	reqBody, _ := ioutil.ReadAll(r.Body)
 
+	path := "/repositories/" + repository + "/" + dataitem
+	resp, err := commToServerGetRsp("get", path, reqBody)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+		return
+	}
+
+	result := ds.Response{}
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+		return
+	}
+	log.Info(string(respbody))
+
+	if resp.StatusCode == http.StatusBadRequest && result.Code == cmd.ServerErrResultCode1009 {
+		HttpNoData(w, http.StatusOK, cmd.DataitemNotExist, result.Msg)
+		return
+	}
+
 	if ensure == 0 {
 		path := "/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
 

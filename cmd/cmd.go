@@ -68,11 +68,13 @@ const (
 	ServerErrResultCode5009 = 5009
 	ServerErrResultCode5012 = 5012
 	ServerErrResultCode5023 = 5023
+	ServerErrResultCode1009 = 1009
 )
 
 const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
+	DataitemNotExist       = 2
 )
 
 var (
