@@ -74,7 +74,7 @@ const (
 const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
-	DataitemNotExist       = 2
+	DataitemNotExist   = 2
 )
 
 var (
@@ -193,7 +193,7 @@ func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, er
 		req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
 	}
 	*/
-	conn, err := net.Dial("unix", UnixSock)
+	conn, err := net.Dial("tcp", "127.0.0.1:35600")
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Datahub daemon not running? Use 'datahub --daemon' to start daemon.")

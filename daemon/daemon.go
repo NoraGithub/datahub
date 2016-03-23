@@ -116,6 +116,7 @@ func tcpNew(l net.Listener) (*StoppabletcpListener, error) {
 var StoppedError = errors.New("Listener stopped")
 var sl = new(StoppableListener)
 var p2psl = new(StoppabletcpListener)
+var slwin = new(StoppabletcpListener)
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
 
@@ -256,17 +257,17 @@ func RunDaemon() {
 	LoadJobFromDB()
 
 	os.Chdir(g_strDpPath)
-	originalListener, err := net.Listen("unix", cmd.UnixSock)
+	originalListener, err := net.Listen("tcp", "127.0.0.1:35600")
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		if err = os.Chmod(cmd.UnixSock, os.ModePerm); err != nil {
-			l := log.Error(err)
-			logq.LogPutqueue(l)
-		}
+		//if err = os.Chmod(cmd.UnixSock, os.ModePerm); err != nil {
+		//	l := log.Error(err)
+		//	logq.LogPutqueue(l)
+		//}
 	}
 
-	sl, err = New(originalListener)
+	slwin, err = tcpNew(originalListener)
 	if err != nil {
 		panic(err)
 	}
@@ -324,7 +325,7 @@ func RunDaemon() {
 			log.Printf("Got signal:%v", signal)
 		}
 
-		sl.Stop()
+		slwin.Stop()
 		if len(DaemonID) > 0 {
 			p2psl.Stop()
 		}
@@ -349,7 +350,7 @@ func RunDaemon() {
 		defer wg.Done()
 	*/
 	log.Info("starting daemon listener...")
-	server.Serve(sl)
+	server.Serve(slwin)
 	log.Info("Stopping daemon listener...")
 
 	if len(DaemonID) > 0 {
