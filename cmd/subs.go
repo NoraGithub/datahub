@@ -179,7 +179,7 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 }
 
 func getItemStatus(reponame, itemname string) string {
-	uri := "/repositories/" + reponame + "/" +itemname
+	uri := "/repositories/" + reponame + "/" + itemname
 	resp, err := commToDaemon("get", uri, nil)
 	if err != nil {
 		panic(err)

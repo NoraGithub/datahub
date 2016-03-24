@@ -39,7 +39,8 @@ func Repo(login bool, args []string) (err error) {
 	} else {
 		u, err := url.Parse(args[0])
 		if err != nil {
-			panic(err)
+			fmt.Println("Error :", err)
+			return err
 		}
 		source := u.Path
 		if (len(u.Path) > 0) && (u.Path[0] == '/') {
@@ -74,6 +75,9 @@ func Repo(login bool, args []string) (err error) {
 				item = target[0]
 				tag = target[1]
 				//fmt.Println(uri, icmd)
+			} else {
+				fmt.Println("Error : The parameter after repo is in wrong format!")
+				return errors.New("The parameter after repo is in wrong format!")
 			}
 		} else {
 			fmt.Println("Error : The parameter after repo is in wrong format!")
@@ -182,7 +186,7 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 }
 
 func getTagStatus(reponame, itemname, tagname string) string {
-	uri := "/daemon/" + reponame + "/" + itemname + "/" +tagname
+	uri := "/daemon/" + reponame + "/" + itemname + "/" + tagname
 	resp, err := commToDaemon("get", uri, nil)
 	if err != nil {
 		panic(err)
