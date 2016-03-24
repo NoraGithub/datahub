@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
-	"github.com/asiainfoLDP/datahub/daemon/daemonigo"
+	//"github.com/asiainfoLDP/datahub/daemon/daemonigo"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
@@ -228,12 +228,12 @@ func RunDaemon() {
 	//fmt.Println("Run daemon..")
 	// Daemonizing echo server application.
 
-	switch isDaemon, err := daemonigo.Daemonize(); {
+	/*switch isDaemon, err := daemonigo.Daemonize(); {
 	case !isDaemon:
 		return
 	case err != nil:
 		log.Fatal("main(): could not start daemon, reason -> %s", err.Error())
-	}
+	}*/
 	//fmt.Printf("server := http.Server{}\n")
 
 	if false == isDirExists(g_strDpPath) {
@@ -357,7 +357,7 @@ func RunDaemon() {
 		wg.Wait()
 	}
 
-	daemonigo.UnlockPidFile()
+	//daemonigo.UnlockPidFile()
 	g_ds.Db.Close()
 
 	log.Info("daemon exit....")

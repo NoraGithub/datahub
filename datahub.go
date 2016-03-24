@@ -5,7 +5,7 @@ import (
 	"github.com/asiainfoLDP/datahub/client"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/daemon"
-	"github.com/asiainfoLDP/datahub/daemon/daemonigo"
+	//"github.com/asiainfoLDP/datahub/daemon/daemonigo"
 	"github.com/asiainfoLDP/datahub/ds"
 	flag "github.com/asiainfoLDP/datahub/utils/mflag"
 	"os"
@@ -35,7 +35,7 @@ func flagParse() {
 	}
 
 	if len(*flToken) == 40 {
-		daemonigo.Token = *flToken
+		//daemonigo.Token = *flToken
 		daemon.DaemonID = *flToken
 	}
 

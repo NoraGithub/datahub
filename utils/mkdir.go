@@ -2,12 +2,12 @@ package utils
 
 import (
 	"os"
-	"syscall"
+	//"syscall"
 )
 
 func Mkdir(path string, perm ...os.FileMode) error {
-	mask := syscall.Umask(0)
-	defer syscall.Umask(mask)
+	//mask := syscall.Umask(0)
+	//defer syscall.Umask(mask)
 
 	var permission os.FileMode = 0755
 

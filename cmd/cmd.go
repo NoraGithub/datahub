@@ -12,7 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 )
 
 const GstrDpPath string = "/var/lib/datahub"
@@ -256,8 +256,8 @@ func StopP2P() error {
 			err = fmt.Errorf("datahub is not running.")
 		}
 	} else {
-		if pid, err := strconv.Atoi(string(data)); err == nil {
-			return syscall.Kill(pid, syscall.SIGQUIT)
+		if _, err := strconv.Atoi(string(data)); err == nil {
+			//return syscall.Kill(pid, syscall.SIGQUIT)
 		}
 	}
 	return err
