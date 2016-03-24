@@ -65,6 +65,7 @@ const (
 )
 
 const (
+	ServerErrResultCodeOk   = 0
 	ServerErrResultCode5009 = 5009
 	ServerErrResultCode5012 = 5012
 	ServerErrResultCode5023 = 5023
@@ -74,7 +75,13 @@ const (
 const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
-	DataitemNotExist       = 2
+	RepositoryNotExist = 2
+	DataitemNotExist   = 3
+	TagNotExist        = 4
+	RepoOrItemNotExist = 5
+	TagExist           = 6
+	RepoOrItemExist    = 7
+
 )
 
 var (

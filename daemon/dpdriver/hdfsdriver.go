@@ -1,7 +1,7 @@
 package dpdriver
 
 import (
-	dfs "github.com/hdfs"
+	dfs "github.com/colinmarc/hdfs"
 	"github.com/colinmarc/hdfs/rpc"
 	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
 	"errors"

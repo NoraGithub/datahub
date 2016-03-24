@@ -286,6 +286,7 @@ func RunDaemon() {
 	router.GET("/repositories/:repo/:item", repoItemHandler)
 	router.GET("/repositories/:repo", repoRepoNameHandler)
 	router.GET("/repositories", repoHandler)
+	router.GET("/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
 	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
 	router.DELETE("/repositories/:repo/:item/:tag", repoDelTagHandler)
 
