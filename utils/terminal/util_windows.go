@@ -17,7 +17,9 @@
 package terminal
 
 import (
+	"fmt"
 	"io"
+	"os"
 	"syscall"
 	"unsafe"
 )
@@ -82,17 +84,54 @@ func IsTerminal(fd int) bool {
 // mode and returns the previous state of the terminal so that it can be
 // restored.
 func MakeRaw(fd int) (*State, error) {
-	var st uint32
-	_, _, e := syscall.Syscall(procGetConsoleMode.Addr(), 2, uintptr(fd), uintptr(unsafe.Pointer(&st)), 0)
+	fmt.Println("MakeRaw")
+	//var st uint32
+
+	/*h := syscall.Handle(os.Stdin.Fd())
+	//uintptr(fd)
+	_, _, e := syscall.Syscall(procGetConsoleMode.Addr(), 2, uintptr(h), uintptr(unsafe.Pointer(&st)), 0)
 	if e != 0 {
+		fmt.Println("1.procGetConsoleMode", fd, procGetConsoleMode.Addr(), uintptr(fd), uintptr(unsafe.Pointer(&st)), e)
 		return nil, error(e)
 	}
 	st &^= (enableEchoInput | enableProcessedInput | enableLineInput | enableProcessedOutput)
-	_, _, e = syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(fd), uintptr(st), 0)
+	_, _, e = syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(h), uintptr(st), 0)
 	if e != 0 {
+		fmt.Println("2.procGetConsoleMode", fd, procGetConsoleMode.Addr(), uintptr(st), e)
 		return nil, error(e)
 	}
 	return &State{st}, nil
+	*/
+
+	h := syscall.Handle(os.Stdin.Fd())
+	var m uint32
+	if err := syscall.GetConsoleMode(h, &m); err != nil {
+		return nil, err
+	}
+	fmt.Println("m:", m, h)
+	m &^= enableEchoInput
+
+	if err := SetConsoleMode(h, m); err != nil {
+		//return nil, err
+	}
+	/*_, _, e := syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(h), uintptr(st), 0)
+	if e != 0 {
+		fmt.Println("2.procGetConsoleMode", fd, procGetConsoleMode.Addr(), uintptr(st), e)
+		return nil, error(e)
+	}*/
+	return &State{m}, nil
+}
+
+func SetConsoleMode(console syscall.Handle, mode uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(console), uintptr(mode), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
 }
 
 // GetState returns the current state of a terminal which may be useful to
@@ -109,7 +148,8 @@ func GetState(fd int) (*State, error) {
 // Restore restores the terminal connected to the given file descriptor to a
 // previous state.
 func Restore(fd int, state *State) error {
-	_, _, err := syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(fd), uintptr(state.mode), 0)
+	h := syscall.Handle(os.Stdin.Fd())
+	_, _, err := syscall.Syscall(procSetConsoleMode.Addr(), 2, uintptr(h), uintptr(state.mode), 0)
 	return err
 }
 

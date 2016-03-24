@@ -1,13 +1,14 @@
 package utils
 
 import (
-	"github.com/asiainfoLDP/datahub/utils/terminal"
+	//"fmt"
+	//"github.com/asiainfoLDP/datahub/utils/terminal"
 	"os"
 	"syscall"
 )
 
 func getch() byte {
-	if oldState, err := terminal.MakeRaw(0); err != nil {
+	/*if oldState, err := terminal.MakeRaw(0); err != nil {
 		panic(err)
 	} else {
 		defer terminal.Restore(0, oldState)
@@ -17,7 +18,16 @@ func getch() byte {
 	if n, err := syscall.Read(0, buf[:]); n == 0 || err != nil {
 		panic(err)
 	}
-	return buf[0]
+	return buf[0]*/
+	var buf [1]byte
+	msvcrt, _ := syscall.LoadLibrary("msvcrt.dll")
+	defer syscall.FreeLibrary(msvcrt)
+	_getch, _ := syscall.GetProcAddress(msvcrt, "_getch")
+	ch, _, err := syscall.Syscall(_getch, 0, 0, 0, 0)
+	if err != 0 {
+		return buf[0]
+	}
+	return byte(ch)
 }
 
 // getPasswd returns the input read from terminal.
@@ -29,7 +39,7 @@ func getPasswd(masked bool) []byte {
 		bs = []byte("\b \b")
 		mask = []byte("*")
 	}
-
+	//fmt.Println("...")
 	for {
 		if v := getch(); v == 127 || v == 8 {
 			if l := len(pass); l > 0 {
@@ -48,6 +58,7 @@ func getPasswd(masked bool) []byte {
 }
 
 func GetPasswd(mask ...bool) []byte {
+	//fmt.Println(mask, len(mask), mask[0])
 	if len(mask) > 0 {
 		return getPasswd(mask[0])
 	}

@@ -69,7 +69,7 @@ func Login(login bool, args []string) (err error) {
 	if resp.StatusCode == http.StatusOK {
 		Logged = true
 		if login {
-			fmt.Println("DataHub : login success.")
+			fmt.Println("DataHub : Login success.")
 		}
 		return
 	} else if resp.StatusCode == http.StatusForbidden {
@@ -92,16 +92,16 @@ func Login(login bool, args []string) (err error) {
 			default:
 				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
 			}
-			fmt.Println("Error : login failed.")
-			return errors.New("Error : login failed.")
+			fmt.Println(ErrMsgLogin)
+			return errors.New(ErrMsgLogin)
 		}
 	} else {
 		if /*resp.StatusCode == 401 &&*/ login {
 			body, _ := ioutil.ReadAll(resp.Body)
-			fmt.Println("login failed. ", string(body))
+			fmt.Println("Login failed.", string(body))
 		}
-		fmt.Println("Error : login failed.")
-		return errors.New("Error : login failed.")
+		fmt.Println(ErrMsgLogin)
+		return errors.New(ErrMsgLogin)
 	}
 	/*
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -138,7 +138,7 @@ func Logout(login bool, args []string) error {
 		fmt.Println("DataHub : You already logout.")
 	}
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("DataHub : logout success.")
+		fmt.Println("DataHub : Logout success.")
 	}
 	return nil
 }

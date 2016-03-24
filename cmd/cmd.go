@@ -79,6 +79,7 @@ const (
 
 var (
 	ErrMsgArgument string = "DataHub : Invalid argument."
+	ErrMsgLogin    string = "Error : Login failed."
 )
 
 var Cmd = []Command{
