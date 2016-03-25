@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -327,13 +328,17 @@ func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, 
 	exist = false
 
 	resp, err := commToServerGetRsp("get", path, nil)
-	defer resp.Body.Close()
 	if err != nil {
 		log.Error(err)
 		//HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
 		return
 	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+		err = errors.New("unkown error")
+		return
+	}
 	result := ds.Response{}
 	respbody, _ := ioutil.ReadAll(resp.Body)
 	unmarshalerr := json.Unmarshal(respbody, &result)
@@ -367,6 +372,11 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 	defer resp.Body.Close()
 	if err != nil {
 		log.Error(err)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+		err = errors.New("unkown error")
 		return
 	}
 
