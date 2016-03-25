@@ -54,8 +54,8 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			struDp.Conn = g_strDpPath
 			sdpDirName = g_strDpPath
 
-		} else if struDp.Conn[0] != '/' && struDp.Type == DPFILE {
-			sdpDirName = g_strDpPath + "/" + struDp.Conn
+		} else if strings.Contains(struDp.Conn, ":") == false && struDp.Type == DPFILE {
+			sdpDirName = g_strDpPath + "\\" + struDp.Conn
 			struDp.Conn = sdpDirName
 
 		} else {

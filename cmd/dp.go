@@ -34,6 +34,7 @@ type FormatDpDetail struct {
 }
 
 func Dp(needLogin bool, args []string) (err error) {
+	//fmt.Println(winGstrDpPath)
 	if needLogin && !Logged {
 		login(false)
 	}

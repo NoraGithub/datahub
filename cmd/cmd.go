@@ -15,7 +15,9 @@ import (
 	//"syscall"
 )
 
-const GstrDpPath string = "/var/lib/datahub"
+//const GstrDpPath string = "/var/lib/datahub"
+
+var GstrDpPath string = Env("APPDATA", true) + "\\DATAHUB"
 
 type UserInfo struct {
 	userName string
@@ -275,4 +277,13 @@ func ShowUsage() {
 		fmt.Printf("    %-10s%s\n", v.Name, v.Desc)
 	}
 	fmt.Printf("\nrun '%s COMMAND --help' for details on a command.\n", os.Args[0])
+}
+
+func Env(name string, required bool) string {
+	s := os.Getenv(name)
+	if required && s == "" {
+		panic("env variable required, " + name)
+	}
+	//fmt.Printf("[env][%s] %s\n", name, s)
+	return s
 }

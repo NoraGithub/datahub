@@ -26,13 +26,17 @@ var (
 	g_ds = new(ds.Ds)
 
 	wg sync.WaitGroup
+
+	g_strDpPath string = cmd.GstrDpPath
+	g_dbfile    string = g_strDpPath + "\\DB\\datahub.db"
+	logfile            = g_strDpPath + "\\LOG\\datahub.log"
 )
 
 const (
-	g_dbfile    string = "/var/lib/datahub/datahub.db"
-	g_strDpPath string = cmd.GstrDpPath
-	DPFILE      string = "file"
-	DPS3        string = "s3"
+	//g_dbfile string = "/var/lib/datahub/datahub.db"
+
+	DPFILE string = "file"
+	DPS3   string = "s3"
 )
 
 type StoppableListener struct {
@@ -236,6 +240,8 @@ func RunDaemon() {
 	}*/
 	//fmt.Printf("server := http.Server{}\n")
 
+	log.SetLogFile(logfile)
+
 	if false == isDirExists(g_strDpPath) {
 		err := os.MkdirAll(g_strDpPath, 0755)
 		if err != nil {
@@ -243,6 +249,9 @@ func RunDaemon() {
 		}
 
 	}
+
+	log.Println(os.MkdirAll(g_strDpPath+"\\DB", 0755))
+	log.Println(os.MkdirAll(g_strDpPath+"\\LOG", 0755))
 
 	dbinit()
 

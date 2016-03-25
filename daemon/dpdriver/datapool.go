@@ -23,7 +23,7 @@ type Datapool struct {
 
 var datapooldrivers = make(map[string]DatapoolDriver)
 
-const gDpPath string = cmd.GstrDpPath
+var gDpPath string = cmd.GstrDpPath
 
 func register(name string, datapooldriver DatapoolDriver) {
 	if datapooldriver == nil {

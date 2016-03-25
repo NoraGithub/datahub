@@ -3,6 +3,7 @@ package daemonigo
 
 import (
 	"fmt"
+	"github.com/asiainfoLDP/datahub/cmd"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	flag "github.com/asiainfoLDP/datahub/utils/mflag"
 	"github.com/asiainfoLDP/datahub/utils/osext"
@@ -47,7 +48,7 @@ var AppName = "datahub daemon"
 // Absolute or relative path from working directory to PID file.
 
 var PidFile = "/var/run/datahub.pid"
-var logfile = "/var/log/datahub.log"
+var logfile = cmd.GstrDpPath + "\\Log\\datahub.log"
 
 // Pointer to PID file to keep file-lock alive.
 var pidFile *os.File

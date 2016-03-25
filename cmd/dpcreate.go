@@ -31,7 +31,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 			" with default type 'file' and path \"/var/lib/datahub\" ?\n[Y or N]:")
 		if GetEnsure() == true {
 			d.Name = args[0]
-			d.Conn = GstrDpPath
+			d.Conn = GstrDpPath + "\\Datapool"
 			d.Type = "file"
 		} else {
 			return
@@ -46,23 +46,24 @@ func DpCreate(needLogin bool, args []string) (err error) {
 
 		if len(sp) > 1 && len(sp[1]) > 0 {
 			d.Type = strings.ToLower(sp[0])
-			if sp[1][0] != '/' && d.Type == "file" {
+			if strings.Contains(sp[1], ":") == false && d.Type == "file" {
 				fmt.Println("DataHub : Please input absolute path after 'file://', e.g. file:///home/user/mydp")
 				return
 			}
-			if d.Type == "file" {
+			/*if d.Type == "file" {
 				d.Conn = "/" + strings.Trim(sp[1], "/")
 			} else {
 				d.Conn = strings.Trim(sp[1], "/")
-			}
+			}*/
+			d.Conn = sp[1]
 
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
-			if sp[0][0] != '/' {
+			/*if sp[0][0] != '/' {
 				fmt.Printf("DataHub : Please input path for '%s'.\n", args[0])
 				return
 			}
-			d.Conn = "/" + strings.Trim(sp[0], "/")
+			d.Conn = "/" + strings.Trim(sp[0], "/")*/
 		} else {
 			fmt.Printf("Error : Invalid argument.\nSee '%s --help'.\n", f.Name())
 			return
@@ -112,7 +113,7 @@ func GetEnsure() bool {
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
 	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]]")
-	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
+	fmt.Println("  e.g. datahub dp create dptest file://C:\\data")
 	fmt.Println("       datahub dp create s3dp s3://mybucket")
 	fmt.Println("Create a datapool\n")
 

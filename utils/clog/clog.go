@@ -103,7 +103,7 @@ func SetOutput(w io.Writer) {
 func Error(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_ERROR {
-		s = KRED + "[ERROR] " + KNRM + trace() + fmt.Sprintln(a...)
+		s = /*KRED +*/ "[ERROR] " /*+ KNRM*/ + trace() + fmt.Sprintln(a...)
 		log.Print(s)
 	}
 	return
@@ -112,7 +112,7 @@ func Error(a ...interface{}) (s string) {
 func Errorf(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_ERROR {
-		s = KRED + "[ERROR] " + KNRM + trace() + fmt.Sprintf(format, a...)
+		s = /*KRED +*/ "[ERROR] " /* + KNRM*/ + trace() + fmt.Sprintf(format, a...)
 		log.Print(s)
 	}
 	return
@@ -121,7 +121,7 @@ func Errorf(format string, a ...interface{}) (s string) {
 func Fatal(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_FATAL {
-		s = KRED + KBLD + "[FATAL] " + KNRM + trace() + fmt.Sprintln(a...)
+		s = /*KRED + KBLD + */ "[FATAL] " /*+ KNRM*/ + trace() + fmt.Sprintln(a...)
 		log.Print(s)
 		os.Exit(1)
 	}
@@ -131,7 +131,7 @@ func Fatal(a ...interface{}) (s string) {
 func Fatalf(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_FATAL {
-		s = KRED + KBLD + "[FATAL] " + KNRM + trace() + fmt.Sprintf(format, a...)
+		s = /*KRED + KBLD +*/ "[FATAL] " /*+ KNRM*/ + trace() + fmt.Sprintf(format, a...)
 		log.Print(s)
 		os.Exit(1)
 	}
@@ -142,7 +142,7 @@ func Info(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_INFO {
 		//log.Print(KGRN+"[INFO] "+KNRM+trace(), fmt.Sprintln(a...))
-		s = fmt.Sprint(KGRN + "[INFO] " + KNRM + trace() + fmt.Sprintln(a...))
+		s = fmt.Sprint( /*KGRN +*/ "[INFO] " /* + KNRM*/ + trace() + fmt.Sprintln(a...))
 		log.Print(s)
 	}
 	return
@@ -151,7 +151,7 @@ func Info(a ...interface{}) (s string) {
 func Infof(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_INFO {
-		s = KGRN + "[INFO] " + KNRM + trace() + fmt.Sprintf(format, a...)
+		s = /*KGRN + */ "[INFO] " /*+ KNRM*/ + trace() + fmt.Sprintf(format, a...)
 		log.Print(s)
 	}
 	return
@@ -160,7 +160,7 @@ func Infof(format string, a ...interface{}) (s string) {
 func Trace(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_TRACE {
-		s = KMAG + "[TRACE] " + KNRM + trace() + fmt.Sprintln(a...)
+		s = /*KMAG + */ "[TRACE] " /*+ KNRM*/ + trace() + fmt.Sprintln(a...)
 		log.Print(s)
 	}
 	return
@@ -169,7 +169,7 @@ func Trace(a ...interface{}) (s string) {
 func Tracef(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_TRACE {
-		s = KMAG + "[TRACE] " + KNRM + trace() + fmt.Sprintf(format, a...)
+		s = /*KMAG +*/ "[TRACE] " /*+ KNRM*/ + trace() + fmt.Sprintf(format, a...)
 		log.Print(s)
 	}
 	return
@@ -178,7 +178,7 @@ func Tracef(format string, a ...interface{}) (s string) {
 func Debug(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_DEBUG {
-		s = KBLU + "[DEBUG] " + KNRM + tracef() + fmt.Sprintln(a...)
+		s = /*KBLU +*/ "[DEBUG] " /*+ KNRM*/ + tracef() + fmt.Sprintln(a...)
 		log.Print(s)
 	}
 	return
@@ -187,7 +187,7 @@ func Debug(a ...interface{}) (s string) {
 func Debugf(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_DEBUG {
-		s = KBLU + "[DEBUG] " + KNRM + tracef() + fmt.Sprintf(format, a...)
+		s = /*KBLU +*/ "[DEBUG] " /*+ KNRM*/ + tracef() + fmt.Sprintf(format, a...)
 		log.Print(s)
 	}
 	return
@@ -196,7 +196,7 @@ func Debugf(format string, a ...interface{}) (s string) {
 func Warn(a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_WARN {
-		s = KYEL + "[WARNING] " + KNRM + trace() + fmt.Sprintln(a...)
+		s = /* KYEL + */ "[WARNING] " /* + KNRM */ + trace() + fmt.Sprintln(a...)
 		log.Print(s)
 	}
 	return
@@ -205,20 +205,20 @@ func Warn(a ...interface{}) (s string) {
 func Warnf(format string, a ...interface{}) (s string) {
 	checkLogEnv()
 	if logLevel >= LOG_LEVEL_WARN {
-		s = KYEL + "[WARNING] " + KNRM + trace() + fmt.Sprintf(format, a...)
+		s = /*KYEL + */ "[WARNING] " /*+ KNRM*/ + trace() + fmt.Sprintf(format, a...)
 		log.Print(s)
 	}
 	return
 }
 
 func Println(a ...interface{}) (s string) {
-	s = KGRN + "[INFO] " + KNRM + trace() + fmt.Sprintln(a...)
+	s = /*KGRN + */ "[INFO] " /* + KNRM */ + trace() + fmt.Sprintln(a...)
 	log.Print(s)
 	return
 }
 
 func Printf(format string, a ...interface{}) (s string) {
-	s = KGRN + "[INFO] " + KNRM + trace() + fmt.Sprintf(format, a...)
+	s = /*KGRN + */ "[INFO] " /* + KNRM */ + trace() + fmt.Sprintf(format, a...)
 	log.Print(s)
 	return
 }

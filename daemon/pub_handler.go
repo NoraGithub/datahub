@@ -201,8 +201,8 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	splits := strings.Split(pub.Detail, "/")
 	fileName := splits[len(splits)-1]
 
-	DpItemFullPath := dpconn + "/" + itemDesc
-	DestFullPathFileName := DpItemFullPath + "/" + fileName
+	//DpItemFullPath := dpconn + "/" + itemDesc
+	//DestFullPathFileName := DpItemFullPath + "/" + fileName
 
 	datapool, err := dpdriver.New(dptype)
 	if err != nil {
@@ -277,7 +277,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	if resp.StatusCode == http.StatusOK {
 		if dptype == "file" {
-			AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
+			//AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
 		}
 		HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
 
@@ -531,6 +531,7 @@ func DeleteItemOrTag(repo, item, tag string) (err error) {
 
 func GetFileSize(file string) (size int64, e error) {
 	f, e := os.Stat(file)
+	log.Println(f, e, f.Size())
 	if e != nil {
 		return 0, e
 	}
