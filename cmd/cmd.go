@@ -70,6 +70,7 @@ const (
 	ServerErrResultCode5012 = 5012
 	ServerErrResultCode5023 = 5023
 	ServerErrResultCode1009 = 1009
+	ServerErrResultCode1400 = 1400
 )
 
 const (
@@ -86,6 +87,7 @@ const (
 
 var (
 	ErrMsgArgument string = "DataHub : Invalid argument."
+	ValidateErrMsgArgument string = "DataHub : The parameter after rm is in wrong format."
 )
 
 var Cmd = []Command{
@@ -227,7 +229,7 @@ func printDash(n int) {
 func showResponse(resp *http.Response) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println(resp.StatusCode, string(body))
+		fmt.Println("Error :",resp.StatusCode, string(body))
 		return
 	}
 

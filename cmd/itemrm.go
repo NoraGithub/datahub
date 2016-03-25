@@ -21,17 +21,17 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		itemortagrmUsage()
 		return nil
 	} else if len(args) > 1 {
-		fmt.Println(ErrMsgArgument)
+		fmt.Println(ValidateErrMsgArgument)
 		itemortagrmUsage()
-		return errors.New(ErrMsgArgument)
+		return errors.New(ValidateErrMsgArgument)
 	}
 
 	arg := args[0]
 
 	if validateArgs(arg) == false {
-		fmt.Println(ErrMsgArgument)
+		fmt.Println(ValidateErrMsgArgument)
 		itemortagrmUsage()
-		return errors.New(ErrMsgArgument)
+		return errors.New(ValidateErrMsgArgument)
 	}
 
 	var repository string
@@ -42,9 +42,9 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	if len(splitStr) == 1 {
 		splitStr2 := strings.Split(splitStr[0], "/")
 		if len(splitStr2) != 2 {
-			fmt.Println(ErrMsgArgument)
+			fmt.Println(ValidateErrMsgArgument)
 			itemortagrmUsage()
-			return errors.New(ErrMsgArgument)
+			return errors.New(ValidateErrMsgArgument)
 		}
 		repository = splitStr2[0]
 		dataitem = splitStr2[1]
@@ -79,9 +79,9 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		return err
 	} else if len(splitStr) == 2 {
 		if splitStr[1] == "" {
-			fmt.Println(ErrMsgArgument)
+			fmt.Println(ValidateErrMsgArgument)
 			itemortagrmUsage()
-			return errors.New(ErrMsgArgument)
+			return errors.New(ValidateErrMsgArgument)
 		}
 
 		splitStr2 := strings.Split(splitStr[0], "/")
@@ -116,9 +116,9 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		}
 
 	} else {
-		fmt.Println(ErrMsgArgument)
+		fmt.Println(ValidateErrMsgArgument)
 		itemortagrmUsage()
-		return errors.New(ErrMsgArgument)
+		return errors.New(ValidateErrMsgArgument)
 	}
 	return nil
 }

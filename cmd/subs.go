@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"net/http"
 )
 
 func Subs(login bool, args []string) (err error) {
@@ -170,7 +171,10 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		n, _ := fmt.Printf("%s/%-8s\t%s\t\t%s\n", "REPOSITORY", "ITEM", "TYPE", "STATUS")
 		printDash(n + 5)
 		for _, item := range subs {
-			itemStatus = getItemStatus(item.Repository_name, item.Dataitem_name)
+			itemStatus, err = getItemStatus(item.Repository_name, item.Dataitem_name)
+			if err != nil {
+				fmt.Println("Error :", err)
+			}
 			fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
 		}
 
@@ -178,39 +182,50 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 
 }
 
-func getItemStatus(reponame, itemname string) string {
+func getItemStatus(reponame, itemname string) (string, error) {
 	uri := "/repositories/" + reponame + "/" + itemname
 	resp, err := commToDaemon("get", uri, nil)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	result := ds.Result{}
 	itemInfo := ds.ItemInfo{}
 	result.Data = &itemInfo
 	respbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	err = json.Unmarshal(respbody, &result)
-	if err != nil {
-		panic(err)
+	if resp.StatusCode == http.StatusOK {
+		err = json.Unmarshal(respbody, &result)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		return "", errors.New(string(respbody))
+		//showResponse(resp)
 	}
+
 	uri = "/heartbeat/status/" + itemInfo.Create_user
 	resp, err = commToDaemon("get", uri, nil)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	itemStatus := ds.ItemStatus{}
 	result.Data = &itemStatus
 	respbody, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	err = json.Unmarshal(respbody, &result)
-	if err != nil {
-		panic(err)
+	if resp.StatusCode == http.StatusOK {
+		err = json.Unmarshal(respbody, &result)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		showResponse(resp)
 	}
-	return itemStatus.Status
+
+	return itemStatus.Status, nil
 }
 
 func subsUsage() {
