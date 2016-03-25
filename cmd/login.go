@@ -27,7 +27,7 @@ type Loginerr struct {
 }
 
 func Login(login bool, args []string) (err error) {
-	fmt.Printf("login: ")
+	fmt.Printf("login as: ")
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
 	if err := f.Parse(args); err != nil {

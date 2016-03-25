@@ -10,9 +10,9 @@ import (
 )
 
 type FormatDpCreate struct {
-	Name string `json:"dpname, omitempty"`
-	Type string `json:"dptype, omitempty"`
-	Conn string `json:"dpconn, omitempty"`
+	Name string	`json:"dpname, omitempty"`
+	Type string 	`json:"dptype, omitempty"`
+	Conn string	`json:"dpconn, omitempty"`
 }
 
 var DataPoolTypes = []string{"file", "db", "hdfs", "jdbc", "s3", "api", "storm"}
@@ -52,9 +52,16 @@ func DpCreate(needLogin bool, args []string) (err error) {
 			}
 			if d.Type == "file" {
 				d.Conn = "/" + strings.Trim(sp[1], "/")
-			} else {
-				d.Conn = strings.Trim(sp[1], "/")
+			} else if d.Type == "s3" {
+				//d.Conn = strings.Trim(sp[1], "/")
+				d.Conn = sp[1]
+			} else if d.Type == "hdfs" {
+				d.Conn = sp[1]
+				if validateDpconn(d.Conn, d.Type) == false {
+					return
+				}
 			}
+
 
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"
@@ -109,11 +116,52 @@ func GetEnsure() bool {
 	return false
 }
 
+func validateDpconn(dpconn, dptype string) bool {
+	if dptype == "hdfs" {
+		args := strings.Split(dpconn, "@")
+		usernamepassword := args[0]
+		entrypoint := args[1]
+		if strings.Contains(usernamepassword, ":") == false {
+			fmt.Println("DataHub : Invalid username or password.\nSee 'datahub dp create --help'.")
+			return false
+		} else {
+			args = strings.SplitN(usernamepassword, ":", 2)
+			username := args[0]
+			//password := args[1]
+			if username == "" {
+				fmt.Println("DataHub : Username can not be empty.\nSee 'datahub dp create --help'.")
+				return false
+			}
+		}
+
+		if strings.Contains(entrypoint, ":") == false || strings.Count(entrypoint, ":") != 1 {
+			fmt.Println("DataHub : Invalid PORT.\nSee 'datahub dp create --help'.")
+			return false
+		}
+		if strings.Count(entrypoint, ".") != 3 {
+			fmt.Println("Datahub : Invalid IP.\nSee 'datahub dp create --help'.")
+			return false
+		} else {
+			args := strings.Split(entrypoint, ".")
+			for _, arg := range args {
+				if arg == "" {
+					fmt.Println("Datahub : Invalid IP.\nSee 'datahub dp create --help'.")
+					return false
+				}
+			}
+		}
+
+	}
+
+	return true
+}
+
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
-	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]]")
+	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
 	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
 	fmt.Println("       datahub dp create s3dp s3://mybucket")
+	fmt.Println("       datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
 	fmt.Println("Create a datapool\n")
 
 }
