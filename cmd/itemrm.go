@@ -113,6 +113,8 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			} else {
 				fmt.Println("Error :",err)
 			}
+		} else {
+			showError(resp)
 		}
 	} else {
 		fmt.Println(ValidateErrMsgArgument)
