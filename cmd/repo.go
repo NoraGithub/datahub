@@ -258,10 +258,6 @@ func getTagStatusOfItem(reponame, itemname string) ([]string, error) {
 	result.Data = &tagStatus
 	respbody, err := ioutil.ReadAll(resp.Body)
 
-	err = json.Unmarshal(respbody, &result)
-	if err != nil {
-		return nil, err
-	}
 	if resp.StatusCode == http.StatusOK {
 		err = json.Unmarshal(respbody, &result)
 		if err != nil {

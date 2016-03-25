@@ -97,24 +97,23 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			return err
 		}
 		defer resp.Body.Close()
-
 		body, _ := ioutil.ReadAll(resp.Body)
 		result := ds.Result{}
-		if err := json.Unmarshal(body, &result); err != nil {
-			fmt.Println("Error :", err)
-			return err
-		}
 
-		if resp.StatusCode == http.StatusUnauthorized {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusBadRequest {
+			if err := json.Unmarshal(body, &result); err != nil {
+				fmt.Println("Error :", err)
+				return err
+			}
+			ensureRmTag(resp.StatusCode, result.Code, result.Msg, repository, dataitem, tag)
+
+		} else if resp.StatusCode == http.StatusUnauthorized {
 			if err = Login(false, nil); err == nil {
 				err = ItemOrTagRm(needLogin, args)
 			} else {
 				fmt.Println("Error :",err)
 			}
-		} else {
-			ensureRmTag(resp.StatusCode, result.Code, result.Msg, repository, dataitem, tag)
 		}
-
 	} else {
 		fmt.Println(ValidateErrMsgArgument)
 		itemortagrmUsage()
