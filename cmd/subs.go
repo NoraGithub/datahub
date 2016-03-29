@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"net/http"
+	"github.com/asiainfoLDP/datahub/utils"
 )
 
 func Subs(login bool, args []string) (err error) {
@@ -168,16 +169,23 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("%s/%-8s\t%s\t\t%s\n", "REPOSITORY", "ITEM", "TYPE", "STATUS")
-		printDash(n + 5)
+
+		citem := []string{"REPOSITORY/ITEM"}
+		ctype := []string{"TYPE"}
+		cstatus := []string{"STATUS"}
 		for _, item := range subs {
+			//crepo = append(crepo, item.Repository_name)
+			citem = append(citem, item.Repository_name+"/"+item.Dataitem_name)
+			ctype = append(ctype, "file")
 			itemStatus, err = getItemStatus(item.Repository_name, item.Dataitem_name)
 			if err != nil {
-				fmt.Println("Error :", err)
+				//fmt.Println("Error :", err)
+				cstatus = append(cstatus, "")
 			}
-			fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
+			cstatus = append(cstatus, itemStatus)
+			//fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
 		}
-
+		utils.PrintFmt(citem, ctype, cstatus)
 	}
 
 }
