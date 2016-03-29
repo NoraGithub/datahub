@@ -7,9 +7,9 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
-	"net/http"
 )
 
 func Subs(login bool, args []string) (err error) {
@@ -78,7 +78,7 @@ func cmdSubsRepo(detail bool, uri string, args []string) error {
 		if err := Login(false, nil); err == nil {
 			Subs(true, args)
 		} else {
-			fmt.Println(err)
+			//fmt.Println(err)
 		}
 	} else {
 		showError(resp)
