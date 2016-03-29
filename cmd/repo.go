@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"github.com/asiainfoLDP/datahub/utils"
 )
 
 const (
@@ -137,8 +138,8 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("%-16s\n", "REPOSITORY") //, "UPDATETIME", "COMMENT")
-		printDash(n + 2)
+		fmt.Printf("%-16s\n", "REPOSITORY") //, "UPDATETIME", "COMMENT")
+
 		for _, v := range repos {
 			fmt.Printf("%-16s\n", v.RepositoryName) //, v.Optime, v.Comment)
 		}
@@ -149,8 +150,8 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("REPOSITORY/DATAITEM\n")
-		printDash(n + 12)
+		fmt.Printf("REPOSITORY/DATAITEM\n")
+
 		for _, v := range onerepo.DataItems {
 			fmt.Printf("%s/%s\n", repo, v)
 		}
@@ -175,30 +176,40 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 			return
 		}
 
-		n, _ := fmt.Printf("%s\t%s\t%s\t\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT", "STATUS")
-		printDash(n + 12)
 		repoitemname := repo + "/" + item
+
+		ctag := []string{"REPOSITORY/ITEM:TAG"}
+		cupdatetime := []string{"UPDATETIME"}
+		ccomment := []string{"COMMENT"}
+		cstatus := []string{"STATUS"}
 
 		if itemStatus == "offline" {
 			for _, v := range repoitemtags.Taglist {
-				repoitemtag := repoitemname + ":" + v.Tag
-				tagStatus = judgeTag(abnormalTags, repoitemtag)
-				fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, "ABNORMAL")
+				//fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, "ABNORMAL")
+				cupdatetime = append(cupdatetime, v.Optime)
+				ccomment = append(ccomment, v.Comment)
+				cstatus = append(cstatus, "ABNORMAL")
 			}
 		} else {
 			for _, v := range repoitemtags.Taglist {
 				repoitemtag := repoitemname + ":" + v.Tag
 				tagStatus = judgeTag(abnormalTags, repoitemtag)
-				fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, tagStatus)
+				//fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, tagStatus)
+				ctag = append(ctag, repo+"/"+item+":"+v.Tag)
+				cupdatetime = append(cupdatetime, v.Optime)
+				ccomment = append(ccomment, v.Comment)
+				cstatus = append(cstatus, tagStatus)
 			}
 		}
+		utils.PrintFmt(ctag, cupdatetime, ccomment, cstatus)
+
 	} else if icmd == ReposReponameDataItemTag {
 		itemStatus, err := getItemStatus(repo, item)
 		if err != nil {
 			fmt.Println("Error :", err)
 			return
 		}
-		tegStatus, err := getTagStatus(repo, item, tag)
+		tagStatus, err := getTagStatus(repo, item, tag)
 		if err != nil {
 			fmt.Println("Error :", err)
 			return
@@ -210,13 +221,25 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 			fmt.Println("Error :", err)
 			return
 		}
-		n, _ := fmt.Printf("%s\t%s\t%s\t\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT", "STATUS")
-		printDash(n + 12)
+		//n, _ := fmt.Printf("%s\t%s\t%s\t\t%s\n", "REPOSITORY/ITEM:TAG", "UPDATETIME", "COMMENT", "STATUS")
+		ctag := []string{"REPOSITORY/ITEM:TAG"}
+		cupdatetime := []string{"UPDATETIME"}
+		ccomment := []string{"COMMENT"}
+		cstatus := []string{"STATUS"}
 		if itemStatus == "offline" {
-			fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment, "ABNORMAL")
+			//fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment, "ABNORMAL")
+			ctag = append(ctag, repo+"/"+item+":"+tag)
+			cupdatetime = append(cupdatetime, onetag.Optime)
+			ccomment = append(ccomment, onetag.Comment)
+			cstatus = append(cstatus, "ABNORMAL")
 		} else {
-			fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment, tegStatus)
+			//fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, tag, onetag.Optime, onetag.Comment, tegStatus)
+			ctag = append(ctag, repo+"/"+item+":"+tag)
+			cupdatetime = append(cupdatetime, onetag.Optime)
+			ccomment = append(ccomment, onetag.Comment)
+			cstatus = append(cstatus, tagStatus)
 		}
+		utils.PrintFmt(ctag, cupdatetime, ccomment, cstatus)
 	}
 }
 
