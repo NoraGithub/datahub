@@ -38,7 +38,7 @@ func Pub(needlogin bool, args []string) (err error) {
 
 	if len(args) > 2 {
 		if err = f.Parse(args[2:]); err != nil {
-			//fmt.Println("parse parameter error")
+			fmt.Println("Error : parse parameter error.", err)
 			return err
 		}
 	}
@@ -52,7 +52,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	//deal arg[0]
 	sp := strings.Split(argfi, "/")
 	if len(sp) != 2 {
-		//fmt.Println(usage)
+		pubUsage()
 		return errors.New("invalid repo/item")
 	}
 	repo = sp[0]
@@ -100,7 +100,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 	}
 	jsonData, err := json.Marshal(p)
 	if err != nil {
-		fmt.Println("Error : Mrashal pubdata error while publishing dateitem.")
+		fmt.Println("Error : Marshal pubdata error while publishing dateitem.")
 		return err
 	}
 

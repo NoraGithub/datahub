@@ -82,12 +82,12 @@ const (
 	RepoOrItemNotExist = 5
 	TagExist           = 6
 	RepoOrItemExist    = 7
-
 )
 
 var (
-	ErrMsgArgument string = "DataHub : Invalid argument."
+	ErrMsgArgument         string = "DataHub : Invalid argument."
 	ValidateErrMsgArgument string = "DataHub : The parameter after rm is in wrong format."
+	ErrLoginFailed         string = "Error : login failed."
 )
 
 var Cmd = []Command{
@@ -229,7 +229,7 @@ func printDash(n int) {
 func showResponse(resp *http.Response) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("Error :",resp.StatusCode, string(body))
+		fmt.Println("Error :", resp.StatusCode, string(body))
 		return
 	}
 
