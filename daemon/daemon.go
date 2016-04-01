@@ -240,8 +240,6 @@ func RunDaemon() {
 	}*/
 	//fmt.Printf("server := http.Server{}\n")
 
-	log.SetLogFile(logfile)
-
 	if false == isDirExists(g_strDpPath) {
 		err := os.MkdirAll(g_strDpPath, 0755)
 		if err != nil {
@@ -250,8 +248,10 @@ func RunDaemon() {
 
 	}
 
-	log.Println(os.MkdirAll(g_strDpPath+"\\DB", 0755))
-	log.Println(os.MkdirAll(g_strDpPath+"\\LOG", 0755))
+	os.MkdirAll(g_strDpPath+"\\DB", 0755)
+	os.MkdirAll(g_strDpPath+"\\LOG", 0755)
+
+	log.SetLogFile(logfile)
 
 	dbinit()
 
