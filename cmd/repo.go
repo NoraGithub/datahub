@@ -186,6 +186,7 @@ func repoResp(icmd int, respbody []byte, repo, item, tag string) {
 		if itemStatus == "offline" {
 			for _, v := range repoitemtags.Taglist {
 				//fmt.Printf("%s/%s:%s\t%s\t%s\t%s\n", repo, item, v.Tag, v.Optime, v.Comment, "ABNORMAL")
+				ctag = append(ctag, repo+"/"+item+":"+v.Tag)
 				cupdatetime = append(cupdatetime, v.Optime)
 				ccomment = append(ccomment, v.Comment)
 				cstatus = append(cstatus, "ABNORMAL")
