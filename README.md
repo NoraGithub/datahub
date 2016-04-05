@@ -136,7 +136,7 @@ datahub dp rm $DPNAME
 例子
 ```
 $ datahub dp rm testdp
-DataHub : Datapool testrm removed successfully!
+DataHub : Datapool testdp removed successfully!
 $
 ```
 

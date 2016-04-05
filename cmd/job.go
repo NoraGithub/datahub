@@ -84,6 +84,7 @@ func JobRm(needLogin bool, args []string) (err error) {
 	} else {
 		showError(resp)
 	}
+	//mt.Println(resp.Header)
 	return err
 }
 

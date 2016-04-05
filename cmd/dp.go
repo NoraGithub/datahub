@@ -55,7 +55,7 @@ func Dp(needLogin bool, args []string) (err error) {
 			return err
 		}
 		if resp.StatusCode == http.StatusOK {
-			dpResp(false, body)
+			dpResp(false, body, "")
 		} else {
 			fmt.Println(string(body))
 			fmt.Println(resp.StatusCode)
@@ -74,7 +74,7 @@ func Dp(needLogin bool, args []string) (err error) {
 				}
 				body, _ := ioutil.ReadAll(resp.Body)
 				if resp.StatusCode == http.StatusOK {
-					dpResp(true, body)
+					dpResp(true, body, v)
 				} else {
 					fmt.Println(resp.StatusCode)
 					err = errors.New(string(resp.StatusCode))
@@ -86,7 +86,7 @@ func Dp(needLogin bool, args []string) (err error) {
 	return err
 }
 
-func dpResp(bDetail bool, RespBody []byte) {
+func dpResp(bDetail bool, RespBody []byte, dpname string) {
 	if bDetail == false {
 		strcDps := []FormatDp{}
 		result := &ds.Result{Data: &strcDps}
@@ -114,6 +114,10 @@ func dpResp(bDetail bool, RespBody []byte) {
 			return
 		}
 		if result.Code == ResultOK {
+			if len(strcDp.Items) == 0 {
+				fmt.Printf("DataHub : Datapool %v doesn't exist.\n", dpname)
+				return
+			}
 			n, _ := fmt.Printf("%s%-16s\t%-16s\t%-16s\n", "DATAPOOL:", strcDp.Name, strcDp.Type, strcDp.Conn)
 			for _, item := range strcDp.Items {
 				RepoItemTag := item.Repository + "/" + item.DataItem + ":" + item.Tag

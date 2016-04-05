@@ -245,6 +245,11 @@ func showResponse(resp *http.Response) {
 
 func showError(resp *http.Response) {
 
+	if resp.StatusCode == http.StatusMovedPermanently {
+		fmt.Println(ErrMsgArgument)
+		return
+	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
 	result := ds.Result{}
 	err := json.Unmarshal(body, &result)

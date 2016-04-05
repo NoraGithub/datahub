@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
+	"github.com/asiainfoLDP/datahub/utils"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-	"github.com/asiainfoLDP/datahub/utils"
 )
 
 const (
@@ -47,7 +47,7 @@ func Repo(login bool, args []string) (err error) {
 		if (len(u.Path) > 0) && (u.Path[0] == '/') {
 			source = u.Path[1:]
 		}
-
+		//fmt.Println(source)
 		urls := strings.Split(source, "/")
 		lenth := len(urls)
 
@@ -97,6 +97,10 @@ func Repo(login bool, args []string) (err error) {
 		body, _ := ioutil.ReadAll(resp.Body)
 		repoResp(icmd, body, repo, item, tag)
 	} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusBadRequest {
+		if resp.StatusCode == http.StatusUnauthorized {
+			fmt.Println("Error : Not login.")
+			return err
+		} //05.04.2016  The PM receive 401 while testing, but I don't know why.
 		body, _ := ioutil.ReadAll(resp.Body)
 		result := ds.Result{}
 		err = json.Unmarshal(body, &result)
