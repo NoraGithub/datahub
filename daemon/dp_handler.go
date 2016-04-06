@@ -30,6 +30,8 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
+	log.Debug("Get FormatDpCreate obj ok.")
+
 	var allowtype bool = false
 	for _, v := range DPTYPES {
 		if struDp.Type == v {
@@ -37,7 +39,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 	}
 	if !allowtype {
-		fmt.Println("DataHub : Datapool type need to be:", DPTYPES)
+		log.Println("DataHub : Datapool type need to be:", DPTYPES)
 		rw.Write([]byte(fmt.Sprintf(`{"msg":"Datapool type need to be:%s"}`, DPTYPES)))
 		return
 	}
@@ -76,7 +78,8 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			struDp.Conn = strings.TrimLeft(struDp.Conn, "/")
 			err = nil
 		} else if struDp.Type == DPFILE {
-			err = os.MkdirAll(sdpDirName, 0777)
+			err = os.MkdirAll(sdpDirName, 0755)
+			log.Debug("mkdir", sdpDirName)
 		}
 
 		if err != nil {

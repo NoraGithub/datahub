@@ -27,13 +27,15 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
-		fmt.Print("DataHub : Are you sure to create a datapool ",
-			" with default type 'file' and path \"/var/lib/datahub\" ?\n[Y or N]:")
+		d.Conn = GstrDpPath + "\\Datapool"
+		fmt.Printf("DataHub : Are you sure to create a datapool "+
+			"with default type 'file' and path \"%v\" ?\n[Y or N]:", d.Conn)
 		if GetEnsure() == true {
 			d.Name = args[0]
-			d.Conn = GstrDpPath + "\\Datapool"
 			d.Type = "file"
+			//fmt.Println("input yes")
 		} else {
+			//fmt.Println("input no")
 			return
 		}
 	} else {
@@ -47,7 +49,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		if len(sp) > 1 && len(sp[1]) > 0 {
 			d.Type = strings.ToLower(sp[0])
 			if strings.Contains(sp[1], ":") == false && d.Type == "file" {
-				fmt.Println("DataHub : Please input absolute path after 'file://', e.g. file:///home/user/mydp")
+				fmt.Println("DataHub : Please input absolute path after 'file://', e.g. file://D:\\data\\mydatapool")
 				return
 			}
 			/*if d.Type == "file" {
@@ -57,8 +59,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 			}*/
 			d.Conn = sp[1]
 
-		} else if len(sp) == 1 && len(sp[0]) != 0 {
-			d.Type = "file"
+			//} else if len(sp) == 1 && len(sp[0]) != 0 {
+			//d.Type = "file"
 			/*if sp[0][0] != '/' {
 				fmt.Printf("DataHub : Please input path for '%s'.\n", args[0])
 				return
@@ -80,11 +82,13 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		fmt.Println("DataHub : Datapool type need to be:", DataPoolTypes)
 		return
 	}
-
+	//fmt.Println(d)
 	jsonData, err := json.Marshal(d)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
+	//fmt.Println("req to daemon")
 	resp, err := commToDaemon("POST", "/datapools", jsonData)
 	if err != nil {
 		fmt.Println(err)
@@ -99,7 +103,8 @@ func DpCreate(needLogin bool, args []string) (err error) {
 func GetEnsure() bool {
 	reader := bufio.NewReader(os.Stdin)
 	en, _ := reader.ReadBytes('\n')
-	ens := strings.Trim(string(en), "\n")
+	//fmt.Printf("%X\n", en)
+	ens := strings.Trim(string(en), "\r\n") //on windows \r\n
 	ens = strings.ToLower(ens)
 	Yes := []string{"y", "yes"}
 	for _, y := range Yes {
