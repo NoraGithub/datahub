@@ -34,6 +34,7 @@ func Subs(login bool, args []string) (err error) {
 			repo, item, err := GetRepoItem(args[0])
 			if err != nil {
 				fmt.Println(ErrMsgArgument)
+				subsUsage()
 				return err
 			}
 			//fmt.Println(repo, item)

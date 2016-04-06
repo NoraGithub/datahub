@@ -17,13 +17,10 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	if err := f.Parse(args); err != nil {
 		return err
 	}
-	if len(args) == 0 {
+	if len(args) == 0 || len(args) > 1 {
+		fmt.Println(ErrMsgArgument)
 		itemortagrmUsage()
-		return nil
-	} else if len(args) > 1 {
-		fmt.Println(ValidateErrMsgArgument)
-		itemortagrmUsage()
-		return errors.New(ValidateErrMsgArgument)
+		return errors.New(ErrMsgArgument)
 	}
 
 	arg := args[0]

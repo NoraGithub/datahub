@@ -22,7 +22,7 @@ const (
 
 func Pub(needlogin bool, args []string) (err error) {
 	if len(args) < 2 {
-		//fmt.Println(usage)
+		fmt.Println(ErrMsgArgument)
 		pubUsage()
 		return errors.New("args len error!")
 	}
@@ -44,6 +44,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	}
 
 	if len(args[0]) == 0 || len(args[1]) == 0 {
+		fmt.Println(ErrMsgArgument)
 		pubUsage()
 		return errors.New("need item or tag error!")
 	}
@@ -52,6 +53,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	//deal arg[0]
 	sp := strings.Split(argfi, "/")
 	if len(sp) != 2 {
+		fmt.Println(ErrMsgArgument)
 		pubUsage()
 		return errors.New("invalid repo/item")
 	}

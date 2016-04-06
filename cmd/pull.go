@@ -21,6 +21,7 @@ func Pull(login bool, args []string) (err error) {
 	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "Cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
+		fmt.Println(ErrMsgArgument)
 		pullUsage()
 		return
 	}
@@ -40,7 +41,7 @@ func Pull(login bool, args []string) (err error) {
 	source := strings.Trim(u.Path, "/")
 
 	if url := strings.Split(source, "/"); len(url) != 2 {
-		fmt.Println("Datahub : Invalid argument.")
+		fmt.Println(ErrMsgArgument)
 		pullUsage()
 		return
 	} else {

@@ -137,7 +137,7 @@ var Cmd = []Command{
 	{
 		Name:      "logout",
 		Handler:   Logout,
-		Desc:      "Logout to hub.dataos.io",
+		Desc:      "Logout from hub.dataos.io",
 		NeedLogin: true,
 	},
 
@@ -163,7 +163,7 @@ var Cmd = []Command{
 				Handler: ItemOrTagRm,
 			},
 		},
-		Desc:      "Repository mangement",
+		Desc:      "Repository management",
 		NeedLogin: true,
 	},
 	{
@@ -175,7 +175,7 @@ var Cmd = []Command{
 	{
 		Name:    "version",
 		Handler: Version,
-		Desc:    "Datahub version infomation",
+		Desc:    "Datahub version information",
 	},
 }
 

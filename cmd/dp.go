@@ -55,10 +55,9 @@ func Dp(needLogin bool, args []string) (err error) {
 			return err
 		}
 		if resp.StatusCode == http.StatusOK {
-			dpResp(false, body, "")
+			dpResp(false, body)
 		} else {
-			fmt.Println(string(body))
-			fmt.Println(resp.StatusCode)
+			fmt.Println(resp.StatusCode, string(body))
 			err = errors.New(string(resp.StatusCode))
 		}
 
@@ -74,7 +73,7 @@ func Dp(needLogin bool, args []string) (err error) {
 				}
 				body, _ := ioutil.ReadAll(resp.Body)
 				if resp.StatusCode == http.StatusOK {
-					dpResp(true, body, v)
+					dpResp(true, body)
 				} else {
 					fmt.Println(resp.StatusCode)
 					err = errors.New(string(resp.StatusCode))
@@ -86,7 +85,7 @@ func Dp(needLogin bool, args []string) (err error) {
 	return err
 }
 
-func dpResp(bDetail bool, RespBody []byte, dpname string) {
+func dpResp(bDetail bool, RespBody []byte) {
 	if bDetail == false {
 		strcDps := []FormatDp{}
 		result := &ds.Result{Data: &strcDps}
@@ -114,17 +113,16 @@ func dpResp(bDetail bool, RespBody []byte, dpname string) {
 			return
 		}
 		if result.Code == ResultOK {
+			n, _ := fmt.Printf("%s%-16s\t%-16s\t%-16s\n", "DATAPOOL:", strcDp.Name, strcDp.Type, strcDp.Conn)
 			if len(strcDp.Items) == 0 {
-				fmt.Printf("DataHub : Datapool %v doesn't exist.\n", dpname)
 				return
 			}
-			n, _ := fmt.Printf("%s%-16s\t%-16s\t%-16s\n", "DATAPOOL:", strcDp.Name, strcDp.Type, strcDp.Conn)
 			for _, item := range strcDp.Items {
 				RepoItemTag := item.Repository + "/" + item.DataItem + ":" + item.Tag
 				if item.Publish == "Y" {
-					fmt.Printf("%-32s\t%-20s\t%-5s\t%-32s\t%-64s\n", RepoItemTag, item.Time, "pub", item.ItemDesc, item.TagDetail)
+					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%s\n", RepoItemTag, item.Time, "pub", item.ItemDesc, item.TagDetail)
 				} else {
-					fmt.Printf("%-32s\t%-20s\t%-5s\t%-32s\t%-64s\n", RepoItemTag, item.Time, "pull", item.ItemDesc, item.TagDetail)
+					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%s\n", RepoItemTag, item.Time, "pull", item.ItemDesc, item.TagDetail)
 				}
 			}
 			printDash(n)
