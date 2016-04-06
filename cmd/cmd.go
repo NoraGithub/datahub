@@ -67,21 +67,29 @@ const (
 )
 
 const (
+	ServerErrResultCodeOk   = 0
 	ServerErrResultCode5009 = 5009
 	ServerErrResultCode5012 = 5012
 	ServerErrResultCode5023 = 5023
 	ServerErrResultCode1009 = 1009
+	ServerErrResultCode1400 = 1400
 )
 
 const (
 	NoConsumingPlan    = 0
 	ExitsConsumingPlan = 1
-	DataitemNotExist   = 2
+	RepositoryNotExist = 2
+	DataitemNotExist   = 3
+	TagNotExist        = 4
+	RepoOrItemNotExist = 5
+	TagExist           = 6
+	RepoOrItemExist    = 7
 )
 
 var (
 	ErrMsgArgument string = "DataHub : Invalid argument."
-	ErrMsgLogin    string = "Error : Login failed."
+	ValidateErrMsgArgument string = "DataHub : The parameter after rm is in wrong format."
+	ErrLoginFailed         string = "Error : login failed."
 )
 
 var Cmd = []Command{
@@ -131,7 +139,7 @@ var Cmd = []Command{
 	{
 		Name:      "logout",
 		Handler:   Logout,
-		Desc:      "Logout to hub.dataos.io",
+		Desc:      "Logout from hub.dataos.io",
 		NeedLogin: true,
 	},
 
@@ -157,7 +165,7 @@ var Cmd = []Command{
 				Handler: ItemOrTagRm,
 			},
 		},
-		Desc:      "Repository mangement",
+		Desc:      "Repository management",
 		NeedLogin: true,
 	},
 	{
@@ -169,7 +177,7 @@ var Cmd = []Command{
 	{
 		Name:    "version",
 		Handler: Version,
-		Desc:    "Datahub version infomation",
+		Desc:    "Datahub version information",
 	},
 }
 
@@ -223,7 +231,7 @@ func printDash(n int) {
 func showResponse(resp *http.Response) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println(resp.StatusCode, string(body))
+		fmt.Println("Error :", resp.StatusCode, string(body))
 		return
 	}
 
@@ -238,6 +246,10 @@ func showResponse(resp *http.Response) {
 }
 
 func showError(resp *http.Response) {
+	if resp.StatusCode == http.StatusMovedPermanently {
+		fmt.Println(ErrMsgArgument)
+		return
+	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	result := ds.Result{}
