@@ -531,7 +531,7 @@ func DeleteItemOrTag(repo, item, tag string) (err error) {
 
 func GetFileSize(file string) (size int64, e error) {
 	f, e := os.Stat(file)
-	log.Println(f, e, f.Size())
+	log.Debug(f, e, f.Size())
 	if e != nil {
 		return 0, e
 	}

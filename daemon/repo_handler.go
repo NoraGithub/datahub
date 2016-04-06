@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -55,29 +56,17 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	r.ParseForm()
 	ensure, _ := strconv.Atoi(r.Form.Get("ensure"))
+
 	reqBody, _ := ioutil.ReadAll(r.Body)
 
-	path := "/repositories/" + repository + "/" + dataitem
-	resp, err := commToServerGetRsp("get", path, reqBody)
-	defer resp.Body.Close()
+	exist, msg, err := judgeRepoOrItemExist(repository, dataitem)
 	if err != nil {
 		log.Error(err)
 		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
 		return
 	}
-
-	result := ds.Response{}
-	respbody, _ := ioutil.ReadAll(resp.Body)
-	unmarshalerr := json.Unmarshal(respbody, &result)
-	if unmarshalerr != nil {
-		log.Error(unmarshalerr)
-		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
-		return
-	}
-	log.Info(string(respbody))
-
-	if resp.StatusCode == http.StatusBadRequest && result.Code == cmd.ServerErrResultCode1009 {
-		HttpNoData(w, http.StatusOK, cmd.DataitemNotExist, result.Msg)
+	if exist == false {
+		HttpNoData(w, http.StatusOK, cmd.RepoOrItemNotExist, msg)
 		return
 	}
 
@@ -172,6 +161,8 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	dataitem := ps.ByName("item")
 	tag := ps.ByName("tag")
 
+	reqBody, _ := ioutil.ReadAll(r.Body)
+
 	if strings.Contains(tag, "*") {
 		tagsname, err := getBatchDelTagsName(repository, dataitem, tag)
 		if err != nil {
@@ -194,7 +185,6 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 					return
 				}
 
-				reqBody, _ := ioutil.ReadAll(r.Body)
 				path := "/repositories/" + repository + "/" + dataitem + "/" + tagname
 				resp, err := commToServerGetRsp("delete", path, reqBody)
 				if err != nil {
@@ -274,5 +264,140 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
 		}
 	}
+}
+
+func judgeTagExistHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
+
+	repository := ps.ByName("repo")
+	dataitem := ps.ByName("item")
+	tag := ps.ByName("tag")
+
+	if strings.ContainsAny(tag, "*") {
+		exist, msg, err := judgeRepoOrItemExist(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+			return
+		}
+		if exist == false {
+			HttpNoData(w, http.StatusBadRequest, cmd.RepoOrItemNotExist, msg)
+			return
+		} else {
+			HttpNoData(w, http.StatusOK, cmd.TagExist, msg)
+			return
+		}
+	} else {
+		exist, msg, err := judgeRepoOrItemExist(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+			return
+		}
+		if exist == false {
+			HttpNoData(w, http.StatusBadRequest, cmd.RepoOrItemNotExist, msg)
+			return
+		} else {
+			exist, msg, err = judgeTagExist(repository, dataitem, tag)
+			if err != nil {
+				log.Error(err)
+				HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+				return
+			}
+			if exist == false {
+				HttpNoData(w, http.StatusBadRequest, cmd.TagNotExist, msg)
+				return
+			} else {
+				HttpNoData(w, http.StatusOK, cmd.TagExist, msg)
+				return
+			}
+		}
+	}
+
+	return
+}
+
+func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, err error) {
+
+	path := "/repositories/" + repository + "/" + dataitem
+
+	exist = false
+
+	resp, err := commToServerGetRsp("get", path, nil)
+	if err != nil {
+		log.Error(err)
+		//HttpNoData(w, http.StatusInternalServerError, cmd.ErrorServiceUnavailable, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+		err = errors.New("unkown error")
+		return
+	}
+	result := ds.Response{}
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		//HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+		return
+	}
+	log.Info(string(respbody))
+
+	if resp.StatusCode == http.StatusBadRequest && result.Code == cmd.ServerErrResultCode1009 {
+		//HttpNoData(w, http.StatusBadRequest, cmd.RepoOrItemNotExist, result.Msg)
+		msg = result.Msg
+		return
+	} else if resp.StatusCode == http.StatusOK && result.Code == cmd.ServerErrResultCodeOk {
+		exist = true
+		msg = result.Msg
+		return
+	}
+
+	return
+}
+
+func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, err error) {
+
+	path := "/repositories/" + repository + "/" + dataitem + "/" + tag
+
+	exist = false
+
+	resp, err := commToServerGetRsp("get", path, nil)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+		err = errors.New("unkown error")
+		return
+	}
+
+	result := ds.Response{}
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		return
+	}
+	log.Info(string(respbody))
+
+	if resp.StatusCode == http.StatusBadRequest && result.Code == cmd.ServerErrResultCode1009 {
+		msg = result.Msg
+		return
+	} else if resp.StatusCode == http.StatusOK && result.Code == cmd.ServerErrResultCodeOk {
+		exist = true
+		msg = result.Msg
+		return
+	}
+
+	return
 }
 

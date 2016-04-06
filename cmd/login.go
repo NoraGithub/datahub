@@ -27,10 +27,11 @@ type Loginerr struct {
 }
 
 func Login(login bool, args []string) (err error) {
-	fmt.Printf("login: ")
+	fmt.Printf("login as: ")
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
 	if err := f.Parse(args); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	if len(args) >= 1 {
@@ -69,7 +70,7 @@ func Login(login bool, args []string) (err error) {
 	if resp.StatusCode == http.StatusOK {
 		Logged = true
 		if login {
-			fmt.Println("DataHub : Login success.")
+			fmt.Println("DataHub : login success.")
 		}
 		return
 	} else if resp.StatusCode == http.StatusForbidden {
@@ -92,16 +93,17 @@ func Login(login bool, args []string) (err error) {
 			default:
 				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
 			}
-			fmt.Println(ErrMsgLogin)
-			return errors.New(ErrMsgLogin)
+			fmt.Println(ErrLoginFailed)
+			return errors.New(ErrLoginFailed)
 		}
 	} else {
+
+		fmt.Println(ErrLoginFailed)
 		if /*resp.StatusCode == 401 &&*/ login {
 			body, _ := ioutil.ReadAll(resp.Body)
-			fmt.Println("Login failed.", string(body))
+			fmt.Println(string(body))
 		}
-		fmt.Println(ErrMsgLogin)
-		return errors.New(ErrMsgLogin)
+		return errors.New(ErrLoginFailed)
 	}
 	/*
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -138,7 +140,7 @@ func Logout(login bool, args []string) error {
 		fmt.Println("DataHub : You already logout.")
 	}
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("DataHub : Logout success.")
+		fmt.Println("DataHub : logout success.")
 	}
 	return nil
 }

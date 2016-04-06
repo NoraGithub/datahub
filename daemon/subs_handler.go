@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"fmt"
+	"github.com/asiainfoLDP/datahub/cmd"
 )
 
 func subsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -27,6 +28,10 @@ func userStatusHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 func tagStatusHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
 	repository := ps.ByName("repo")
 	dataitem := ps.ByName("item")
 	tag := ps.ByName("tag")
@@ -38,6 +43,10 @@ func tagStatusHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 }
 
 func tagOfItemStatusHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
 	repository := ps.ByName("repo")
 	dataitem := ps.ByName("item")
 	uri := fmt.Sprintf("/daemon/tags/status?repname=%s&itemname=%s",repository, dataitem)
