@@ -316,7 +316,7 @@ Internet_stats/Film_and_television
 ##### 6.3. 查询dataitem的详情
 
 ```shell
-datahub repo rm Internet_stats/Music
+datahub repo Internet_stats/Music
 ```
 输出
 ```
