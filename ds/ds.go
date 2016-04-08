@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v1.5.0"
+	DATAHUB_VERSION = "v1.6.0"
 )
 
 type DsPull struct {
@@ -77,9 +77,9 @@ type Tag struct {
 }
 
 type TagStatus struct {
-	Status      string `json:"status,omitempty"`
-	Total       int    `json:"total,omitempty"`
-	Results     []string `json:"results,omitempty"`
+	Status  string   `json:"status,omitempty"`
+	Total   int      `json:"total,omitempty"`
+	Results []string `json:"results,omitempty"`
 }
 
 type ItemInfo struct {
@@ -87,7 +87,7 @@ type ItemInfo struct {
 }
 
 type ItemStatus struct {
-	Status      string `json:"status,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 
 type Data struct {
