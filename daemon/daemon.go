@@ -202,9 +202,13 @@ func helloHttp(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) 
 func stopHttp(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 	//fmt.Fprintf(rw, "Hello HTTP!\n")
-	sl.Close()
-	p2psl.Close()
-	log.Println("connect close")
+	//slwin.Close()
+	//p2psl.Close()
+	slwin.Stop()
+	if len(DaemonID) > 0 {
+		p2psl.Stop()
+	}
+	log.Println("Connect close")
 }
 
 func isDirExists(path string) bool {

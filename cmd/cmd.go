@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strconv"
+	//"strconv"
 	"strings"
 	//"syscall"
 )
@@ -87,7 +87,7 @@ const (
 )
 
 var (
-	ErrMsgArgument string = "DataHub : Invalid argument."
+	ErrMsgArgument         string = "DataHub : Invalid argument."
 	ValidateErrMsgArgument string = "DataHub : The parameter after rm is in wrong format."
 	ErrLoginFailed         string = "Error : login failed."
 )
@@ -264,7 +264,7 @@ func showError(resp *http.Response) {
 
 func StopP2P() error {
 
-	data, err := ioutil.ReadFile(pidFile)
+	/*data, err := ioutil.ReadFile(pidFile)
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -274,9 +274,10 @@ func StopP2P() error {
 		if _, err := strconv.Atoi(string(data)); err == nil {
 			//return syscall.Kill(pid, syscall.SIGQUIT)
 		}
-	}
-	return err
-	//commToDaemon("get", "/stop", nil)
+	}*/
+
+	commToDaemon("get", "/stop", nil)
+	return nil
 }
 
 func ShowUsage() {
