@@ -10,9 +10,9 @@ import (
 )
 
 type FormatDpCreate struct {
-	Name string	`json:"dpname, omitempty"`
-	Type string 	`json:"dptype, omitempty"`
-	Conn string	`json:"dpconn, omitempty"`
+	Name string `json:"dpname, omitempty"`
+	Type string `json:"dptype, omitempty"`
+	Conn string `json:"dpconn, omitempty"`
 }
 
 var DataPoolTypes = []string{"file", "db", "hdfs", "jdbc", "s3", "api", "storm"}
@@ -27,6 +27,10 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 1 {
+		if strings.Contains(args[0], "/") == true {
+			fmt.Println("DataHub : The name of datapool can't contain '/'.")
+			return
+		}
 		fmt.Print("DataHub : Are you sure to create a datapool ",
 			" with default type 'file' and path \"/var/lib/datahub\" ?\n[Y or N]:")
 		if GetEnsure() == true {
@@ -39,6 +43,10 @@ func DpCreate(needLogin bool, args []string) (err error) {
 	} else {
 		if len(args) != 2 || len(args[0]) == 0 {
 			fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
+			return
+		}
+		if strings.Contains(args[0], "/") == true {
+			fmt.Println("DataHub : The name of datapool can't contain '/'.")
 			return
 		}
 		d.Name = args[0]
@@ -61,7 +69,6 @@ func DpCreate(needLogin bool, args []string) (err error) {
 					return
 				}
 			}
-
 
 		} else if len(sp) == 1 && len(sp[0]) != 0 {
 			d.Type = "file"

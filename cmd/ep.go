@@ -24,6 +24,7 @@ func Ep(needLogin bool, args []string) (err error) {
 		return err
 	}
 	if len(args) > 1 {
+		fmt.Println(ErrMsgArgument)
 		epUsage()
 		return
 	}
@@ -35,6 +36,7 @@ func Ep(needLogin bool, args []string) (err error) {
 
 		ep := parseEp(args[0])
 		if len(ep) == 0 {
+			fmt.Println(ErrMsgArgument)
 			epUsage()
 			return
 		}

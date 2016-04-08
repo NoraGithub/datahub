@@ -55,6 +55,7 @@ func JobRm(needLogin bool, args []string) (err error) {
 		path += "/" + args[0]
 
 	} else if len(args) == 0 {
+		fmt.Println(ErrMsgArgument)
 		jobUsage()
 		return errors.New("Invalid arguments.")
 	}
@@ -69,6 +70,7 @@ func JobRm(needLogin bool, args []string) (err error) {
 	//}
 
 	if (path == "/job") && (*fRmAll == false) {
+		fmt.Println(ErrMsgArgument)
 		jobUsage()
 		return errors.New("Invalid arguments.")
 	}
@@ -84,6 +86,7 @@ func JobRm(needLogin bool, args []string) (err error) {
 	} else {
 		showError(resp)
 	}
+	//mt.Println(resp.Header)
 	return err
 }
 

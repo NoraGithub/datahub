@@ -17,13 +17,10 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 	if err := f.Parse(args); err != nil {
 		return err
 	}
-	if len(args) == 0 {
+	if len(args) == 0 || len(args) > 1 {
+		fmt.Println(ErrMsgArgument)
 		itemortagrmUsage()
-		return nil
-	} else if len(args) > 1 {
-		fmt.Println(ValidateErrMsgArgument)
-		itemortagrmUsage()
-		return errors.New(ValidateErrMsgArgument)
+		return errors.New(ErrMsgArgument)
 	}
 
 	arg := args[0]
@@ -51,7 +48,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		uri := "/repositories/" + repository + "/" + dataitem
 		resp, err := commToDaemon("DELETE", uri, nil)
 		if err != nil {
-			fmt.Println("Error :",err)
+			fmt.Println("Error :", err)
 			return err
 		}
 		defer resp.Body.Close()
@@ -60,7 +57,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			body, _ := ioutil.ReadAll(resp.Body)
 			result := ds.Result{}
 			if err := json.Unmarshal(body, &result); err != nil {
-				fmt.Println(err)
+				fmt.Println("Error :", err)
 				return err
 			}
 
@@ -70,7 +67,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			if err = Login(false, nil); err == nil {
 				err = ItemOrTagRm(needLogin, args)
 			} else {
-				fmt.Println(err)
+				fmt.Println("Error :", err)
 			}
 		} else {
 			showError(resp)
@@ -111,7 +108,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 			if err = Login(false, nil); err == nil {
 				err = ItemOrTagRm(needLogin, args)
 			} else {
-				fmt.Println("Error :",err)
+				//fmt.Println(err)
 			}
 		} else {
 			showError(resp)
@@ -159,7 +156,7 @@ func ensureRmItem(code int, uri, msg string) {
 
 }
 
-func ensureRmTag(statusCode, code int, msg, repository, dataitem, tag string)  {
+func ensureRmTag(statusCode, code int, msg, repository, dataitem, tag string) {
 
 	if statusCode == http.StatusBadRequest && code == RepoOrItemNotExist {
 		fmt.Println("Error :", msg)
@@ -169,7 +166,7 @@ func ensureRmTag(statusCode, code int, msg, repository, dataitem, tag string)  {
 		return
 	} else if statusCode == http.StatusOK && code == TagExist {
 		fmt.Print("DataHub : After you delete the Tag, data could not be recovery.\n" +
-		"Are you sure to delete the current Tag?[Y or N]:")
+			"Are you sure to delete the current Tag?[Y or N]:")
 
 		if GetEnsure() == true {
 			uri := "/repositories/" + repository + "/" + dataitem + "/" + tag
