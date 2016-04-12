@@ -118,7 +118,7 @@ func Pull(login bool, args []string) (err error) {
 		if result.Code == ServerErrResultCode5009 {
 			fmt.Println("DataHub : Failed to get subscription")
 		} else if result.Code == ServerErrResultCode5012 {
-			fmt.Println("DataHub : Permission denied,you have not subscribed current repo yet.")
+			fmt.Println("DataHub : Permission denied,you have not subscribed current dataitem yet.")
 		} else if result.Code == ServerErrResultCode5023 {
 			fmt.Println("DataHub : Currently the data is unavaliable.")
 		} else {
