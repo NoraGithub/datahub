@@ -42,6 +42,8 @@ Datahub CLI是datahub的命令行客户端，用来输入datahub相关命令。
     - Repository管理
 - job
     - 显示任务列表
+- ep
+    - 
 - help
     - 帮助命令
 

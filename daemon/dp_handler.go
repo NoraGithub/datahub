@@ -160,7 +160,7 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
-	sqlDp := fmt.Sprintf(`SELECT DPID, DPNAME, DPTYPE, DPCONN FROM DH_DP 
+	sqlDp := fmt.Sprintf(`SELECT DPID, DPTYPE, DPCONN FROM DH_DP 
 		WHERE STATUS = 'A' AND DPNAME = '%s'`, dpname)
 	rowdp, err := g_ds.QueryRow(sqlDp)
 	if err != nil {
@@ -170,11 +170,13 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	var dpid int
 	onedp.Items = make([]cmd.Item, 0, 16)
-	rowdp.Scan(&dpid, &onedp.Name, &onedp.Type, &onedp.Conn)
+	onedp.Name = dpname
+	rowdp.Scan(&dpid, &onedp.Type, &onedp.Conn)
 	if dpid > 0 {
 		//Use "left out join" to get repository/dataitem records, whether it has tags or not.
 		//B.STATUS='A'
-		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME)
+		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), 
+				B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME), B.COMMENT 
 				FROM DH_DP_RPDM_MAP A LEFT JOIN DH_RPDM_TAG_MAP B
 				ON (A.RPDMID = B.RPDMID)
 				WHERE A.DPID = %v AND A.STATUS='A' `, dpid)
@@ -184,10 +186,11 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 			return
 		}
 		defer tagrows.Close()
+
+		var repoitemtime string
 		for tagrows.Next() {
 			item := cmd.Item{}
-			var repoitemtime string
-			tagrows.Scan(&item.Repository, &item.DataItem, &item.ItemDesc, &item.Publish, &repoitemtime, &item.Tag, &item.TagDetail, &item.Time)
+			tagrows.Scan(&item.Repository, &item.DataItem, &item.ItemDesc, &item.Publish, &repoitemtime, &item.Tag, &item.TagDetail, &item.Time, &item.TagComment)
 			if len(item.Time) == 0 {
 				item.Time = repoitemtime
 			}
