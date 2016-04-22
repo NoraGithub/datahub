@@ -126,8 +126,7 @@ $ datahub dp create s3dp s3://mybucket
 DataHub : s3dp already exists, please change another name.
 $
 ```
-说明：mybucket是s3上已存在的bucket。
-另外，需要在启动daemon的系统中设置环境变量：AWS_SECRET_ACCESS_KEY， AWS_ACCESS_KEY_ID， AWS_REGION。
+说明：mybucket是s3上已存在的bucket。另外，需要在启动daemon的系统中设置环境变量：AWS_SECRET_ACCESS_KEY， AWS_ACCESS_KEY_ID， AWS_REGION。
 
 例子 3
 ```
@@ -386,7 +385,7 @@ datahub job rm &JOBID
 
 #### 8. ep命令
 
-- 设置datahub daemon的entrypoint，作为数据提供方，供需求方访问，并下载数据。
+- 设置datahub daemon的entrypoint，作为数据提供方，需要提供可访问的url，供需求方访问，并下载数据。
 - 此命令也可以用来查看是否设置了entrypoint。
 
 #### 9. logout命令
