@@ -28,22 +28,24 @@ docker run -d -e "DAEMON_TOKEN=xxxxxxxxxxx" -e "DAEMON_ENTRYPOINT=http://XXXXXXX
 
 Datahub CLI是datahub的命令行客户端，用来输入datahub相关命令。
 
-- dp        
+- dp
     - Datapool管理
-- subs      
+- subs
     - Subscrption管理
-- login     
+- login
     - 登录到dataos.io
-- pull      
+- pull
     - 下载数据
 - pub
     - 发布数据
-- repo      
+- repo
     - Repository管理
 - job
     - 显示任务列表
 - ep
-    - 
+    - 设置Entrypoint
+- logout
+    - 登出
 - help
     - 帮助命令
 
@@ -69,12 +71,12 @@ datahub dp
 例子
 ```shell
 $ datahub dp
-DATAPOOL            TYPE    
+DATAPOOL            TYPE
 ------------------------
 dp1                 file 
 dp2                 db2
-dphere              hdfs
-dpthere             api
+dphdfs              hdfs
+dps3                s3
 $
 ```
 
@@ -92,12 +94,13 @@ DATAPOOL:%DPNAME        %DPTYPE         %DPCONN
 ```shell
 $ datahub dp dp1
 DATAPOOL:dp1            file                      /var/lib/datahub/dp1
-repo1/item1:tag1        2015-10-23 03:57:42       pub
-repo1/item1:tag2        2015-10-23 03:59:49       pub
-repo1/item2:latest      2015-10-23 04:01:22       pull
-cmcc/beijing:latest     2015-11-19 10:57:21       pull
+repo1/item1:tag1        2015-10-23 03:57:42       pub		repo1_item1       tag1.txt    		Size:232.00KB
+repo1/item1:tag2        2015-10-23 03:59:49       pub		repo1_item1	  tag2
+repo1/item2:jinrong-40  2015-10-23 04:01:22       pull		item2location	  jinrong_40.txt	金融信息
+cmcc/beijing:jiangsu-lac-ci     2015-11-19 10:57:21       pull		cmcc_beijing	jiangsu-lac-ci.txt   位置区编码
 $ 
 ```
+说明：cmcc_beijing为dataitem beijing在datapool dp1中的位置， jiangsu-lac-ci.txt为tag存储到dp1中的文件名，“位置区编码”为详细信息。
 
 ##### 1.3. 创建数据池
 
@@ -123,6 +126,14 @@ $ datahub dp create s3dp s3://mybucket
 DataHub : s3dp already exists, please change another name.
 $
 ```
+说明：mybucket是s3上已存在的bucket。
+另外，需要在启动daemon的系统中设置环境变量：AWS_SECRET_ACCESS_KEY， AWS_ACCESS_KEY_ID， AWS_REGION。
+
+例子 3
+```
+$ datahub dp create hdfsdp hdfs://user123:admin123@x.x.x.x:9000
+```
+说明：“hdfs://”后需要接hdfs的连接串。
 
 ##### 1.4. 删除数据池
 
@@ -229,7 +240,7 @@ $
 
 - login命令支持被动调用，用于datahub client与datahub server交互时作认证。并将认证信息保存到环境变量，免去后续指令重复输入认证信息。
 
-##### 4.1. 登录到dataos.io
+##### 4.1. 登录到hub.dataos.io
 
 ```shell
 datahub login [--user=user]
@@ -295,8 +306,8 @@ datahub repo
 ```
 REPOSITORY
 --------------------
-Location_information	                
-Internet_stats  
+Location_information
+Internet_stats
 Base_station_location
 ```
 
@@ -373,11 +384,20 @@ datahub job &JOBID
 datahub job rm &JOBID
 ```
 
-#### 8. help命令
+#### 8. ep命令
+
+- 设置datahub daemon的entrypoint，作为数据提供方，供需求方访问，并下载数据。
+- 此命令也可以用来查看是否设置了entrypoint。
+
+#### 9. logout命令
+
+- 登出hub.dataos.io
+
+#### 10. help命令
 
 - help提供datahub所有命令的帮助信息。
 
-##### 8.1. 列出帮助
+##### 10.1. 列出帮助
 
 ```shell
 datahub help [$CMD] [$SUBCMD]
