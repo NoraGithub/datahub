@@ -37,12 +37,12 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 	}
 	if !allowtype {
-		fmt.Println("DataHub : Datapool type need to be:", DPTYPES)
+		log.Println("DataHub : Datapool type need to be:", DPTYPES)
 		rw.Write([]byte(fmt.Sprintf(`{"msg":"Datapool type need to be:%s"}`, DPTYPES)))
 		return
 	}
 
-	if len(struDp.Name) == 0 {
+	if len(struDp.Name) == 0 || strings.Contains(struDp.Name, "/") == true {
 		log.Println("Invalid argument")
 		rw.Write([]byte(`{"msg":"Invalid argument"}`))
 		return
@@ -64,7 +64,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("'%s' has been created already.", struDp.Name)
+			msg.Msg = fmt.Sprintf("'%s' already exists, please change another name.", struDp.Name)
 			resp, _ := json.Marshal(msg)
 			rw.Write(resp)
 			return
@@ -84,7 +84,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			logq.LogPutqueue(l)
 			msg.Msg = err.Error()
 		} else {
-			msg.Msg = fmt.Sprintf("Datapool has been created successfully.Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
+			msg.Msg = fmt.Sprintf("Datapool has been created successfully. Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
@@ -154,12 +154,13 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	row.Scan(&total)
 	if total == 0 {
 		msg := fmt.Sprintf("Datapool '%v' not found.", dpname)
+		result.Code = cmd.ErrorNoRecord
 		WriteResp(rw, result, msg)
 		log.Error("Datahub:", result.Code, "Msg:", result.Msg)
 		return
 	}
 
-	sqlDp := fmt.Sprintf(`SELECT DPID, DPNAME, DPTYPE, DPCONN FROM DH_DP 
+	sqlDp := fmt.Sprintf(`SELECT DPID, DPTYPE, DPCONN FROM DH_DP 
 		WHERE STATUS = 'A' AND DPNAME = '%s'`, dpname)
 	rowdp, err := g_ds.QueryRow(sqlDp)
 	if err != nil {
@@ -169,11 +170,13 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	var dpid int
 	onedp.Items = make([]cmd.Item, 0, 16)
-	rowdp.Scan(&dpid, &onedp.Name, &onedp.Type, &onedp.Conn)
+	onedp.Name = dpname
+	rowdp.Scan(&dpid, &onedp.Type, &onedp.Conn)
 	if dpid > 0 {
 		//Use "left out join" to get repository/dataitem records, whether it has tags or not.
 		//B.STATUS='A'
-		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME)
+		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), 
+				B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME), B.COMMENT 
 				FROM DH_DP_RPDM_MAP A LEFT JOIN DH_RPDM_TAG_MAP B
 				ON (A.RPDMID = B.RPDMID)
 				WHERE A.DPID = %v AND A.STATUS='A' `, dpid)
@@ -183,10 +186,11 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 			return
 		}
 		defer tagrows.Close()
+
+		var repoitemtime string
 		for tagrows.Next() {
 			item := cmd.Item{}
-			var repoitemtime string
-			tagrows.Scan(&item.Repository, &item.DataItem, &item.ItemDesc, &item.Publish, &repoitemtime, &item.Tag, &item.TagDetail, &item.Time)
+			tagrows.Scan(&item.Repository, &item.DataItem, &item.ItemDesc, &item.Publish, &repoitemtime, &item.Tag, &item.TagDetail, &item.Time, &item.TagComment)
 			if len(item.Time) == 0 {
 				item.Time = repoitemtime
 			}

@@ -21,6 +21,7 @@ func Pull(login bool, args []string) (err error) {
 	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "Cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
+		fmt.Println(ErrMsgArgument)
 		pullUsage()
 		return
 	}
@@ -40,7 +41,7 @@ func Pull(login bool, args []string) (err error) {
 	source := strings.Trim(u.Path, "/")
 
 	if url := strings.Split(source, "/"); len(url) != 2 {
-		fmt.Println("Datahub : Invalid argument.")
+		fmt.Println(ErrMsgArgument)
 		pullUsage()
 		return
 	} else {
@@ -117,7 +118,7 @@ func Pull(login bool, args []string) (err error) {
 		if result.Code == ServerErrResultCode5009 {
 			fmt.Println("DataHub : Failed to get subscription")
 		} else if result.Code == ServerErrResultCode5012 {
-			fmt.Println("DataHub : Permission denied,you have not subscribed current repo yet.")
+			fmt.Println("DataHub : Permission denied,you have not subscribed current dataitem yet.")
 		} else if result.Code == ServerErrResultCode5023 {
 			fmt.Println("DataHub : Currently the data is unavaliable.")
 		} else {

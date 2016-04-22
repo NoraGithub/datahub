@@ -201,8 +201,8 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	splits := strings.Split(pub.Detail, "/")
 	fileName := splits[len(splits)-1]
 
-	DpItemFullPath := dpconn + "/" + itemDesc
-	DestFullPathFileName := DpItemFullPath + "/" + fileName
+	//DpItemFullPath := dpconn + "/" + itemDesc
+	//DestFullPathFileName := DpItemFullPath + "/" + fileName
 
 	datapool, err := dpdriver.New(dptype)
 	if err != nil {
@@ -241,7 +241,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	body, e := json.Marshal(&struct {
-		Commnet string `json:"comment"`
+		Comment string `json:"comment"`
 	}{pub.Comment})
 
 	if e != nil {
@@ -251,7 +251,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	err = InsertPubTagToDb(repo, item, tag, fileName)
+	err = InsertPubTagToDb(repo, item, tag, fileName, pub.Comment)
 
 	if err != nil {
 		log.Error("Insert tag to db error.")
@@ -277,7 +277,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	if resp.StatusCode == http.StatusOK {
 		if dptype == "file" {
-			AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag)
+			//AddtoMonitor(DestFullPathFileName, repo+"/"+item+":"+tag) //do not monitor temporarily
 		}
 		HttpNoData(w, http.StatusOK, cmd.ResultOK, "OK")
 

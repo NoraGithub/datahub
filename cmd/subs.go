@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/ds"
+	"github.com/asiainfoLDP/datahub/utils"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
-	"net/http"
 )
 
 func Subs(login bool, args []string) (err error) {
@@ -33,6 +34,7 @@ func Subs(login bool, args []string) (err error) {
 			repo, item, err := GetRepoItem(args[0])
 			if err != nil {
 				fmt.Println(ErrMsgArgument)
+				subsUsage()
 				return err
 			}
 			//fmt.Println(repo, item)
@@ -78,7 +80,7 @@ func cmdSubsRepo(detail bool, uri string, args []string) error {
 		if err := Login(false, nil); err == nil {
 			Subs(true, args)
 		} else {
-			fmt.Println(err)
+			//fmt.Println(err)
 		}
 	} else {
 		showError(resp)
@@ -168,16 +170,23 @@ func subsResp(detail bool, respbody []byte, repoitem string) {
 		if err != nil {
 			panic(err)
 		}
-		n, _ := fmt.Printf("%s/%-8s\t%s\t\t%s\n", "REPOSITORY", "ITEM", "TYPE", "STATUS")
-		printDash(n + 5)
+
+		citem := []string{"REPOSITORY/ITEM"}
+		ctype := []string{"TYPE"}
+		cstatus := []string{"STATUS"}
 		for _, item := range subs {
+			//crepo = append(crepo, item.Repository_name)
+			citem = append(citem, item.Repository_name+"/"+item.Dataitem_name)
+			ctype = append(ctype, "file")
 			itemStatus, err = getItemStatus(item.Repository_name, item.Dataitem_name)
 			if err != nil {
-				fmt.Println("Error :", err)
+				//fmt.Println("Error :", err)
+				cstatus = append(cstatus, "")
 			}
-			fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
+			cstatus = append(cstatus, itemStatus)
+			//fmt.Printf("%s/%-8s\t%s\t%s\n", item.Repository_name, item.Dataitem_name, "file", itemStatus)
 		}
-
+		utils.PrintFmt(citem, ctype, cstatus)
 	}
 
 }

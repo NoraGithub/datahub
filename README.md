@@ -1,14 +1,18 @@
 # Datahub-Client
 ----------------
+###简介
+Datahub-Client实现了datahub CLI和datahub daemon两部分功能。Datahub daemon是常驻进程，接收datahub CLI发送的命令，完成命令的后台执行。
+
+
 ### 开始
 
-在安装GO(需要go1.4以上版本)语言和设置了[GOPATH](http://golang.org/doc/code.html#GOPATH)环境变量之后，安装datahub-client：
+在安装GO(需要go1.4以上版本)语言和设置了[GOPATH](http://golang.org/doc/code.html#GOPATH)环境变量之后，安装datahub daemon：
 
 ```shell
 go get github.com/asiainfoLDP/datahub
 ```
 
-启动datahub服务:
+启动datahub daemon服务:
 ```shell
 sudo $GOPATH/bin/datahub --daemon --token xxxxxxxxxxx
 ```
@@ -22,26 +26,30 @@ docker run -d -e "DAEMON_TOKEN=xxxxxxxxxxx" -e "DAEMON_ENTRYPOINT=http://XXXXXXX
 
 ### 运行Datahub CLI
 
-Datahub CLI是datahub-client的命令行客户端，用来执行datahub相关命令。
+Datahub CLI是datahub的命令行客户端，用来输入datahub相关命令。
 
-- dp        
+- dp
     - Datapool管理
-- subs      
+- subs
     - Subscrption管理
-- login     
+- login
     - 登录到dataos.io
-- pull      
+- pull
     - 下载数据
 - pub
     - 发布数据
-- repo      
+- repo
     - Repository管理
 - job
     - 显示任务列表
+- ep
+    - 设置Entrypoint
+- logout
+    - 登出
 - help
     - 帮助命令
 
-### Datahub Client 命令行使用说明
+### Datahub CLI命令行使用说明
 ---
 #### NOTE：
 - 如果没有额外说明，所有的命令在没有错误发生时，不在终端输出任何信息，只记录到日志中。错误信息会打印到终端。
@@ -63,10 +71,12 @@ datahub dp
 例子
 ```shell
 $ datahub dp
-dp1     regular file 
-dp2     db2
-dphere  hdfs
-dpthere api
+DATAPOOL            TYPE
+------------------------
+dp1                 file 
+dp2                 db2
+dphdfs              hdfs
+dps3                s3
 $
 ```
 
@@ -77,27 +87,27 @@ datahub dp $DPNAME
 ```
 输出
 ```shell
-%DPNAME %DPTYPE %DPCONN
+DATAPOOL:%DPNAME        %DPTYPE         %DPCONN
 {%REPO/%ITEM:%TAG       %LOCAL_TIME     %T}
 ```
 例子
 ```shell
 $ datahub dp dp1
-dp1 regular file    /var/lib/datahub/dp1
-
-repo1/item1:tag1        12:34 Oct 11 2015       pub
-repo1/item1:tag2        15:00 Nov 2  2015       pub
-repo1/item2:latest  10:00 Nov 1  2015       pull
-cmcc/beijing:latest 10:00 Nov 1  2015       pull
+DATAPOOL:dp1            file                      /var/lib/datahub/dp1
+repo1/item1:tag1        2015-10-23 03:57:42       pub		repo1_item1       tag1.txt    		Size:232.00KB
+repo1/item1:tag2        2015-10-23 03:59:49       pub		repo1_item1	  tag2
+repo1/item2:jinrong-40  2015-10-23 04:01:22       pull		item2location	  jinrong_40.txt	金融信息
+cmcc/beijing:jiangsu-lac-ci     2015-11-19 10:57:21       pull		cmcc_beijing	jiangsu-lac-ci.txt   位置区编码
 $ 
 ```
+说明：cmcc_beijing为dataitem beijing在datapool dp1中的位置， jiangsu-lac-ci.txt为tag存储到dp1中的文件名，“位置区编码”为详细信息。
 
 ##### 1.3. 创建数据池
 
 - 目前只支持本地目录形式的数据池创建。
 
 ```shell
-datahub dp create $DPNAME [[file://][ABSOLUTE PATH]] [[s3://][BUCKET]]
+datahub dp create $DPNAME [[file://][ABSOLUTE PATH]] | [[s3://][BUCKET]] | [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]
 ```
 输出
 ```
@@ -106,16 +116,23 @@ datahub dp create $DPNAME [[file://][ABSOLUTE PATH]] [[s3://][BUCKET]]
 例子 1
 ```
 $ datahub dp create testdp file:///var/lib/datahub/testdp
-DataHub : dp create success. name:testdp type:file path:/var/lib/datahub/testdp
+DataHub : Datapool has been created successfully. Name:testdp Type:file Path:/var/lib/datahub/testdp.
 $
 ```
 
 例子 2
 ```
 $ datahub dp create s3dp s3://mybucket
-DataHub : dp create success. name:s3dp type:s3 path:mybucket
+DataHub : s3dp already exists, please change another name.
 $
 ```
+说明：mybucket是s3上已存在的bucket。另外，需要在启动daemon的系统中设置环境变量：AWS_SECRET_ACCESS_KEY， AWS_ACCESS_KEY_ID， AWS_REGION。
+
+例子 3
+```
+$ datahub dp create hdfsdp hdfs://user123:admin123@x.x.x.x:9000
+```
+说明：“hdfs://”后需要接hdfs的连接串。
 
 ##### 1.4. 删除数据池
 
@@ -131,7 +148,7 @@ datahub dp rm $DPNAME
 例子
 ```
 $ datahub dp rm testdp
-Datapool testdp with type:file removed successfully!
+DataHub : Datapool testdp removed successfully!
 $
 ```
 
@@ -144,13 +161,15 @@ datahub subs
 ```
 输出
 ```
-{%REPO/%ITEM    %TYPE}
+REPOSITORY/ITEM     TYPE    STATUS
+{%REPO/%ITEM        %TYPE   online/offline}
 ```
 例子
 ```
 $ datahub subs
-cmcc/beijing        file
-repo1/testing       api
+REPOSITORY/ITEM     TYPE    STATUS
+cmcc/beijing        file    online
+repo1/testing       hdfs    online
 $
 ```
 
@@ -161,18 +180,16 @@ datahub subs $REPO
 ```
 输出
 ```
-%REPO/%ITEM     %TYPE
+REPOSITORY/ITEM     TYPE      STATUS
+%REPO/%ITEM         %TYPE     %STATUS
 
-{%ITEM:%TAGNAME %UPDATE_TIME    %INFO}
 ```
 例子
 ```
 $ datahub subs cmcc
-cmcc/beijing    regular file
-$ datahub subs cmcc
-cmcc/Beijing     file
-cmcc/Tianjin     file
-cmcc/Shanghai    file
+REPOSITORY/ITEM    TYPE      STATUS
+cmcc/beijing       file      online
+cmcc/Shanghai      file      offline
 $
 ```
 ##### 2.3. 列出已订阅item详情
@@ -181,17 +198,17 @@ datahub subs $REPO/$ITEM
 ```
 输出
 ```
-%REPO/%ITEM     %TYPE
-{%ITEM:%TAGNAME %UPDATE_TIME    %INFO}
+REPOSITORY/ITEM:TAG      UPDATETIME      COMMENT      STATUS
+%REPO/%ITEM:%TAGNAME     %UPDATE_TIME    %COMMENT     %STATUS
 ```
 例子
 ```
 $ datahub subs cmcc/beijing
-cmcc/beijing    file
-cmcc/beijing:chaoyang    15:34 Oct 12 2015       600M
-cmcc/beijing:daxing  16:40 Oct 13 2015       435M
-cmcc/beijing:shunyi  16:40 Oct 14 2015       324M
-cmcc/beijing:haidian 16:40 Oct 15 2015       988M
+REPOSITORY/ITEM:TAG      UPDATETIME              COMMENT      STATUS
+cmcc/beijing:chaoyang    15:34 Oct 12 2015       600M         NORMAL
+cmcc/beijing:daxing      16:40 Oct 13 2015       435M         NORMAL
+cmcc/beijing:shunyi      16:40 Oct 14 2015       324M         NORMAL
+cmcc/beijing:haidian     16:40 Oct 15 2015       988M         NORMAL
 $
 ```
 
@@ -222,7 +239,7 @@ $
 
 - login命令支持被动调用，用于datahub client与datahub server交互时作认证。并将认证信息保存到环境变量，免去后续指令重复输入认证信息。
 
-##### 4.1. 登录到dataos.io
+##### 4.1. 登录到hub.dataos.io
 
 ```shell
 datahub login [--user=user]
@@ -234,9 +251,9 @@ datahub login [--user=user]
 例子
 ```
 $ datahub login
-login: datahub
+login as: datahub
 password: *******
-Authorization failed.
+Error : login failed.
 $
 ```
 
@@ -288,8 +305,8 @@ datahub repo
 ```
 REPOSITORY
 --------------------
-Location_information	                
-Internet_stats  
+Location_information
+Internet_stats
 Base_station_location
 ```
 
@@ -311,7 +328,7 @@ Internet_stats/Film_and_television
 ##### 6.3. 查询dataitem的详情
 
 ```shell
-datahub repo rm Internet_stats/Music
+datahub repo Internet_stats/Music
 ```
 输出
 ```
@@ -366,11 +383,20 @@ datahub job &JOBID
 datahub job rm &JOBID
 ```
 
-#### 8. help命令
+#### 8. ep命令
+
+- 设置datahub daemon的entrypoint，作为数据提供方，需要提供可访问的url，供需求方访问，并下载数据。
+- 此命令也可以用来查看是否设置了entrypoint。
+
+#### 9. logout命令
+
+- 登出hub.dataos.io
+
+#### 10. help命令
 
 - help提供datahub所有命令的帮助信息。
 
-##### 8.1. 列出帮助
+##### 10.1. 列出帮助
 
 ```shell
 datahub help [$CMD] [$SUBCMD]

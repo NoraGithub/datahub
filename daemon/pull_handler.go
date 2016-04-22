@@ -53,7 +53,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	dpexist := CheckDataPoolExist(p.Datapool)
 	if dpexist == false {
-		e := fmt.Sprintf("Error : Datapool '%s' does not exist.", p.Datapool)
+		e := fmt.Sprintf("Datapool '%s' does not exist.", p.Datapool)
 		l := log.Error("Code:", cmd.ErrorDatapoolNotExits, e)
 		logq.LogPutqueue(l)
 		msgret := ds.Result{Code: cmd.ErrorDatapoolNotExits, Msg: e}
@@ -280,8 +280,43 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 	status = datapool.StoreFile(status, destfilename, dpconn, p.Datapool, p.ItemDesc, p.DestName)
 	updateJobQueue(jobid, status, dlsize)
 
-	InsertTagToDb(true, p)
+	tagComment := GetTagComment(p.Repository, p.Dataitem, p.Tag)
+
+	InsertTagToDb(true, p, tagComment)
 	return n, nil
+}
+
+func GetTagComment(repo, item, tag string) string {
+	path := "/repositories/" + repo + "/" + item + "/" + tag
+
+	resp, err := commToServerGetRsp("get", path, nil)
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
+		err = errors.New("unkown error")
+		log.Error("GET", path, resp.StatusCode)
+		return ""
+	}
+	result := ds.Response{}
+	struComment := &struct {
+		Comment string `json:"comment"`
+	}{}
+	result.Data = struComment
+
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	log.Println(string(respbody))
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		return ""
+	}
+	log.Println(result)
+
+	return struComment.Comment
 }
 
 func ErrLogAndResp(c chan int, w http.ResponseWriter, httpcode, errorcode int, err error) (int64, error) {

@@ -61,13 +61,14 @@ func dbinit() {
 	}
 	row.Scan(&RetDhRpdmTagMap)
 	if len(RetDhRpdmTagMap) > 1 {
-		if false == strings.Contains(RetDhRpdmTagMap, "TAGID") {
-			UpdateSql04To05()
+		if false == strings.Contains(RetDhRpdmTagMap, "COMMENT") {
+			//	UpdateSql04To05()
+			UpdateSql16To17()
 		}
 	}
-	if err := UpgradeSql07To08(); err != nil {
-		panic(err)
-	}
+	//if err := UpgradeSql07To08(); err != nil {
+	//	panic(err)
+	//}
 	if err := CreateTable(); err != nil {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
@@ -336,7 +337,7 @@ func RunDaemon() {
 		go startP2PServer()
 		go HeartBeat()
 		go CheckHealthClock()
-		go datapoolMonitor()
+		//go datapoolMonitor()  //Temporarily not use
 		go GetMessages()
 		go PullTagAutomatic()
 	} else {

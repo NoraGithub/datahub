@@ -31,6 +31,7 @@ func Login(login bool, args []string) (err error) {
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
 	if err := f.Parse(args); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	if len(args) >= 1 {
@@ -92,16 +93,17 @@ func Login(login bool, args []string) (err error) {
 			default:
 				fmt.Printf("%s\n%v chances left.\n", result.Msg, leftchance)
 			}
-			fmt.Println("Error : login failed.")
-			return errors.New("Error : login failed.")
+			fmt.Println(ErrLoginFailed)
+			return errors.New(ErrLoginFailed)
 		}
 	} else {
+
+		fmt.Println(ErrLoginFailed)
 		if /*resp.StatusCode == 401 &&*/ login {
 			body, _ := ioutil.ReadAll(resp.Body)
-			fmt.Println("login failed. ", string(body))
+			fmt.Println(string(body))
 		}
-		fmt.Println("Error : login failed.")
-		return errors.New("Error : login failed.")
+		return errors.New(ErrLoginFailed)
 	}
 	/*
 		body, _ := ioutil.ReadAll(resp.Body)
