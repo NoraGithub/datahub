@@ -46,11 +46,30 @@ type StoppabletcpListener struct {
 }
 
 func dbinit() {
-	log.Println("connect to db sqlite3")
-	db, err := sql.Open("sqlite3", g_dbfile)
-	//defer db.Close()
-	chk(err)
-	g_ds.Db = db
+
+	DB_TYPE := os.Getenv("DB_TYPE")
+	if strings.ToUpper(DB_TYPE) == "MYSQL" {
+		for i := 0; i < 3; i++ {
+			connectMysql()
+			if g_ds.Db == nil {
+				select {
+				case <-time.After(time.Second * 5):
+					continue
+				}
+			} else {
+				break
+			}
+		}
+		if g_ds.Db == nil {
+			return
+		}
+	} else {
+		log.Println("connect to db sqlite3")
+		db, err := sql.Open("sqlite3", g_dbfile)
+		//defer db.Close()
+		chk(err)
+		g_ds.Db = db
+	}
 
 	var RetDhRpdmTagMap string
 	row, err := g_ds.QueryRow(ds.SQLIsExistRpdmTagMap)
@@ -73,6 +92,22 @@ func dbinit() {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
 		panic(err)
+	}
+}
+
+func connectMysql() {
+	DB_ADDR := os.Getenv("MYSQL_PORT_3306_TCP_ADDR")
+	DB_PORT := os.Getenv("MYSQL_PORT_3306_TCP_PORT")
+	DB_DATABASE := os.Getenv("MYSQL_ENV_MYSQL_DATABASE")
+	DB_USER := os.Getenv("MYSQL_ENV_MYSQL_USER")
+	DB_PASSWORD := os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
+	DB_URL := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=true`, DB_USER, DB_PASSWORD, DB_ADDR, DB_PORT, DB_DATABASE)
+	db, err := sql.Open("mysql", DB_URL)
+	if err != nil {
+		log.Errorf("error: %s\n", err)
+	} else {
+		g_ds.Db = db
+		log.Println("Connect to Mysql successfully!")
 	}
 }
 
