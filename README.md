@@ -1,12 +1,12 @@
 # Datahub-Client
 ----------------
 ###简介
-Datahub-Client实现了datahub CLI和datahub daemon两部分功能。Datahub daemon是常驻进程，接收datahub CLI发送的命令，完成命令的后台执行。
+Datahub-Client实现了DataHub CLI和DataHub daemon两部分功能。Datahub daemon是常驻进程，接收DataHub CLI发送的命令，完成命令的后台执行。
 
 
 ### 开始
 
-在安装GO(需要go1.4以上版本)语言和设置了[GOPATH](http://golang.org/doc/code.html#GOPATH)环境变量之后，安装Datahub daemon：
+在安装GO(需要go1.4以上版本)语言和设置了[GOPATH](http://golang.org/doc/code.html#GOPATH)环境变量之后，安装DataHub daemon：
 
 ```shell
 go get github.com/asiainfoLDP/datahub
@@ -57,7 +57,7 @@ Datahub CLI是datahub的命令行客户端，用来输入datahub相关命令。
 - 参数支持全名和简称两种形式，例如--type等同于-t。详情见命令帮助。
 - 参数赋值支持空格和等号两种形式，例如--type=file等同于--type file。
 
-#### 1. datapool相关命令
+#### 1. Datapool相关命令
 
 ##### 1.1. 列出所有命令池
 
@@ -80,7 +80,7 @@ dps3                s3
 $
 ```
 
-##### 1.2. 列出datapool详情
+##### 1.2. 列出Datapool详情
 
 ```shell
 datahub dp $DPNAME
@@ -162,7 +162,7 @@ datahub subs
 输出
 ```
 REPOSITORY/DATAITEM               TYPE    STATUS
-{%REPOSITORY/%DATAITEM        %TYPE   online/offline}
+{%REPOSITORY/%DATAITEM            %TYPE   online/offline}
 ```
 例子
 ```
@@ -237,7 +237,7 @@ $
 
 #### 4. login命令
 
-- login命令支持被动调用，用于Datahub client与Datahub server交互时作认证。并将认证信息保存到环境变量，免去后续指令重复输入认证信息。
+- login命令支持被动调用，用于DataHub client与DataHub server交互时作认证。并将认证信息保存到环境变量，免去后续指令重复输入认证信息。
 
 ##### 4.1. 登录到hub.dataos.io
 
@@ -332,8 +332,8 @@ datahub repo Internet_stats/Music
 ```
 输出
 ```
-REPOSITORY/DATAITEM:TAG	UPDATETIME	COMMENT
----------------------------------------------------
+REPOSITORY/DATAITEM:TAG	                    UPDATETIME	                COMMENT
+------------------------------------------------------------------------------------
 Internet_stats/Music:music_baidumusic_6008	2016-03-04 09:15:18|6天前	百度音乐
 Internet_stats/Music:music_qqmusic_6001		2016-02-03 09:23:30|1个月前	QQ音乐
 Internet_stats/Music:music_kuwomusic_6005	2016-01-06 09:35:44|2个月前	酷我音乐
