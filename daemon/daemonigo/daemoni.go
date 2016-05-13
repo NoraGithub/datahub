@@ -48,6 +48,8 @@ var AppName = "datahub daemon"
 
 var PidFile = "/var/run/datahub.pid"
 var logfile = "/var/log/datahub.log"
+var OutPutLogScreen = "SCREENLOG"
+var sCREENLOG = "1"
 
 // Pointer to PID file to keep file-lock alive.
 var pidFile *os.File
@@ -68,7 +70,13 @@ func Daemonize() (isDaemon bool, err error) {
 		}
 	}
 	if isDaemon {
-		log.SetLogFile(logfile)
+		screenlog := os.Getenv(OutPutLogScreen)
+		if screenlog == sCREENLOG {
+
+		} else {
+			log.SetLogFile(logfile)
+		}
+
 		oldmask := syscall.Umask(int(Umask))
 		defer syscall.Umask(oldmask)
 		if _, err = syscall.Setsid(); err != nil {

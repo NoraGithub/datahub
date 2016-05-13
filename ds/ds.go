@@ -2,6 +2,7 @@ package ds
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 )
@@ -18,7 +19,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v1.8.0"
+	DATAHUB_VERSION = "v1.9.0"
 )
 
 type DsPull struct {
