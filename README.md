@@ -214,12 +214,12 @@ $
 
 #### 3. pull命令
 
-##### 3.1. 拉取某个DataItem的tag
+##### 3.1. 拉取某个DataItem的Tag
 - pull一个tag，需指定`$DATAPOOL`, 可再指定`$DATAPOOL`下的子目录`$LOCATION`，默认下载到`$DATAPOOL://$REPOSITORY_$DATAITEM`. 
 可选参数:
 [--destname, -d]命名下载的Tag
 [--automatic, -a]自动下载已订阅的DataItem新增的Tag
-[--cancel, -c]取消自动下载tag
+[--cancel, -c]取消自动下载Tag
 
 ```shell
 datahub pull %REPOSITORY/%DATAITEM:$TAG $DATAPOOL[://$LOCATION] [--destname，-d]
@@ -385,8 +385,8 @@ datahub job rm &JOBID
 
 #### 8. ep命令
 
-- 设置Datahub daemon的entrypoint，作为数据提供方，需要提供可访问的url，供需求方访问，并下载数据。
-- 此命令也可以用来查看是否设置了entrypoint。
+- 设置Datahub daemon的Entrypoint，作为数据提供方，需要提供可访问的url，供需求方访问，并下载数据。
+- 此命令也可以用来查看是否设置了Entrypoint。
 
 #### 9. logout命令
 
