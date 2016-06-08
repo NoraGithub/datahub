@@ -349,6 +349,8 @@ func RunDaemon() {
 	http.HandleFunc("/users/auth", loginHandler)
 	http.HandleFunc("/users/logout", logoutHandler)
 
+	router.GET("/users/whoami", whoamiHandler)
+
 	server := http.Server{}
 
 	go func() {

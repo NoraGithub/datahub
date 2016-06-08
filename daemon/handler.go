@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -92,7 +93,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request)  {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout.")
 	if loginAuthStr == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -150,4 +151,23 @@ func commToServerGetRsp(method, path string, buffer []byte) (resp *http.Response
 	}
 
 	return resp, nil
+}
+
+func whoamiHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	code := 0
+	msg := "OK"
+	httpcode := http.StatusOK
+	userstru := &ds.User{}
+	if len(loginAuthStr) > 0 {
+		userstru.Username = gstrUsername
+	} else {
+		userstru.Username = ""
+		code = cmd.ErrorUnAuthorization
+		msg = "Not login."
+		httpcode = http.StatusUnauthorized
+	}
+
+	b, _ := buildResp(code, msg, userstru)
+	w.WriteHeader(httpcode)
+	w.Write(b)
 }

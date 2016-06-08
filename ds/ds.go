@@ -39,6 +39,10 @@ type Result struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
+type User struct {
+	Username string `json:"username,omitempty"`
+}
+
 type ResultPages struct {
 	Total   int         `json:"total"`
 	Results interface{} `json:"results"`
