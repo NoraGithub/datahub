@@ -24,10 +24,11 @@ type UserInfo struct {
 }
 
 var (
-	User     = UserInfo{}
-	UnixSock = "/var/run/datahub.sock"
-	Logged   = false
-	pidFile  = "/var/run/datahub.pid"
+	User          = UserInfo{}
+	UnixSock      = "/var/run/datahub.sock"
+	Logged        = false
+	pidFile       = "/var/run/datahub.pid"
+	CmdHttpServer = "127.0.0.1:35600"
 )
 
 type Command struct {
@@ -202,7 +203,7 @@ func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, er
 		req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
 	}
 	*/
-	conn, err := net.Dial("unix", UnixSock)
+	conn, err := net.Dial("tcp", CmdHttpServer)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Datahub daemon not running? Use 'datahub --daemon' to start daemon.")

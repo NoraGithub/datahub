@@ -150,7 +150,7 @@ func tcpNew(l net.Listener) (*StoppabletcpListener, error) {
 }
 
 var StoppedError = errors.New("Listener stopped")
-var sl = new(StoppableListener)
+var sl = new(StoppabletcpListener)
 var p2psl = new(StoppabletcpListener)
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
@@ -292,7 +292,7 @@ func RunDaemon() {
 	LoadJobFromDB()
 
 	os.Chdir(g_strDpPath)
-	originalListener, err := net.Listen("unix", cmd.UnixSock)
+	originalListener, err := net.Listen("tcp", cmd.CmdHttpServer)
 	if err != nil {
 		log.Fatal(err)
 	} else {
@@ -302,7 +302,7 @@ func RunDaemon() {
 		}
 	}
 
-	sl, err = New(originalListener)
+	sl, err = tcpNew(originalListener)
 	if err != nil {
 		panic(err)
 	}
