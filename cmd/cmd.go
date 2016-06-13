@@ -28,7 +28,7 @@ var (
 	UnixSock      = "/var/run/datahub.sock"
 	Logged        = false
 	pidFile       = "/var/run/datahub.pid"
-	CmdHttpServer = "127.0.0.1:35600"
+	CmdHttpServer = "localhost:35600"
 )
 
 type Command struct {

@@ -29,10 +29,11 @@ var (
 )
 
 const (
-	g_dbfile    string = "/var/lib/datahub/datahub.db"
-	g_strDpPath string = cmd.GstrDpPath
-	DPFILE      string = "file"
-	DPS3        string = "s3"
+	g_dbfile        string = "/var/lib/datahub/datahub.db"
+	g_strDpPath     string = cmd.GstrDpPath
+	DPFILE          string = "file"
+	DPS3            string = "s3"
+	DaemonCliServer string = "0.0.0.0:35600"
 )
 
 type StoppableListener struct {
@@ -292,7 +293,7 @@ func RunDaemon() {
 	LoadJobFromDB()
 
 	os.Chdir(g_strDpPath)
-	originalListener, err := net.Listen("tcp", cmd.CmdHttpServer)
+	originalListener, err := net.Listen("tcp", DaemonCliServer)
 	if err != nil {
 		log.Fatal(err)
 	} else {
