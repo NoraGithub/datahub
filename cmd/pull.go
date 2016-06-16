@@ -139,8 +139,9 @@ func Pull(login bool, args []string) (err error) {
 //}
 
 func pullUsage() {
-	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [--destname] [--automatic] [--cancel]\n", os.Args[0])
+	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [OPTION]\n", os.Args[0])
 	fmt.Println("\nPull a tag from the provider\n")
+	fmt.Println("Options:\n")
 	fmt.Println("  --destname, -d = name  Indicates the name that tag will be stored as")
 	fmt.Println("  --automatic, -a        Pull the new tags of a dataitem automatically")
 	fmt.Println("  --cancel, -c           Cancel the automatical pulling of a dataitem")

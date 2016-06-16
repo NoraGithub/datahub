@@ -222,7 +222,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 }
 
 func pubUsage() {
-	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC\n", os.Args[0])
+	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
 	fmt.Println("Publish a dataitem\n")
 	fmt.Printf("  %s pub REPO/DATAITEM:TAG TAGDETAIL\n", os.Args[0])
 	fmt.Println("Publish a tag\n")
