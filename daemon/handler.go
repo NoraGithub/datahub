@@ -171,3 +171,38 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	w.WriteHeader(httpcode)
 	w.Write(b)
 }
+
+func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled or not")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	itemInfo := ItemInDatapool{}
+	itemInfo.Dpname, itemInfo.Dpconn, itemInfo.Dptype, itemInfo.ItemLocation = GetDpnameDpconnItemdesc(repo, item)
+
+	if len(itemInfo.ItemLocation) == 0 {
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "The DataItem hasn't been pulled.", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "The DataItem has been pulled.", &itemInfo)
+	}
+}
+
+func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	result := ds.Result{Code: code, Msg: msg, Data: data}
+	jsondata, err := json.Marshal(&result)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(getJsonBuildingErrorJson()))
+	} else {
+		w.WriteHeader(statusCode)
+		w.Write(jsondata)
+	}
+}
+
+func getJsonBuildingErrorJson() []byte {
+
+	return []byte(log.Infof(`{"code": %d, "msg": %s}`, cmd.ErrorMarshal, "Json building error"))
+
+}

@@ -351,6 +351,8 @@ func RunDaemon() {
 	http.HandleFunc("/api/users/logout", logoutHandler)
 
 	router.GET("/api/users/whoami", whoamiHandler)
+	router.GET("/api/pulled/:repo/:item", itemPulledHandler)
+
 	router.NotFound = &mux{}
 
 	server := http.Server{}
