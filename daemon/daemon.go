@@ -26,6 +26,8 @@ var (
 	g_ds = new(ds.Ds)
 
 	wg sync.WaitGroup
+
+	staticFileDir string
 )
 
 const (
@@ -411,7 +413,23 @@ type mux struct {
 }
 
 func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/"+r.URL.Path[1:])
+	staticFileDir = os.Getenv("STATIC_FILE_DIR")
+	if len(staticFileDir) == 0 {
+		http.ServeFile(w, r, "/var/lib/datahub/dist/"+r.URL.Path[1:])
+	} else {
+		http.ServeFile(w, r, strings.TrimRight(staticFileDir, "/")+"/"+r.URL.Path[1:])
+	}
+}
+
+func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/index.html")
+	staticFileDir = os.Getenv("STATIC_FILE_DIR")
+	if len(staticFileDir) == 0 {
+		http.ServeFile(w, r, "/var/lib/datahub/dist/index.html")
+	} else {
+		http.ServeFile(w, r, strings.TrimRight(staticFileDir, "/")+"/index.html")
+	}
 }
 
 func init() {
@@ -422,10 +440,4 @@ func init() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
-}
-
-func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/index.html")
-
 }
