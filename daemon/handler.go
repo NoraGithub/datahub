@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -92,7 +93,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request)  {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout.")
 	if loginAuthStr == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -150,4 +151,58 @@ func commToServerGetRsp(method, path string, buffer []byte) (resp *http.Response
 	}
 
 	return resp, nil
+}
+
+func whoamiHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	code := 0
+	msg := "OK"
+	httpcode := http.StatusOK
+	userstru := &ds.User{}
+	if len(loginAuthStr) > 0 {
+		userstru.Username = gstrUsername
+	} else {
+		userstru.Username = ""
+		code = cmd.ErrorUnAuthorization
+		msg = "Not login."
+		httpcode = http.StatusUnauthorized
+	}
+
+	b, _ := buildResp(code, msg, userstru)
+	w.WriteHeader(httpcode)
+	w.Write(b)
+}
+
+func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled or not")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	itemInfo := ItemInDatapool{}
+	itemInfo.Dpname, itemInfo.Dpconn, itemInfo.Dptype, itemInfo.ItemLocation = GetDpnameDpconnItemdesc(repo, item)
+
+	if len(itemInfo.ItemLocation) == 0 {
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "The DataItem hasn't been pulled.", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "The DataItem has been pulled.", &itemInfo)
+	}
+}
+
+func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	result := ds.Result{Code: code, Msg: msg, Data: data}
+	jsondata, err := json.Marshal(&result)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(getJsonBuildingErrorJson()))
+	} else {
+		w.WriteHeader(statusCode)
+		w.Write(jsondata)
+	}
+}
+
+func getJsonBuildingErrorJson() []byte {
+
+	return []byte(log.Infof(`{"code": %d, "msg": %s}`, cmd.ErrorMarshal, "Json building error"))
+
 }

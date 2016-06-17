@@ -1,8 +1,0 @@
-github.com/go-fsnotify/fsnotify         2cdd39bd6129c6a49c74fb07fb9d77ba1271c572
-github.com/julienschmidt/httprouter     77a895ad01ebc98a4dc95d8355bc825ce80a56f6
-github.com/mattn/go-sqlite3             5651a9d9d49ec25811d08220ee972080378d52ea
-github.com/aws/aws-sdk-go        	eeecefe67cd4e848339e1b1a852f664513b74a98
-github.com/go-ini/ini			afbd495e5aaea13597b5e14fe514ddeaa4d76fc3
-github.com/jmespath/go-jmespath		c01cf91b011868172fdcd9f41838e80c9d716264
-github.com/colinmarc/hdfs		5e5d664bed7859df0bda87baba3e4c10afc4b75d
-github.com/golang/protobuf/proto 	8d92cf5fc15a4382f8964b08e1f42a75c0591aa3

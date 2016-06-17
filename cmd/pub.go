@@ -168,7 +168,7 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 	}
 	jsonData, err := json.Marshal(p)
 	if err != nil {
-		fmt.Println("Error : Mrashal pubdata error while publishing tag.")
+		fmt.Println("Error : Marshal pubdata error while publishing tag.")
 		return err
 	}
 
@@ -222,7 +222,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 }
 
 func pubUsage() {
-	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC\n", os.Args[0])
+	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
 	fmt.Println("Publish a dataitem\n")
 	fmt.Printf("  %s pub REPO/DATAITEM:TAG TAGDETAIL\n", os.Args[0])
 	fmt.Println("Publish a tag\n")

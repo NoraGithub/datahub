@@ -29,10 +29,11 @@ var (
 )
 
 const (
-	g_dbfile    string = "/var/lib/datahub/datahub.db"
-	g_strDpPath string = cmd.GstrDpPath
-	DPFILE      string = "file"
-	DPS3        string = "s3"
+	g_dbfile        string = "/var/lib/datahub/datahub.db"
+	g_strDpPath     string = cmd.GstrDpPath
+	DPFILE          string = "file"
+	DPS3            string = "s3"
+	DaemonCliServer string = "0.0.0.0:35600"
 )
 
 type StoppableListener struct {
@@ -46,11 +47,30 @@ type StoppabletcpListener struct {
 }
 
 func dbinit() {
-	log.Println("connect to db sqlite3")
-	db, err := sql.Open("sqlite3", g_dbfile)
-	//defer db.Close()
-	chk(err)
-	g_ds.Db = db
+
+	DB_TYPE := os.Getenv("DB_TYPE")
+	if strings.ToUpper(DB_TYPE) == "MYSQL" {
+		for i := 0; i < 3; i++ {
+			connectMysql()
+			if g_ds.Db == nil {
+				select {
+				case <-time.After(time.Second * 5):
+					continue
+				}
+			} else {
+				break
+			}
+		}
+		if g_ds.Db == nil {
+			return
+		}
+	} else {
+		log.Println("connect to db sqlite3")
+		db, err := sql.Open("sqlite3", g_dbfile)
+		//defer db.Close()
+		chk(err)
+		g_ds.Db = db
+	}
 
 	var RetDhRpdmTagMap string
 	row, err := g_ds.QueryRow(ds.SQLIsExistRpdmTagMap)
@@ -61,17 +81,34 @@ func dbinit() {
 	}
 	row.Scan(&RetDhRpdmTagMap)
 	if len(RetDhRpdmTagMap) > 1 {
-		if false == strings.Contains(RetDhRpdmTagMap, "TAGID") {
-			UpdateSql04To05()
+		if false == strings.Contains(RetDhRpdmTagMap, "COMMENT") {
+			//	UpdateSql04To05()
+			UpdateSql16To17()
 		}
 	}
-	if err := UpgradeSql07To08(); err != nil {
-		panic(err)
-	}
+	//if err := UpgradeSql07To08(); err != nil {
+	//	panic(err)
+	//}
 	if err := CreateTable(); err != nil {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
 		panic(err)
+	}
+}
+
+func connectMysql() {
+	DB_ADDR := os.Getenv("MYSQL_PORT_3306_TCP_ADDR")
+	DB_PORT := os.Getenv("MYSQL_PORT_3306_TCP_PORT")
+	DB_DATABASE := os.Getenv("MYSQL_ENV_MYSQL_DATABASE")
+	DB_USER := os.Getenv("MYSQL_ENV_MYSQL_USER")
+	DB_PASSWORD := os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
+	DB_URL := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=true`, DB_USER, DB_PASSWORD, DB_ADDR, DB_PORT, DB_DATABASE)
+	db, err := sql.Open("mysql", DB_URL)
+	if err != nil {
+		log.Errorf("error: %s\n", err)
+	} else {
+		g_ds.Db = db
+		log.Println("Connect to Mysql successfully!")
 	}
 }
 
@@ -114,7 +151,7 @@ func tcpNew(l net.Listener) (*StoppabletcpListener, error) {
 }
 
 var StoppedError = errors.New("Listener stopped")
-var sl = new(StoppableListener)
+var sl = new(StoppabletcpListener)
 var p2psl = new(StoppabletcpListener)
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
@@ -256,7 +293,7 @@ func RunDaemon() {
 	LoadJobFromDB()
 
 	os.Chdir(g_strDpPath)
-	originalListener, err := net.Listen("unix", cmd.UnixSock)
+	originalListener, err := net.Listen("tcp", DaemonCliServer)
 	if err != nil {
 		log.Fatal(err)
 	} else {
@@ -266,52 +303,57 @@ func RunDaemon() {
 		}
 	}
 
-	sl, err = New(originalListener)
+	sl, err = tcpNew(originalListener)
 	if err != nil {
 		panic(err)
 	}
 
 	router := httprouter.New()
-	router.GET("/", helloHttp)
-	router.POST("/datapools", dpPostOneHandler)
-	router.GET("/datapools", dpGetAllHandler)
-	router.GET("/datapools/:dpname", dpGetOneHandler)
-	router.DELETE("/datapools/:dpname", dpDeleteOneHandler)
+	router.GET("/", serverFileHandler)
+	router.POST("/api/datapools", dpPostOneHandler)
+	router.GET("/api/datapools", dpGetAllHandler)
+	router.GET("/api/datapools/:dpname", dpGetOneHandler)
+	router.DELETE("/api/datapools/:dpname", dpDeleteOneHandler)
 
-	router.GET("/ep", epGetHandler)
-	router.POST("/ep", epPostHandler)
-	router.DELETE("/ep", epDeleteHandler)
+	router.GET("/api/ep", epGetHandler)
+	router.POST("/api/ep", epPostHandler)
+	router.DELETE("/api/ep", epDeleteHandler)
 
-	router.GET("/repositories/:repo/:item/:tag", repoTagHandler)
-	router.GET("/repositories/:repo/:item", repoItemHandler)
-	router.GET("/repositories/:repo", repoRepoNameHandler)
-	router.GET("/repositories", repoHandler)
-	router.GET("/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
-	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
-	router.DELETE("/repositories/:repo/:item/:tag", repoDelTagHandler)
+	router.GET("/api/repositories/:repo/:item/:tag", repoTagHandler)
+	router.GET("/api/repositories/:repo/:item", repoItemHandler)
+	router.GET("/api/repositories/:repo", repoRepoNameHandler)
+	router.GET("/api/repositories", repoHandler)
+	router.GET("/api/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
+	router.DELETE("/api/repositories/:repo/:item", repoDelOneItemHandler)
+	router.DELETE("/api/repositories/:repo/:item/:tag", repoDelTagHandler)
 
-	router.GET("/subscriptions/dataitems", subsHandler)
-	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
+	router.GET("/api/subscriptions/dataitems", subsHandler)
+	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
 
-	router.POST("/repositories/:repo/:item", pubItemHandler)
-	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)
+	router.POST("/api/repositories/:repo/:item", pubItemHandler)
+	router.POST("/api/repositories/:repo/:item/:tag", pubTagHandler)
 
-	router.POST("/subscriptions/:repo/:item/pull", pullHandler)
+	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
 
-	router.GET("/job", jobHandler)
-	router.GET("/job/:id", jobDetailHandler)
-	router.DELETE("/job/:id", jobRmHandler)
-	router.DELETE("/job", jobRmAllHandler)
+	router.GET("/api/job", jobHandler)
+	router.GET("/api/job/:id", jobDetailHandler)
+	router.DELETE("/api/job/:id", jobRmHandler)
+	router.DELETE("/api/job", jobRmAllHandler)
 
-	router.GET("/daemon/:repo/:item/:tag", tagStatusHandler)
-	router.GET("/daemon/:repo/:item", tagOfItemStatusHandler)
+	router.GET("/api/daemon/:repo/:item/:tag", tagStatusHandler)
+	router.GET("/api/daemon/:repo/:item", tagOfItemStatusHandler)
 
-	router.GET("/heartbeat/status/:user", userStatusHandler)
+	router.GET("/api/heartbeat/status/:user", userStatusHandler)
 
 	http.Handle("/", router)
-	http.HandleFunc("/stop", stopHttp)
-	http.HandleFunc("/users/auth", loginHandler)
-	http.HandleFunc("/users/logout", logoutHandler)
+	http.HandleFunc("/api/stop", stopHttp)
+	http.HandleFunc("/api/users/auth", loginHandler)
+	http.HandleFunc("/api/users/logout", logoutHandler)
+
+	router.GET("/api/users/whoami", whoamiHandler)
+	router.GET("/api/pulled/:repo/:item", itemPulledHandler)
+
+	router.NotFound = &mux{}
 
 	server := http.Server{}
 
@@ -336,7 +378,7 @@ func RunDaemon() {
 		go startP2PServer()
 		go HeartBeat()
 		go CheckHealthClock()
-		go datapoolMonitor()
+		//go datapoolMonitor()  //Temporarily not use
 		go GetMessages()
 		go PullTagAutomatic()
 	} else {
@@ -365,6 +407,13 @@ func RunDaemon() {
 
 }
 
+type mux struct {
+}
+
+func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/"+r.URL.Path[1:])
+}
+
 func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
@@ -373,4 +422,10 @@ func init() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
+}
+
+func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/index.html")
+
 }

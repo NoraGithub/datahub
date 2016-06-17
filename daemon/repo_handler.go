@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -10,8 +11,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"errors"
 )
+
+type ItemInDatapool struct {
+	Dpname       string `json:"dpname", omitempty`
+	Dptype       string `json:"dptype", omitempty`
+	Dpconn       string `json:"dpconn", omitempty`
+	ItemLocation string `json:"itemlocation", omitempty`
+}
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(repo)")
@@ -400,4 +407,3 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 
 	return
 }
-

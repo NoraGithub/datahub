@@ -2,6 +2,7 @@ package ds
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 )
@@ -18,7 +19,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v1.6.0"
+	DATAHUB_VERSION = "v1.9.0"
 )
 
 type DsPull struct {
@@ -36,6 +37,10 @@ type Result struct {
 	Code int         `json:"code,omitempty"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
+}
+
+type User struct {
+	Username string `json:"username,omitempty"`
 }
 
 type ResultPages struct {
@@ -157,7 +162,8 @@ const Create_dh_repo_ditem_tag_map string = `CREATE TABLE IF NOT EXISTS
         RPDMID       INTEGER,
         DETAIL       VARCHAR(256),
         CREATE_TIME  DATETIME,
-        STATUS       CHAR(2)
+        STATUS       CHAR(2),
+        COMMENT		 VARCHAR(256)
     );`
 
 const CreateDhDaemon string = `CREATE TABLE IF NOT EXISTS 

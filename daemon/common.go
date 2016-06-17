@@ -100,7 +100,7 @@ func GetDataPoolDpid(datapoolname string) (dpid int) {
 	}
 }
 
-func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
+func InsertTagToDb(dpexist bool, p ds.DsPull, tagcom string) (err error) {
 	if dpexist == false {
 		return
 	}
@@ -118,9 +118,9 @@ func InsertTagToDb(dpexist bool, p ds.DsPull) (err error) {
 		g_ds.Insert(sqlInsertRpdm)
 		rpdmid = GetRepoItemId(p.Repository, p.Dataitem)
 	}
-	sqlInsertTag := fmt.Sprintf(`INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME ,RPDMID ,DETAIL,CREATE_TIME, STATUS) 
-		VALUES (null, '%s', %d, '%s', datetime('now'), 'A')`,
-		p.Tag, rpdmid, p.DestName)
+	sqlInsertTag := fmt.Sprintf(`INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME ,RPDMID ,DETAIL,CREATE_TIME, STATUS, COMMENT) 
+		VALUES (null, '%s', %d, '%s', datetime('now'), 'A', '%s')`,
+		p.Tag, rpdmid, p.DestName, tagcom)
 	log.Println(sqlInsertTag)
 	_, err = g_ds.Insert(sqlInsertTag)
 	return err
@@ -228,16 +228,16 @@ func GetDpnameDpconnDptypeByDpid(dpid int) (dpname, dpconn, dptype string) {
 	return
 }
 
-func InsertPubTagToDb(repo, item, tag, FileName string) (err error) {
+func InsertPubTagToDb(repo, item, tag, fileName, comment string) (err error) {
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
 		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
 	}
-	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) VALUES (null, '%s', %d, '%s', datetime('now'), 'A');", tag, rpdmid, FileName)
+	sqlInsertTag := fmt.Sprintf("INSERT INTO DH_RPDM_TAG_MAP (TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS, COMMENT) VALUES (null, '%s', %d, '%s', datetime('now'), 'A', '%s');", tag, rpdmid, fileName, comment)
 	log.Println(sqlInsertTag)
 	_, err = g_ds.Insert(sqlInsertTag)
 	if err != nil {
-		l := log.Error("insert tag into db error:", err)
+		l := log.Error("Insert tag into db error:", err)
 		logq.LogPutqueue(l)
 		return err
 	}
@@ -324,115 +324,9 @@ func CreateTable() (err error) {
 	return
 }
 
-func UpdateSql04To05() (err error) {
-	//UPDATE DH_DP
-	TrimRightDpconn := `update DH_DP set DPCONN =substr(DPCONN,0,length(DPCONN)) where DPCONN like '%/';`
-	_, err = g_ds.Update(TrimRightDpconn)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	UpDhDp := `UPDATE DH_DP SET DPCONN=DPCONN||"/"||DPNAME;`
-	_, err = g_ds.Update(UpDhDp)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-
-	//UPDATE DH_DP_RPDM_MAP
-	RenameDpRpdmMap := "ALTER TABLE DH_DP_RPDM_MAP RENAME TO OLD_DH_DP_RPDM_MAP;"
-	_, err = g_ds.Exec(RenameDpRpdmMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	InsertDpRpdmMap := `INSERT INTO DH_DP_RPDM_MAP(RPDMID, REPOSITORY, DATAITEM, DPID, ITEMDESC
-						, PUBLISH, CREATE_TIME, STATUS) 
-						SELECT RPDMID, REPOSITORY, DATAITEM, DPID, REPOSITORY||"/"||DATAITEM, 
-						PUBLISH, CREATE_TIME, 'A' FROM OLD_DH_DP_RPDM_MAP;`
-	DropOldDpRpdmMap := `DROP TABLE OLD_DH_DP_RPDM_MAP;`
-	_, err = g_ds.Insert(InsertDpRpdmMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Drop(DropOldDpRpdmMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-
-	//UPDATE DH_RPDM_TAG_MAP
-	RenameTagMap := "ALTER TABLE DH_RPDM_TAG_MAP RENAME TO OLD_DH_RPDM_TAG_MAP;"
-	_, err = g_ds.Exec(RenameTagMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	InsertTagMap := `INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) 
-					SELECT NULL, TAGNAME, RPDMID, DETAIL, CREATE_TIME, 'A' FROM OLD_DH_RPDM_TAG_MAP;`
-	DropOldTagMap := `DROP TABLE OLD_DH_RPDM_TAG_MAP;`
-	_, err = g_ds.Insert(InsertTagMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Drop(DropOldTagMap)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	log.Info("update db successfully!")
-	return
-}
-
-func UpgradeSql07To08() (err error) {
-	var RetDhJob string
-	row, err := g_ds.QueryRow(ds.SQLIsExistTableDhJob)
-	if err != nil {
-		l := log.Error("Get TABLE Dh_Job error!")
-		logq.LogPutqueue(l)
-		return err
-	}
-	row.Scan(&RetDhJob)
-	if len(RetDhJob) > 1 {
-		if false == strings.Contains(RetDhJob, "ACCESSTOKEN") {
-			return AlterDhJob()
-		}
-	}
-	return nil
-}
-
-func AlterDhJob() (err error) {
-	sqltoken := `ALTER TABLE DH_JOB ADD ACCESSTOKEN VARCHAR(20);`
-	_, err = g_ds.Exec(sqltoken)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	sqlep := `ALTER TABLE DH_JOB ADD ENTRYPOINT VARCHAR(128);`
-	_, err = g_ds.Exec(sqlep)
+func UpdateSql16To17() (err error) {
+	sqlm := `ALTER TABLE DH_RPDM_TAG_MAP ADD COMMENT VARCHAR(256);`
+	_, err = g_ds.Exec(sqlm)
 	if err != nil {
 		l := log.Error(err)
 		logq.LogPutqueue(l)
@@ -885,4 +779,124 @@ func batchDelTags(reponame, itemname, tagname string) (map[int]string, error) {
 	}
 	log.Println(tagnameidmap)
 	return tagnameidmap, nil
+}
+
+/*UpdateSql04To05()  Temporarily not use*/
+func UpdateSql04To05() (err error) {
+	//UPDATE DH_DP
+	TrimRightDpconn := `update DH_DP set DPCONN =substr(DPCONN,0,length(DPCONN)) where DPCONN like '%/';`
+	_, err = g_ds.Update(TrimRightDpconn)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	UpDhDp := `UPDATE DH_DP SET DPCONN=DPCONN||"/"||DPNAME;`
+	_, err = g_ds.Update(UpDhDp)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	//UPDATE DH_DP_RPDM_MAP
+	RenameDpRpdmMap := "ALTER TABLE DH_DP_RPDM_MAP RENAME TO OLD_DH_DP_RPDM_MAP;"
+	_, err = g_ds.Exec(RenameDpRpdmMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	InsertDpRpdmMap := `INSERT INTO DH_DP_RPDM_MAP(RPDMID, REPOSITORY, DATAITEM, DPID, ITEMDESC
+						, PUBLISH, CREATE_TIME, STATUS) 
+						SELECT RPDMID, REPOSITORY, DATAITEM, DPID, REPOSITORY||"/"||DATAITEM, 
+						PUBLISH, CREATE_TIME, 'A' FROM OLD_DH_DP_RPDM_MAP;`
+	DropOldDpRpdmMap := `DROP TABLE OLD_DH_DP_RPDM_MAP;`
+	_, err = g_ds.Insert(InsertDpRpdmMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	_, err = g_ds.Drop(DropOldDpRpdmMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	//UPDATE DH_RPDM_TAG_MAP
+	RenameTagMap := "ALTER TABLE DH_RPDM_TAG_MAP RENAME TO OLD_DH_RPDM_TAG_MAP;"
+	_, err = g_ds.Exec(RenameTagMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	InsertTagMap := `INSERT INTO DH_RPDM_TAG_MAP(TAGID, TAGNAME, RPDMID, DETAIL, CREATE_TIME, STATUS) 
+					SELECT NULL, TAGNAME, RPDMID, DETAIL, CREATE_TIME, 'A' FROM OLD_DH_RPDM_TAG_MAP;`
+	DropOldTagMap := `DROP TABLE OLD_DH_RPDM_TAG_MAP;`
+	_, err = g_ds.Insert(InsertTagMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	_, err = g_ds.Drop(DropOldTagMap)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	log.Info("update db successfully!")
+	return
+}
+
+/*UpgradeSql07To08()  Temporarily not use*/
+func UpgradeSql07To08() (err error) {
+	var RetDhJob string
+	row, err := g_ds.QueryRow(ds.SQLIsExistTableDhJob)
+	if err != nil {
+		l := log.Error("Get TABLE Dh_Job error!")
+		logq.LogPutqueue(l)
+		return err
+	}
+	row.Scan(&RetDhJob)
+	if len(RetDhJob) > 1 {
+		if false == strings.Contains(RetDhJob, "ACCESSTOKEN") {
+			return AlterDhJob()
+		}
+	}
+	return nil
+}
+
+/*AlterDhJob()  Temporarily not use*/
+func AlterDhJob() (err error) {
+	sqltoken := `ALTER TABLE DH_JOB ADD ACCESSTOKEN VARCHAR(20);`
+	_, err = g_ds.Exec(sqltoken)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	sqlep := `ALTER TABLE DH_JOB ADD ENTRYPOINT VARCHAR(128);`
+	_, err = g_ds.Exec(sqlep)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return err
+	}
+	return nil
 }
