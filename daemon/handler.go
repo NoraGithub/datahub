@@ -220,10 +220,8 @@ func pulledItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	repoInfos := make([]ds.RepoInfo, 0)
 	repoInfos, err := GetRepoInfo(datapool, status)
 
-	fmt.Println(repoInfos)
-
 	if err != nil {
-		fmt.Println(err)
+		log.Debug(err)
 		return
 	}
 

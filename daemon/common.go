@@ -909,9 +909,6 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 		status = "N"
 	}
 
-	fmt.Println("datapool: ", datapool)
-	fmt.Println("status: ", status)
-
 	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME LIKE '%s';`, datapool)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
@@ -921,8 +918,6 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 	var dpid int
 	row.Scan(&dpid)
 
-	fmt.Println("----------->", dpid)
-
 	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY FROM DH_DP_RPDM_MAP WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A';`, dpid, status)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
@@ -931,13 +926,10 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 
 	var repository string
 	var itemCount int
-	//repositorys := make([]string, 0)
 	repoinfo := ds.RepoInfo{}
 	repoInfos := make([]ds.RepoInfo, 0)
 	for rows.Next() {
 		rows.Scan(&repository)
-
-		fmt.Println("----------->", repository)
 
 		repoinfo.RepositoryName = repository
 		sql = fmt.Sprintf(`SELECT COUNT(*) FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = '%s' AND STATUS = 'A';`, repository, status)
@@ -947,13 +939,9 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 		}
 
 		row.Scan(&itemCount)
-
-		fmt.Println("----------->", itemCount)
-
 		repoinfo.ItemCount = itemCount
 
 		repoInfos = append(repoInfos, repoinfo)
-		//repositorys = append(repositorys, repository)
 	}
 
 	return repoInfos, err
