@@ -34,7 +34,7 @@ type DsPull struct {
 }
 
 type Result struct {
-	Code int         `json:"code,omitempty"`
+	Code int         `json:"code"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 }
@@ -123,6 +123,11 @@ type PubPara struct {
 
 type Ds struct {
 	Db *sql.DB
+}
+
+type RepoInfo struct {
+	RepositoryName string `json:"repositoryName", omitempty`
+	ItemCount int `json:"itemCount", omitempty`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`

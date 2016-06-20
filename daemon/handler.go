@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 var (
@@ -184,6 +185,54 @@ func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "The DataItem hasn't been pulled.", nil)
 	} else {
 		JsonResult(w, http.StatusOK, cmd.ResultOK, "The DataItem has been pulled.", &itemInfo)
+	}
+}
+
+func publishedItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item published of a datapool")
+	datapool := ps.ByName("dpname")
+	status := "published"
+
+	repoInfos := make([]ds.RepoInfo, 0)
+	repoInfos, err := GetRepoInfo(datapool, status)
+
+	fmt.Println(repoInfos)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("Published DataItem of %s is empty.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem has been published of %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+	}
+}
+
+func pulledItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item published of a datapool")
+	datapool := ps.ByName("dpname")
+	status := "pulled"
+
+	repoInfos := make([]ds.RepoInfo, 0)
+	repoInfos, err := GetRepoInfo(datapool, status)
+
+	fmt.Println(repoInfos)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem has been pulled of %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
 	}
 }
 
