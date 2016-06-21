@@ -64,6 +64,7 @@ const (
 	ErrorOtherError
 	ErrorUnknowError
 	ErrorItemNotExist
+	ErrorPublishedItemEmpty
 )
 
 const (
