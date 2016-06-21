@@ -34,7 +34,7 @@ type DsPull struct {
 }
 
 type Result struct {
-	Code int         `json:"code,omitempty"`
+	Code int         `json:"code"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 }
@@ -119,6 +119,11 @@ type PubPara struct {
 	Accesstype string `json:"itemaccesstype, omitempty"`
 	Comment    string `json:"comment, omitempty"`
 	ItemDesc   string `json:"itemdesc, omitempty"`
+}
+
+type DpOtherData struct {
+	Dir     string `json:"dir, omitempty"`
+	FileNum int    `json:"filenum,  omitempty"`
 }
 
 type Ds struct {

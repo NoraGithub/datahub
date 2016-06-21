@@ -61,6 +61,20 @@ func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	}
 }
 
+func GetDataPoolInfo(datapoolname string) (dpid int, dptype, dpconn string) {
+	sqlget := fmt.Sprintf("SELECT DPID, DPTYPE, DPCONN FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
+	//fmt.Println(sqlgetdpconn)
+	row, err := g_ds.QueryRow(sqlget)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return 0, "", ""
+	} else {
+		row.Scan(&dpid, &dptype, &dpconn)
+		return dpid, dptype, dpconn
+	}
+}
+
 func GetDataPoolDpconnAndDptype(datapoolname string) (dpconn, dptype string) {
 	sqlgetdpconn := fmt.Sprintf("SELECT DPCONN, DPTYPE FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
 	//fmt.Println(sqlgetdpconn)
@@ -899,4 +913,25 @@ func AlterDhJob() (err error) {
 		return err
 	}
 	return nil
+}
+
+func GetItemslocationInDatapool(itemslocation map[string]string, dpname string, dpid int, dpconn string) error {
+
+	sql := fmt.Sprintf("SELECT DISTINCT ITEMDESC, REPOSITORY, DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID=%v AND STATUS='A';", dpid)
+	log.Debug(sql)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Errorf("datapool name %s, dpid %v, dpconn %v, error:%v", dpname, dpid, dpconn, err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	var location, repo, item string
+	for rows.Next() {
+		rows.Scan(&location, &repo, &item)
+		log.Debug(location, repo, item)
+		itemslocation[location] = repo + "/" + item
+	}
+	log.Trace(itemslocation)
+	return err
 }

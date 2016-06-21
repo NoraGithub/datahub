@@ -316,6 +316,7 @@ func RunDaemon() {
 	router.GET("/api/datapools", dpGetAllHandler)
 	router.GET("/api/datapools/:dpname", dpGetOneHandler)
 	router.DELETE("/api/datapools/:dpname", dpDeleteOneHandler)
+	router.GET("/api/datapools/:dpname/other", dpGetOtherDataHandler)
 
 	router.GET("/api/ep", epGetHandler)
 	router.POST("/api/ep", epPostHandler)
