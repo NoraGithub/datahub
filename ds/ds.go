@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"time"
 )
 
 const (
@@ -126,8 +127,19 @@ type Ds struct {
 }
 
 type RepoInfo struct {
-	RepositoryName string `json:"repositoryName", omitempty`
-	ItemCount int `json:"itemCount", omitempty`
+	RepositoryName string `json:"repositoryName, omitempty"`
+	ItemCount      int    `json:"itemCount, omitempty"`
+}
+
+type PublishedRepoInfo struct {
+	RepositoryName     string              `json:"repositoryName, omitempty"`
+	PublishedDataItems []PublishedItemInfo `json:"publishedDataItems, omitempty"`
+}
+
+type PublishedItemInfo struct {
+	ItemName   string    `json:"itemName, omitempty"`
+	CreateTime time.Time `json:"createTime, omitempty"`
+	Location   string    `json:"location, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`

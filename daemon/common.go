@@ -901,7 +901,7 @@ func AlterDhJob() (err error) {
 	return nil
 }
 
-func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
+func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 
 	if status == "published" {
 		status = "Y"
@@ -909,9 +909,11 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 		status = "N"
 	}
 
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME LIKE '%s';`, datapool)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME LIKE '%s';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
 		return nil, err
 	}
 
@@ -921,6 +923,8 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY FROM DH_DP_RPDM_MAP WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A';`, dpid, status)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
 		return nil, err
 	}
 
@@ -935,6 +939,8 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 		sql = fmt.Sprintf(`SELECT COUNT(*) FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = '%s' AND STATUS = 'A';`, repository, status)
 		row, err := g_ds.QueryRow(sql)
 		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
 			return nil, err
 		}
 
@@ -945,4 +951,48 @@ func GetRepoInfo(datapool, status string) ([]ds.RepoInfo, error) {
 	}
 
 	return repoInfos, err
+}
+
+func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error) {
+
+	var publishedRepoInfo ds.PublishedRepoInfo
+	var publishedItemInfo ds.PublishedItemInfo
+	publishedItemInfos := make([]ds.PublishedItemInfo, 0)
+
+	publishedRepoInfo.RepositoryName = repoName
+
+	sql := fmt.Sprintf(`SELECT DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpconn string
+	row.Scan(&dpconn)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A';`, repoName)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dataitem string
+	var createTime time.Time
+	var itemDesc string
+
+	for rows.Next() {
+		rows.Scan(&dataitem, &createTime, &itemDesc)
+		publishedItemInfo.ItemName = dataitem
+		publishedItemInfo.CreateTime = createTime
+		publishedItemInfo.Location = dpconn + "/" + itemDesc
+		publishedItemInfos = append(publishedItemInfos, publishedItemInfo)
+	}
+
+	publishedRepoInfo.PublishedDataItems = publishedItemInfos
+
+	return &publishedRepoInfo, err
 }

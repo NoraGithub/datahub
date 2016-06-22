@@ -14,10 +14,10 @@ func MaxLenString(strarray []string) (maxlen int, maxstr string) {
 
 func PrintFmt(a ...[]string) {
 	var i, j int
-	for i = 0; i < len(a[0]); i ++ {
+	for i = 0; i < len(a[0]); i++ {
 		//fmt.Println(len(a[i]))
 		//fmt.Println(maxlen)
-		for j = 0; j < len(a); j++  {
+		for j = 0; j < len(a); j++ {
 			maxlen, _ := MaxLenString(a[j])
 
 			//fmt.Println(len(a))
