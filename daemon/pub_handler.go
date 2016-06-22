@@ -71,11 +71,16 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 
 	pub := ds.PubPara{}
+	pub.ItemDesc = strings.Trim(pub.ItemDesc,"/")
+	if strings.Contains(pub.ItemDesc,"/") == true{
+		log.Println("The name of item can't contain '/'.",ItemDesc)
+		w.Write([]byte(`{"msg":"The name of item can't contain '/'."}`))
+		return 
+	}
 	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
 		return
-
 	}
-
+	
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	if err := json.Unmarshal(reqBody, &pub); err != nil {
 		HttpNoData(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "pub dataitem error while unmarshal reqBody")

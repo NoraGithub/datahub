@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
 )
 
 const DECIMAL_BASE = 10
@@ -41,6 +42,12 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path + "(pull)")
 	result, _ := ioutil.ReadAll(r.Body)
 	p := ds.DsPull{}
+	p.ItemDesc = strings.Trim(p.ItemDesc,"/")
+	if strings.Contains(p.ItemDesc,"/") == true{
+	              log.Println("The name of item can't contain '/'.",ItemDesc)
+		w.Write([]byte(`{"msg":"The name of item can't contain '/'."}`))	
+		return
+	}
 
 	if err := json.Unmarshal(result, &p); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
