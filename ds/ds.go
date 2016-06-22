@@ -122,6 +122,11 @@ type PubPara struct {
 	ItemDesc   string `json:"itemdesc, omitempty"`
 }
 
+type DpOtherData struct {
+	Dir     string `json:"dir, omitempty"`
+	FileNum int    `json:"filenum,  omitempty"`
+}
+
 type Ds struct {
 	Db *sql.DB
 }

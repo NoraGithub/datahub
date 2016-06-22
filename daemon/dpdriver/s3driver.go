@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"compress/gzip"
 	"errors"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/aws/aws-sdk-go/aws"
@@ -182,6 +183,10 @@ func (s3 *s3driver) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (
 		}
 	}
 
+	return
+}
+
+func (s3 *s3driver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
 	return
 }
 

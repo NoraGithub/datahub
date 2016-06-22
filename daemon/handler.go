@@ -196,8 +196,10 @@ func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	repoInfos := make([]ds.RepoInfo, 0)
 	repoInfos, err := GetRepoInfo(datapool, status)
 
+	log.Debug(repoInfos)
+
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -218,7 +220,7 @@ func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	repoInfos, err := GetRepoInfo(dpName, status)
 
 	if err != nil {
-		log.Debug(err)
+		log.Error(err)
 		return
 	}
 

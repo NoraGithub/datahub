@@ -2,6 +2,7 @@ package dpdriver
 
 import (
 	"errors"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	dfs "github.com/colinmarc/hdfs"
 	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
@@ -141,6 +142,10 @@ func (hdfs *hdfsdriver) CheckDataAndGetSize(dpconn, itemlocation, fileName strin
 		return
 	}
 
+	return
+}
+
+func (hdfs *hdfsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
 	return
 }
 
