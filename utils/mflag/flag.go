@@ -523,7 +523,7 @@ func Set(name, value string) error {
 func (fs *FlagSet) PrintDefaults() {
 	writer := tabwriter.NewWriter(fs.Out(), 20, 1, 3, ' ', 0)
 	//home := homedir.Get()
-    home := ""
+	home := ""
 
 	// Don't substitute when HOME is /
 	if runtime.GOOS != "windows" && home == "/" {
@@ -546,11 +546,11 @@ func (fs *FlagSet) PrintDefaults() {
 		if len(names) > 0 && len(flag.Usage) > 0 {
 			val := flag.DefValue
 
-            /*
-			if home != "" && strings.HasPrefix(val, home) {
-				val = homedir.GetShortcutString() + val[len(home):]
-			}
-            */
+			/*
+				if home != "" && strings.HasPrefix(val, home) {
+					val = homedir.GetShortcutString() + val[len(home):]
+				}
+			*/
 
 			fmt.Fprintf(writer, format, strings.Join(names, ", -"), val)
 			for i, line := range strings.Split(flag.Usage, "\n") {
