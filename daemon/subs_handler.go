@@ -35,7 +35,9 @@ func tagStatusHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	repository := ps.ByName("repo")
 	dataitem := ps.ByName("item")
 	tag := ps.ByName("tag")
+
 	uri := fmt.Sprintf("/api/daemon/tags/status?repname=%s&itemname=%s&tagname=%s", repository, dataitem, tag)
+
 	log.Println(uri)
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	commToServer("get", uri, reqBody, w)
@@ -49,7 +51,9 @@ func tagOfItemStatusHandler(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 	repository := ps.ByName("repo")
 	dataitem := ps.ByName("item")
+
 	uri := fmt.Sprintf("/api/daemon/tags/status?repname=%s&itemname=%s", repository, dataitem)
+
 	log.Println(uri)
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	commToServer("get", uri, reqBody, w)

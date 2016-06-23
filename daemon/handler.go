@@ -189,8 +189,8 @@ func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 }
 
-func publishedItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Debug(r.URL.Path, "item published of a datapool")
+func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "published of a datapool")
 	datapool := ps.ByName("dpname")
 	status := "published"
 
@@ -213,13 +213,12 @@ func publishedItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 }
 
-func pulledItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Debug(r.URL.Path, "item published of a datapool")
-	datapool := ps.ByName("dpname")
+func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "pulled of a datapool")
+	dpName := ps.ByName("dpname")
 	status := "pulled"
 
-	repoInfos := make([]ds.RepoInfo, 0)
-	repoInfos, err := GetRepoInfo(datapool, status)
+	repoInfos, err := GetRepoInfo(dpName, status)
 
 	if err != nil {
 		log.Error(err)
@@ -227,11 +226,51 @@ func pulledItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	if len(repoInfos) == 0 {
-		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", datapool)
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", dpName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All DataItem has been pulled of %s.", datapool)
+		msg := fmt.Sprintf("All DataItem has been pulled of %s.", dpName)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+	}
+}
+
+func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item published of a repository")
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	publishedRepo, err := GetPublishedRepoInfo(dpName, repoName)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedRepo.PublishedDataItems) == 0 {
+		msg := fmt.Sprintf("Pushlied DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been published of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedRepo)
+	}
+}
+
+func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled of a repository")
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	pulledRepoInfo, err := GetPulledRepoInfo(dpName, repoName)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledRepoInfo.PulledDataItems) == 0 {
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been pulled of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, pulledRepoInfo)
 	}
 }
 
