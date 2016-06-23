@@ -19,7 +19,8 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "https://hub.dataos.io/api"
+	DefaultServer     = "https://hub.dataos.io"
+	DefaultServerAPI  = DefaultServer + "/api"
 )
 
 type UserForJson struct {
@@ -31,7 +32,7 @@ type tk struct {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	url := DefaultServer + "/" //r.URL.Path
+	url := DefaultServerAPI + "/" //r.URL.Path
 	//r.ParseForm()
 
 	if _, ok := r.Header["Authorization"]; !ok {

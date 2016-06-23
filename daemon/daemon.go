@@ -358,7 +358,6 @@ func RunDaemon() {
 	router.GET("/api/users/whoami", whoamiHandler)
 	router.GET("/api/pulled/:repo/:item", itemPulledHandler)
 
-
 	router.NotFound = &mux{}
 
 	server := http.Server{}
@@ -439,6 +438,7 @@ func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
+		DefaultServerAPI = DefaultServer + "/api"
 	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
