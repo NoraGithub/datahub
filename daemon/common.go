@@ -7,6 +7,8 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -944,7 +946,7 @@ func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 		status = "N"
 	}
 
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME LIKE '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -996,7 +998,7 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 
 	publishedRepoInfo.RepositoryName = repoName
 
-	sql := fmt.Sprintf(`SELECT DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1005,9 +1007,10 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 	}
 
 	var dpconn string
-	row.Scan(&dpconn)
+	var dpid int
+	row.Scan(&dpid, &dpconn)
 
-	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A';`, repoName)
+	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A';`, dpid, repoName)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1030,4 +1033,84 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 	publishedRepoInfo.PublishedDataItems = publishedItemInfos
 
 	return &publishedRepoInfo, err
+}
+
+func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
+
+	var pulledRepoInfo ds.PulledRepoInfo
+	var pulledItemInfo ds.PulledItemInfo
+	pulledItemInfos := make([]ds.PulledItemInfo, 0)
+
+	pulledRepoInfo.RepositoryName = repoName
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'N' AND STATUS = 'A';`, dpid, repoName)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dataitem string
+	result := ds.Result{}
+	pages := ds.ResultPages{}
+	orderInfoSlice := []ds.OrderInfo{}
+	pages.Results = &orderInfoSlice
+	result.Data = &pages
+
+	for rows.Next() {
+		rows.Scan(&dataitem)
+		pulledItemInfo.ItemName = dataitem
+
+		path := "/subscriptions/pull/" + repoName + "/" + dataitem
+		resp, err := commToServerGetRsp("get", path, nil)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusUnauthorized {
+			pulledItemInfo.SignTime = nil
+		} else if resp.StatusCode != http.StatusOK {
+			err = errors.New("request subscriptions api failed.")
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		} else {
+			respbody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				l := log.Error(err)
+				logq.LogPutqueue(l)
+				return nil, err
+			} else {
+				err = json.Unmarshal(respbody, &result)
+				if err != nil {
+					err = errors.New("unmarshal failed.")
+					l := log.Error(err)
+					logq.LogPutqueue(l)
+					return nil, err
+				}
+				for _, v := range orderInfoSlice {
+					pulledItemInfo.SignTime = &v.Signtime
+					pulledItemInfos = append(pulledItemInfos, pulledItemInfo)
+				}
+			}
+		}
+	}
+	pulledRepoInfo.PulledDataItems = pulledItemInfos
+
+	return &pulledRepoInfo, err
 }

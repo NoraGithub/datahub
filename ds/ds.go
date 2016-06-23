@@ -147,6 +147,20 @@ type PublishedItemInfo struct {
 	Location   string    `json:"location, omitempty"`
 }
 
+type PulledRepoInfo struct {
+	RepositoryName  string           `json:"repositoryName, omitempty"`
+	PulledDataItems []PulledItemInfo `json:"pulledDataItems, omitempty"`
+}
+
+type PulledItemInfo struct {
+	ItemName string     `json:"itemName, omitempty"`
+	SignTime *time.Time `json:"signTime, omitempty"`
+}
+
+type OrderInfo struct {
+	Signtime time.Time `json:"signtime, omitempty"`
+}
+
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
 const SQLIsExistTableDhJob string = `select sql from sqlite_master where tbl_name='DH_JOB' and type='table';`
 
