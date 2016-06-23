@@ -71,9 +71,14 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 
 	pub := ds.PubPara{}
+	pub.ItemDesc = strings.Trim(pub.ItemDesc, "/")
+	if strings.Contains(pub.ItemDesc, "/") == true {
+		log.Println("The path of item can't contain '/'.", pub.ItemDesc)
+		w.Write([]byte(`{"msg":"The path of item can't contain '/'."}`))
+		return
+	}
 	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
 		return
-
 	}
 
 	reqBody, _ := ioutil.ReadAll(r.Body)

@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -41,6 +42,12 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path + "(pull)")
 	result, _ := ioutil.ReadAll(r.Body)
 	p := ds.DsPull{}
+	p.ItemDesc = strings.Trim(p.ItemDesc, "/")
+	if strings.Contains(p.ItemDesc, "/") == true {
+		log.Println("The path of item can't contain '/'.", p.ItemDesc)
+		w.Write([]byte(`{"msg":"The path of item can't contain '/'."}`))
+		return
+	}
 
 	if err := json.Unmarshal(result, &p); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
