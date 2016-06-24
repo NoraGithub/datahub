@@ -359,7 +359,7 @@ func RunDaemon() {
 	router.GET("/api/datapool/pulled/:dpname", pulledOfDatapoolHandler)
 	router.GET("/api/datapool/published/:dpname/:repo", publishedOfRepoHandler)
 	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
-	router.GET("/api/datapool/:dpname/other", dpGetOtherDataHandler)
+	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
 
 	router.NotFound = &mux{}
 
