@@ -510,7 +510,7 @@ func DeleteItemOrTag(repo, item, tag string) (err error) {
 		uri = uri + repo + "/" + item + "/" + tag
 	}
 	log.Println(uri)
-	req, err := http.NewRequest("DELETE", DefaultServer+uri, nil)
+	req, err := http.NewRequest("DELETE", DefaultServerAPI+uri, nil)
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
 	}

@@ -294,7 +294,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 }
 
 func GetTagComment(repo, item, tag string) string {
-	path := "/repositories/" + repo + "/" + item + "/" + tag
+	path := "/api/repositories/" + repo + "/" + item + "/" + tag
 
 	resp, err := commToServerGetRsp("get", path, nil)
 	if err != nil {
@@ -345,8 +345,8 @@ func MoveFromTmp(src, dest string) (err error) {
 
 func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string, err error) {
 
-	log.Println("daemon: connecting to", DefaultServer+url, "to get accesstoken")
-	req, err := http.NewRequest("POST", DefaultServer+url, nil)
+	log.Println("daemon: connecting to", DefaultServerAPI+url, "to get accesstoken")
+	req, err := http.NewRequest("POST", DefaultServerAPI+url, nil)
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
 	}

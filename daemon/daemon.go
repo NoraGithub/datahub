@@ -316,7 +316,6 @@ func RunDaemon() {
 	router.GET("/api/datapools", dpGetAllHandler)
 	router.GET("/api/datapools/:dpname", dpGetOneHandler)
 	router.DELETE("/api/datapools/:dpname", dpDeleteOneHandler)
-	router.GET("/api/datapools/:dpname/other", dpGetOtherDataHandler)
 
 	router.GET("/api/ep", epGetHandler)
 	router.POST("/api/ep", epPostHandler)
@@ -361,6 +360,8 @@ func RunDaemon() {
 	router.GET("/api/datapool/published/:dpname/:repo", publishedOfRepoHandler)
 	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
 	router.POST("/api/datapool/check", checkDpConnectHandler)
+	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
+
 
 	router.NotFound = &mux{}
 
@@ -442,6 +443,7 @@ func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
+		DefaultServerAPI = DefaultServer + "/api"
 	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
