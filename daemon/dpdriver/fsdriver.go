@@ -7,6 +7,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type fsdriver struct {
@@ -77,6 +78,15 @@ func (fs *fsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation
 		}
 	}
 	return
+}
+
+func (fs *fsdriver) CheckDpConnect(dpconn string) (normal bool, err error) {
+
+	if index := strings.IndexAny(dpconn, "/"); index != 0 {
+		return
+	}
+
+	return true, nil
 }
 
 func init() {

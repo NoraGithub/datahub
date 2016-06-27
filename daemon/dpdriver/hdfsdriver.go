@@ -5,17 +5,14 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	dfs "github.com/colinmarc/hdfs"
-	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
-	"github.com/colinmarc/hdfs/rpc"
-	//"github.com/asiainfoLDP/datahub/utils/logq"
 	"net/url"
 	"os"
 )
 
-type Client struct {
-	namenode *rpc.NamenodeConnection
-	defaults *hadoop_hdfs.FsServerDefaultsProto
-}
+//type Client struct {
+//	namenode *rpc.NamenodeConnection
+//	defaults *hadoop_hdfs.FsServerDefaultsProto
+//}
 
 type hdfsdriver struct {
 }
@@ -30,7 +27,7 @@ func (hdfs *hdfsdriver) GetDestFileName(dpconn, itemlocation, filename string) (
 
 func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string {
 
-	log.Infof("Begin to upload %v to %v\n", filename, dp)
+	log.Infof("Begin to upl	oad %v to %v\n", filename, dp)
 
 	client, err := getClient(dpconn)
 	if err != nil {
@@ -146,6 +143,16 @@ func (hdfs *hdfsdriver) CheckDataAndGetSize(dpconn, itemlocation, fileName strin
 }
 
 func (hdfs *hdfsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
+	return
+}
+
+func (hdfs *hdfsdriver) CheckDpConnect(dpconn string) (normal bool, err error) {
+
+	client, err := getClient(dpconn)
+	if err == nil && client != nil {
+		return true, nil
+	}
+
 	return
 }
 

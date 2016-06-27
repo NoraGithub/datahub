@@ -190,6 +190,10 @@ func (s3 *s3driver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation
 	return
 }
 
+func (s3 *s3driver) CheckDpConnect(dpconn string) (normal bool, err error) {
+	return
+}
+
 func init() {
 	//fmt.Println("s3")
 

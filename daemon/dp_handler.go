@@ -314,3 +314,38 @@ func dpGetOtherDataHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	JsonResult(w, http.StatusOK, cmd.ResultOK, "OK", allotherdata)
 }
+
+func checkDpConnectHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	reqbody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var paras ds.DpParas
+	err = json.Unmarshal(reqbody, &paras)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var dpconn string
+	if paras.Dptype == "hdfs" {
+		dpconn = paras.Username + ":" + paras.Password + "@" + paras.Host + ":" + paras.Port
+	}
+
+	datapool, err := dpdriver.New(paras.Dptype)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	isNormal, err := datapool.CheckDpConnect(dpconn)
+
+	if err == nil && isNormal == true {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "datapool连接正常", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ErrorDpConnect, "datapool连接不正常", nil)
+	}
+}

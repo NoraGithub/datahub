@@ -161,6 +161,15 @@ type OrderInfo struct {
 	Signtime time.Time `json:"signtime, omitempty"`
 }
 
+type DpParas struct {
+	Dpname string `json:"dpname, omitempty"`
+	Dptype string `json:"dptype, omitempty"`
+	Username string `json:"username, omitempty"`
+	Password string `json:"password, omitempty"`
+	Host string `json:"host, omitempty"`
+	Port string `json:"port, omitempty"`
+}
+
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
 const SQLIsExistTableDhJob string = `select sql from sqlite_master where tbl_name='DH_JOB' and type='table';`
 
