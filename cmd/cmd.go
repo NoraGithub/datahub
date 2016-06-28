@@ -65,6 +65,7 @@ const (
 	ErrorUnknowError
 	ErrorItemNotExist
 	ErrorPublishedItemEmpty
+	ErrorDpConnect
 )
 
 const (
