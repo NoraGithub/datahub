@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strconv"
+	//"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 )
 
 const GstrDpPath string = "/var/lib/datahub"
@@ -266,7 +266,7 @@ func showError(resp *http.Response) {
 
 func StopP2P() error {
 
-	data, err := ioutil.ReadFile(pidFile)
+	/*data, err := ioutil.ReadFile(pidFile)
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -276,9 +276,10 @@ func StopP2P() error {
 		if pid, err := strconv.Atoi(string(data)); err == nil {
 			return syscall.Kill(pid, syscall.SIGQUIT)
 		}
-	}
+	}*/
+
+	_, err := commToDaemon("get", "/stop", nil)
 	return err
-	//commToDaemon("get", "/stop", nil)
 }
 
 func ShowUsage() {
