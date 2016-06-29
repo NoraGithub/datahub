@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"os"
 	"reflect"
@@ -15,6 +16,7 @@ type DatapoolDriver interface {
 	GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string)
 	CheckItemLocation(datapool, dpconn, itemdesc string) error
 	CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error)
+	GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error)
 }
 
 type Datapool struct {
@@ -66,6 +68,10 @@ func (datapool *Datapool) CheckItemLocation(datapoolname, dpconn, itemlocation s
 
 func (datapool *Datapool) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error) {
 	return datapool.driver.CheckDataAndGetSize(dpconn, itemlocation, fileName)
+}
+
+func (datapool *Datapool) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
+	return datapool.driver.GetDpOtherData(allotherdata, itemslocation, dpconn)
 }
 
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {

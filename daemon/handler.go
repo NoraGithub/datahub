@@ -3,10 +3,12 @@ package daemon
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -17,7 +19,8 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "https://hub.dataos.io/api"
+	DefaultServer     = "https://hub.dataos.io"
+	DefaultServerAPI  = DefaultServer + "/api"
 )
 
 type UserForJson struct {
@@ -29,7 +32,7 @@ type tk struct {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	url := DefaultServer + "/" //r.URL.Path
+	url := DefaultServerAPI + "/" //r.URL.Path
 	//r.ParseForm()
 
 	if _, ok := r.Header["Authorization"]; !ok {
@@ -92,7 +95,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request)  {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout.")
 	if loginAuthStr == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -150,4 +153,143 @@ func commToServerGetRsp(method, path string, buffer []byte) (resp *http.Response
 	}
 
 	return resp, nil
+}
+
+func whoamiHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	code := 0
+	msg := "OK"
+	httpcode := http.StatusOK
+	userstru := &ds.User{}
+	if len(loginAuthStr) > 0 {
+		userstru.Username = gstrUsername
+	} else {
+		userstru.Username = ""
+		code = cmd.ErrorUnAuthorization
+		msg = "Not login."
+		httpcode = http.StatusUnauthorized
+	}
+
+	b, _ := buildResp(code, msg, userstru)
+	w.WriteHeader(httpcode)
+	w.Write(b)
+}
+
+func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled or not")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	itemInfo := ItemInDatapool{}
+	itemInfo.Dpname, itemInfo.Dpconn, itemInfo.Dptype, itemInfo.ItemLocation = GetDpnameDpconnItemdesc(repo, item)
+
+	if len(itemInfo.ItemLocation) == 0 {
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "The DataItem hasn't been pulled.", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "The DataItem has been pulled.", &itemInfo)
+	}
+}
+
+func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "published of a datapool")
+	datapool := ps.ByName("dpname")
+	status := "published"
+
+	repoInfos := make([]ds.RepoInfo, 0)
+	repoInfos, err := GetRepoInfo(datapool, status)
+
+	log.Debug(repoInfos)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("Published DataItem of %s is empty.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem has been published of %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+	}
+}
+
+func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "pulled of a datapool")
+	dpName := ps.ByName("dpname")
+	status := "pulled"
+
+	repoInfos, err := GetRepoInfo(dpName, status)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", dpName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem has been pulled of %s.", dpName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+	}
+}
+
+func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item published of a repository")
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	publishedRepo, err := GetPublishedRepoInfo(dpName, repoName)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedRepo.PublishedDataItems) == 0 {
+		msg := fmt.Sprintf("Pushlied DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been published of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedRepo)
+	}
+}
+
+func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled of a repository")
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	pulledRepoInfo, err := GetPulledRepoInfo(dpName, repoName)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledRepoInfo.PulledDataItems) == 0 {
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been pulled of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, pulledRepoInfo)
+	}
+}
+
+func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	result := ds.Result{Code: code, Msg: msg, Data: data}
+	jsondata, err := json.Marshal(&result)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(getJsonBuildingErrorJson()))
+	} else {
+		w.WriteHeader(statusCode)
+		w.Write(jsondata)
+	}
+}
+
+func getJsonBuildingErrorJson() []byte {
+
+	return []byte(log.Infof(`{"code": %d, "msg": %s}`, cmd.ErrorMarshal, "Json building error"))
+
 }

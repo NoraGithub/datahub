@@ -71,6 +71,12 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 
 	pub := ds.PubPara{}
+	pub.ItemDesc = strings.Trim(pub.ItemDesc, "/")
+	if strings.Contains(pub.ItemDesc, "/") == true {
+		log.Println("The path of item can't contain '/'.", pub.ItemDesc)
+		w.Write([]byte(`{"msg":"The path of item can't contain '/'."}`))
+		return
+	}
 	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
 		return
 
@@ -241,7 +247,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	body, e := json.Marshal(&struct {
-		Commnet string `json:"comment"`
+		Comment string `json:"comment"`
 	}{pub.Comment})
 
 	if e != nil {
@@ -505,7 +511,7 @@ func DeleteItemOrTag(repo, item, tag string) (err error) {
 		uri = uri + repo + "/" + item + "/" + tag
 	}
 	log.Println(uri)
-	req, err := http.NewRequest("DELETE", DefaultServer+uri, nil)
+	req, err := http.NewRequest("DELETE", DefaultServerAPI+uri, nil)
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
 	}

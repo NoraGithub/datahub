@@ -13,6 +13,13 @@ import (
 	"errors"
 )
 
+type ItemInDatapool struct {
+	Dpname       string `json:"dpname", omitempty`
+	Dptype       string `json:"dptype", omitempty`
+	Dpconn       string `json:"dpconn", omitempty`
+	ItemLocation string `json:"itemlocation", omitempty`
+}
+
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(repo)")
 	reqBody, _ := ioutil.ReadAll(r.Body)
@@ -71,7 +78,7 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	if ensure == 0 {
-		path := "/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
+		path := "/api/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
 
 		retResp := ds.Response{}
 		Pages := ds.ResultPages{}
@@ -185,7 +192,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 					return
 				}
 
-				path := "/repositories/" + repository + "/" + dataitem + "/" + tagname
+				path := "/api/repositories/" + repository + "/" + dataitem + "/" + tagname
 				resp, err := commToServerGetRsp("delete", path, reqBody)
 				if err != nil {
 					log.Error(err)
@@ -233,7 +240,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		path := "/repositories/" + repository + "/" + dataitem + "/" + tag
+		path := "/api/repositories/" + repository + "/" + dataitem + "/" + tag
 		resp, err := commToServerGetRsp("delete", path, reqBody)
 		if err != nil {
 			log.Error(err)
@@ -323,7 +330,7 @@ func judgeTagExistHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, err error) {
 
-	path := "/repositories/" + repository + "/" + dataitem
+	path := "/api/repositories/" + repository + "/" + dataitem
 
 	exist = false
 
@@ -364,7 +371,7 @@ func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, 
 
 func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, err error) {
 
-	path := "/repositories/" + repository + "/" + dataitem + "/" + tag
+	path := "/api/repositories/" + repository + "/" + dataitem + "/" + tag
 
 	exist = false
 

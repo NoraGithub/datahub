@@ -7,6 +7,8 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -58,6 +60,20 @@ func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	} else {
 		row.Scan(&dpconn)
 		return dpconn
+	}
+}
+
+func GetDataPoolInfo(datapoolname string) (dpid int, dptype, dpconn string) {
+	sqlget := fmt.Sprintf("SELECT DPID, DPTYPE, DPCONN FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
+	//fmt.Println(sqlgetdpconn)
+	row, err := g_ds.QueryRow(sqlget)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return 0, "", ""
+	} else {
+		row.Scan(&dpid, &dptype, &dpconn)
+		return dpid, dptype, dpconn
 	}
 }
 
@@ -439,6 +455,204 @@ func AlterDhJob() (err error) {
 		return err
 	}
 	return nil
+}
+
+func GetItemslocationInDatapool(itemslocation map[string]string, dpname string, dpid int, dpconn string) error {
+
+	sql := fmt.Sprintf("SELECT DISTINCT ITEMDESC, REPOSITORY, DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID=%v AND STATUS='A';", dpid)
+	log.Debug(sql)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Errorf("datapool name %s, dpid %v, dpconn %v, error:%v", dpname, dpid, dpconn, err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	var location, repo, item string
+	for rows.Next() {
+		rows.Scan(&location, &repo, &item)
+		log.Debug(location, repo, item)
+		itemslocation[location] = repo + "/" + item
+	}
+	log.Trace(itemslocation)
+	return err
+}
+
+func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
+
+	if status == "published" {
+		status = "Y"
+	} else {
+		status = "N"
+	}
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY FROM DH_DP_RPDM_MAP WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A';`, dpid, status)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var repository string
+	var itemCount int
+	repoinfo := ds.RepoInfo{}
+	repoInfos := make([]ds.RepoInfo, 0)
+	for rows.Next() {
+		rows.Scan(&repository)
+
+		repoinfo.RepositoryName = repository
+		sql = fmt.Sprintf(`SELECT COUNT(*) FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = '%s' AND STATUS = 'A';`, repository, status)
+		row, err := g_ds.QueryRow(sql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		}
+
+		row.Scan(&itemCount)
+		repoinfo.ItemCount = itemCount
+
+		repoInfos = append(repoInfos, repoinfo)
+	}
+
+	return repoInfos, err
+}
+
+func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error) {
+
+	var publishedRepoInfo ds.PublishedRepoInfo
+	var publishedItemInfo ds.PublishedItemInfo
+	publishedItemInfos := make([]ds.PublishedItemInfo, 0)
+
+	publishedRepoInfo.RepositoryName = repoName
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpconn string
+	var dpid int
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A';`, dpid, repoName)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dataitem string
+	var createTime time.Time
+	var itemDesc string
+
+	for rows.Next() {
+		rows.Scan(&dataitem, &createTime, &itemDesc)
+		publishedItemInfo.ItemName = dataitem
+		publishedItemInfo.CreateTime = createTime
+		publishedItemInfo.Location = dpconn + "/" + itemDesc
+		publishedItemInfos = append(publishedItemInfos, publishedItemInfo)
+	}
+
+	publishedRepoInfo.PublishedDataItems = publishedItemInfos
+
+	return &publishedRepoInfo, err
+}
+
+func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
+
+	var pulledRepoInfo ds.PulledRepoInfo
+	var pulledItemInfo ds.PulledItemInfo
+	pulledItemInfos := make([]ds.PulledItemInfo, 0)
+
+	pulledRepoInfo.RepositoryName = repoName
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'N' AND STATUS = 'A';`, dpid, repoName)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dataitem string
+	result := ds.Result{}
+	pages := ds.ResultPages{}
+	orderInfoSlice := []ds.OrderInfo{}
+	pages.Results = &orderInfoSlice
+	result.Data = &pages
+
+	for rows.Next() {
+		rows.Scan(&dataitem)
+		pulledItemInfo.ItemName = dataitem
+
+		path := "/subscriptions/pull/" + repoName + "/" + dataitem
+		resp, err := commToServerGetRsp("get", path, nil)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusUnauthorized {
+			pulledItemInfo.SignTime = nil
+		} else if resp.StatusCode != http.StatusOK {
+			err = errors.New("request subscriptions api failed.")
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		} else {
+			respbody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				l := log.Error(err)
+				logq.LogPutqueue(l)
+				return nil, err
+			} else {
+				err = json.Unmarshal(respbody, &result)
+				if err != nil {
+					err = errors.New("unmarshal failed.")
+					l := log.Error(err)
+					logq.LogPutqueue(l)
+					return nil, err
+				}
+				for _, v := range orderInfoSlice {
+					pulledItemInfo.SignTime = &v.Signtime
+					pulledItemInfos = append(pulledItemInfos, pulledItemInfo)
+				}
+			}
+		}
+	}
+	pulledRepoInfo.PulledDataItems = pulledItemInfos
+
+	return &pulledRepoInfo, err
 }
 
 func GetAllTagDetails(monitList *map[string]string) (e error) {

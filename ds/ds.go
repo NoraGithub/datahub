@@ -2,8 +2,10 @@ package ds
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"time"
 )
 
 const (
@@ -33,9 +35,13 @@ type DsPull struct {
 }
 
 type Result struct {
-	Code int         `json:"code,omitempty"`
+	Code int         `json:"code"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
+}
+
+type User struct {
+	Username string `json:"username,omitempty"`
 }
 
 type ResultPages struct {
@@ -116,8 +122,43 @@ type PubPara struct {
 	ItemDesc   string `json:"itemdesc, omitempty"`
 }
 
+type DpOtherData struct {
+	Dir     string `json:"dir, omitempty"`
+	FileNum int    `json:"filenum,  omitempty"`
+}
+
 type Ds struct {
 	Db *sql.DB
+}
+
+type RepoInfo struct {
+	RepositoryName string `json:"repositoryName, omitempty"`
+	ItemCount      int    `json:"itemCount, omitempty"`
+}
+
+type PublishedRepoInfo struct {
+	RepositoryName     string              `json:"repositoryName, omitempty"`
+	PublishedDataItems []PublishedItemInfo `json:"publishedDataItems, omitempty"`
+}
+
+type PublishedItemInfo struct {
+	ItemName   string    `json:"itemName, omitempty"`
+	CreateTime time.Time `json:"createTime, omitempty"`
+	Location   string    `json:"location, omitempty"`
+}
+
+type PulledRepoInfo struct {
+	RepositoryName  string           `json:"repositoryName, omitempty"`
+	PulledDataItems []PulledItemInfo `json:"pulledDataItems, omitempty"`
+}
+
+type PulledItemInfo struct {
+	ItemName string     `json:"itemName, omitempty"`
+	SignTime *time.Time `json:"signTime, omitempty"`
+}
+
+type OrderInfo struct {
+	Signtime time.Time `json:"signtime, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`

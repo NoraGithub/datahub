@@ -69,7 +69,13 @@ func Daemonize() (isDaemon bool, err error) {
 		}
 	}
 	if isDaemon {
-		log.SetLogFile(logfile)
+		screenlog := os.Getenv(OutPutLogScreen)
+		if screenlog == sCREENLOG {
+
+		} else {
+			log.SetLogFile(logfile)
+		}
+
 		oldmask := syscall.Umask(int(Umask))
 		defer syscall.Umask(oldmask)
 		if _, err = syscall.Setsid(); err != nil {

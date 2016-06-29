@@ -64,6 +64,8 @@ const (
 	ErrorNoDatapoolDriver
 	ErrorOtherError
 	ErrorUnknowError
+	ErrorItemNotExist
+	ErrorPublishedItemEmpty
 )
 
 const (
@@ -192,9 +194,9 @@ func login(interactive bool) {
 }
 
 func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, err error) {
-	//fmt.Println(method, path, string(jsonData))
+	//fmt.Println(method, "/api"+path, string(jsonData))
 
-	req, err := http.NewRequest(strings.ToUpper(method), path, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(strings.ToUpper(method), "/api"+path, bytes.NewBuffer(jsonData))
 
 	if len(User.userName) > 0 {
 		req.SetBasicAuth(User.userName, User.password)

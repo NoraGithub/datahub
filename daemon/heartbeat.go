@@ -93,7 +93,7 @@ func HeartBeat() {
 			l := log.Error(err)
 			logq.LogPutqueue(l)
 		}
-		url := DefaultServer + "/heartbeat"
+		url := DefaultServerAPI + "/heartbeat"
 		log.Trace("connecting to", url, string(jsondata))
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsondata))
 		/*
@@ -132,7 +132,7 @@ func GetMessages() {
 	var sleepInterval int
 	var srtInterval string
 	var e error
-	url := DefaultServer + "/notifications?forclient=1&type=item_event&status=0"
+	url := DefaultServerAPI + "/notifications?forclient=1&type=item_event&status=0"
 	for AutoPull == true {
 
 		if srtInterval = os.Getenv("DATAHUB_MSG_INTERVAL"); len(srtInterval) > 0 {
@@ -191,7 +191,7 @@ func GetMessages() {
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
-			urllogin := DefaultServer + "/"
+			urllogin := DefaultServerAPI + "/"
 			reql, err := http.NewRequest("GET", urllogin, nil)
 			if len(loginBasicAuthStr) > 0 {
 				reql.Header.Set("Authorization", loginBasicAuthStr)
@@ -337,11 +337,11 @@ func ScanLocalFile(path string) []string {
 	return localfiles
 }
 
-func RemoveDuplicatesAndEmpty(a []string) (ret []string){
+func RemoveDuplicatesAndEmpty(a []string) (ret []string) {
 	a_len := len(a)
-	for i:=0; i < a_len; i++{
-		if (i > 0 && a[i-1] == a[i]) || len(a[i])==0{
-			continue;
+	for i := 0; i < a_len; i++ {
+		if (i > 0 && a[i-1] == a[i]) || len(a[i]) == 0 {
+			continue
 		}
 		ret = append(ret, a[i])
 	}

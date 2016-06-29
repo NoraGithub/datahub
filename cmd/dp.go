@@ -25,6 +25,7 @@ type Item struct {
 	Publish    string `json:"publish"`
 	TagDetail  string `json:"detail, omitempty"`
 	ItemDesc   string `json:"itemdesc, omitempty"`
+	TagComment string `json:"comment, omitempty"`
 }
 type FormatDpDetail struct {
 	Name  string `json:"dpname"`
@@ -34,7 +35,6 @@ type FormatDpDetail struct {
 }
 
 func Dp(needLogin bool, args []string) (err error) {
-	//fmt.Println(winGstrDpPath)
 	if needLogin && !Logged {
 		login(false)
 	}
@@ -121,9 +121,9 @@ func dpResp(bDetail bool, RespBody []byte) {
 			for _, item := range strcDp.Items {
 				RepoItemTag := item.Repository + "/" + item.DataItem + ":" + item.Tag
 				if item.Publish == "Y" {
-					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%s\n", RepoItemTag, item.Time, "pub", item.ItemDesc, item.TagDetail)
+					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%-20s \t%s\n", RepoItemTag, item.Time, "pub", item.ItemDesc, item.TagDetail, item.TagComment)
 				} else {
-					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%s\n", RepoItemTag, item.Time, "pull", item.ItemDesc, item.TagDetail)
+					fmt.Printf("%-32s \t%-20s \t%-5s \t%-32s \t%-20s \t%s\n", RepoItemTag, item.Time, "pull", item.ItemDesc, item.TagDetail, item.TagComment)
 				}
 			}
 			printDash(n)

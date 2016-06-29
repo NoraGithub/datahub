@@ -27,6 +27,8 @@ var (
 
 	wg sync.WaitGroup
 
+         staticFileDir string
+
 	g_strDpPath string = cmd.GstrDpPath
 	g_dbfile    string = g_strDpPath + "\\DB\\datahub.db"
 	logfile            = g_strDpPath + "\\LOG\\datahub.log"
@@ -50,11 +52,30 @@ type StoppabletcpListener struct {
 }
 
 func dbinit() {
-	log.Println("connect to db sqlite3")
-	db, err := sql.Open("sqlite3", g_dbfile)
-	//defer db.Close()
-	chk(err)
-	g_ds.Db = db
+
+	DB_TYPE := os.Getenv("DB_TYPE")
+	if strings.ToUpper(DB_TYPE) == "MYSQL" {
+		for i := 0; i < 3; i++ {
+			connectMysql()
+			if g_ds.Db == nil {
+				select {
+				case <-time.After(time.Second * 5):
+					continue
+				}
+			} else {
+				break
+			}
+		}
+		if g_ds.Db == nil {
+			return
+		}
+	} else {
+		log.Println("connect to db sqlite3")
+		db, err := sql.Open("sqlite3", g_dbfile)
+		//defer db.Close()
+		chk(err)
+		g_ds.Db = db
+	}
 
 	var RetDhRpdmTagMap string
 	row, err := g_ds.QueryRow(ds.SQLIsExistRpdmTagMap)
@@ -76,6 +97,22 @@ func dbinit() {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
 		panic(err)
+	}
+}
+
+func connectMysql() {
+	DB_ADDR := os.Getenv("MYSQL_PORT_3306_TCP_ADDR")
+	DB_PORT := os.Getenv("MYSQL_PORT_3306_TCP_PORT")
+	DB_DATABASE := os.Getenv("MYSQL_ENV_MYSQL_DATABASE")
+	DB_USER := os.Getenv("MYSQL_ENV_MYSQL_USER")
+	DB_PASSWORD := os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
+	DB_URL := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=true`, DB_USER, DB_PASSWORD, DB_ADDR, DB_PORT, DB_DATABASE)
+	db, err := sql.Open("mysql", DB_URL)
+	if err != nil {
+		log.Errorf("error: %s\n", err)
+	} else {
+		g_ds.Db = db
+		log.Println("Connect to Mysql successfully!")
 	}
 }
 
@@ -286,46 +323,57 @@ func RunDaemon() {
 	}
 
 	router := httprouter.New()
-	router.GET("/", helloHttp)
-	router.POST("/datapools", dpPostOneHandler)
-	router.GET("/datapools", dpGetAllHandler)
-	router.GET("/datapools/:dpname", dpGetOneHandler)
-	router.DELETE("/datapools/:dpname", dpDeleteOneHandler)
+	router.GET("/", serverFileHandler)
+	router.POST("/api/datapools", dpPostOneHandler)
+	router.GET("/api/datapools", dpGetAllHandler)
+	router.GET("/api/datapools/:dpname", dpGetOneHandler)
+	router.DELETE("/api/datapools/:dpname", dpDeleteOneHandler)
 
-	router.GET("/ep", epGetHandler)
-	router.POST("/ep", epPostHandler)
-	router.DELETE("/ep", epDeleteHandler)
+	router.GET("/api/ep", epGetHandler)
+	router.POST("/api/ep", epPostHandler)
+	router.DELETE("/api/ep", epDeleteHandler)
 
-	router.GET("/repositories/:repo/:item/:tag", repoTagHandler)
-	router.GET("/repositories/:repo/:item", repoItemHandler)
-	router.GET("/repositories/:repo", repoRepoNameHandler)
-	router.GET("/repositories", repoHandler)
-	router.GET("/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
-	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
-	router.DELETE("/repositories/:repo/:item/:tag", repoDelTagHandler)
+	router.GET("/api/repositories/:repo/:item/:tag", repoTagHandler)
+	router.GET("/api/repositories/:repo/:item", repoItemHandler)
+	router.GET("/api/repositories/:repo", repoRepoNameHandler)
+	router.GET("/api/repositories", repoHandler)
+	router.GET("/api/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
+	router.DELETE("/api/repositories/:repo/:item", repoDelOneItemHandler)
+	router.DELETE("/api/repositories/:repo/:item/:tag", repoDelTagHandler)
 
-	router.GET("/subscriptions/dataitems", subsHandler)
-	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
+	router.GET("/api/subscriptions/dataitems", subsHandler)
+	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
 
-	router.POST("/repositories/:repo/:item", pubItemHandler)
-	router.POST("/repositories/:repo/:item/:tag", pubTagHandler)
+	router.POST("/api/repositories/:repo/:item", pubItemHandler)
+	router.POST("/api/repositories/:repo/:item/:tag", pubTagHandler)
 
-	router.POST("/subscriptions/:repo/:item/pull", pullHandler)
+	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
 
-	router.GET("/job", jobHandler)
-	router.GET("/job/:id", jobDetailHandler)
-	router.DELETE("/job/:id", jobRmHandler)
-	router.DELETE("/job", jobRmAllHandler)
+	router.GET("/api/job", jobHandler)
+	router.GET("/api/job/:id", jobDetailHandler)
+	router.DELETE("/api/job/:id", jobRmHandler)
+	router.DELETE("/api/job", jobRmAllHandler)
 
-	router.GET("/daemon/:repo/:item/:tag", tagStatusHandler)
-	router.GET("/daemon/:repo/:item", tagOfItemStatusHandler)
+	router.GET("/api/daemon/:repo/:item/:tag", tagStatusHandler)
+	router.GET("/api/daemon/:repo/:item", tagOfItemStatusHandler)
 
-	router.GET("/heartbeat/status/:user", userStatusHandler)
+	router.GET("/api/heartbeat/status/:user", userStatusHandler)
 
 	http.Handle("/", router)
-	http.HandleFunc("/stop", stopHttp)
-	http.HandleFunc("/users/auth", loginHandler)
-	http.HandleFunc("/users/logout", logoutHandler)
+	http.HandleFunc("/api/stop", stopHttp)
+	http.HandleFunc("/api/users/auth", loginHandler)
+	http.HandleFunc("/api/users/logout", logoutHandler)
+
+	router.GET("/api/users/whoami", whoamiHandler)
+	router.GET("/api/pulled/:repo/:item", itemPulledHandler)
+
+	router.GET("/api/datapool/published/:dpname", publishedOfDatapoolHandler)
+	router.GET("/api/datapool/pulled/:dpname", pulledOfDatapoolHandler)
+	router.GET("/api/datapool/published/:dpname/:repo", publishedOfRepoHandler)
+	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
+	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
+
+	router.NotFound = &mux{}
 
 	server := http.Server{}
 
@@ -379,9 +427,33 @@ func RunDaemon() {
 
 }
 
+type mux struct {
+}
+
+func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	staticFileDir = os.Getenv("STATIC_FILE_DIR")
+	if len(staticFileDir) == 0 {
+		http.ServeFile(w, r, "/var/lib/datahub/dist/"+r.URL.Path[1:])
+	} else {
+		http.ServeFile(w, r, strings.TrimRight(staticFileDir, "/")+"/"+r.URL.Path[1:])
+	}
+}
+
+func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//http.ServeFile(w, r, "/home/yy/dev/src/github.com/asiainfoLDP/datahub/dist/index.html")
+	staticFileDir = os.Getenv("STATIC_FILE_DIR")
+	if len(staticFileDir) == 0 {
+		http.ServeFile(w, r, "/var/lib/datahub/dist/index.html")
+	} else {
+		http.ServeFile(w, r, strings.TrimRight(staticFileDir, "/")+"/index.html")
+	}
+}
+
 func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
+		DefaultServerAPI = DefaultServer + "/api"
 	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}

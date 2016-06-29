@@ -1,14 +1,15 @@
 package dpdriver
 
 import (
-	dfs "github.com/colinmarc/hdfs"
-	"github.com/colinmarc/hdfs/rpc"
-	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
 	"errors"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
+	dfs "github.com/colinmarc/hdfs"
+	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
+	"github.com/colinmarc/hdfs/rpc"
 	//"github.com/asiainfoLDP/datahub/utils/logq"
-	"os"
 	"net/url"
+	"os"
 )
 
 type Client struct {
@@ -39,7 +40,7 @@ func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, de
 	}
 	defer client.Close()
 
-	err = client.MkdirAll("/" + itemlocation, 1777)
+	err = client.MkdirAll("/"+itemlocation, 1777)
 	if err != nil {
 		log.Error("Failed to mkdirall in hdfs", err)
 		status = "put to hdfs err"
@@ -63,7 +64,7 @@ func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, de
 
 func (hdfs *hdfsdriver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
 
-	e := os.MkdirAll("/var/lib/datahub/" + itemlocation, 1777)
+	e := os.MkdirAll("/var/lib/datahub/"+itemlocation, 1777)
 	if e != nil {
 		log.Error(e)
 		return
@@ -92,7 +93,7 @@ func (hdfs *hdfsdriver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail 
 
 	cs, err := client.GetContentSummary(hdfsfile)
 	if err != nil {
-		log.Error("Failed to get contentsummary.",err)
+		log.Error("Failed to get contentsummary.", err)
 		return
 	}
 
@@ -110,7 +111,7 @@ func (hdfs *hdfsdriver) CheckItemLocation(datapoolname, dpconn, itemlocation str
 	}
 	defer client.Close()
 
-	err = client.MkdirAll("/" + itemlocation, 1777)
+	err = client.MkdirAll("/"+itemlocation, 1777)
 	if err != nil {
 		log.Error(err)
 	}
@@ -146,8 +147,12 @@ func (hdfs *hdfsdriver) CheckDataAndGetSize(dpconn, itemlocation, fileName strin
 	return
 }
 
+func (hdfs *hdfsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
+	return
+}
+
 func getClient(dpconn string) (client *dfs.Client, err error) {
-	log.Info("dpconn:",dpconn)
+	log.Info("dpconn:", dpconn)
 	u, err := url.Parse("hdfs://" + dpconn)
 	if err != nil {
 		return

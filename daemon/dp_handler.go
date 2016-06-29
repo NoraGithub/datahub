@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/daemon/dpdriver"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
@@ -273,4 +274,43 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		rw.Write(resp)
 	}
 
+}
+
+func dpGetOtherDataHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	dpname := ps.ByName("dpname")
+	dpid, dptype, dpconn := GetDataPoolInfo(dpname)
+	if len(dpconn) == 0 || dpid == 0 || len(dptype) == 0 {
+		log.Info("Datapool:", dpname, "does not exist.")
+		JsonResult(w, http.StatusOK, cmd.ErrorDatapoolNotExits, "The datapool does not exist.", nil)
+		return
+	}
+
+	itemslocation := make(map[string]string)
+	err := GetItemslocationInDatapool(itemslocation, dpname, dpid, dpconn)
+	if err != nil {
+		log.Error("The datapool does not exist.", err)
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "Get dataitem location error.", nil)
+		return
+	}
+
+	datapool, err := dpdriver.New(dptype)
+	if err != nil {
+		l := log.Error(err.Error())
+		logq.LogPutqueue(l)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorDatapoolNotExits, err.Error())
+		return
+	}
+
+	allotherdata := make([]ds.DpOtherData, 0, 4)
+
+	err = datapool.GetDpOtherData(&allotherdata, itemslocation, dpconn)
+	if err != nil {
+		JsonResult(w, http.StatusInternalServerError, cmd.ResultOK, err.Error(), allotherdata)
+		return
+	}
+
+	log.Info("allotherdata", allotherdata)
+
+	JsonResult(w, http.StatusOK, cmd.ResultOK, "OK", allotherdata)
 }
