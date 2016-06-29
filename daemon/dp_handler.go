@@ -8,6 +8,8 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	dfs "github.com/colinmarc/hdfs"
+	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
@@ -78,6 +80,45 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			err = nil
 		} else if struDp.Type == DPFILE {
 			err = os.MkdirAll(sdpDirName, 0777)
+		} else {
+			connstr := struDp.Host + ":" + struDp.Port
+
+			client, err := dfs.New(connstr)
+			if err != nil {
+				//fmt.Println("New err:", err)
+				msg.Msg = fmt.Sprintf("hdfs new client failed.")
+				resp, _ := json.Marshal(msg)
+				rw.Write(resp)
+				return
+			}
+
+			info, err := client.Stat("/")
+			if err != nil {
+				//fmt.Println("Stat err:", err)
+				msg.Msg = fmt.Sprintf("hdfs get hadoop user failed.")
+				resp, _ := json.Marshal(msg)
+				rw.Write(resp)
+				return
+			}
+			hadoopUser := *info.Sys().(*hadoop_hdfs.HdfsFileStatusProto).Owner
+
+			client, err = dfs.NewForUser(connstr, hadoopUser)
+			if err != nil {
+				//fmt.Println("NewForUser err:", err)
+				msg.Msg = fmt.Sprintf("hdfs new client for user failed.")
+				resp, _ := json.Marshal(msg)
+				rw.Write(resp)
+				return
+			}
+
+			err = client.MkdirAll(struDp.Conn, 0777)
+			if err != nil {
+				//fmt.Println("MkdirAll err:", err)
+				msg.Msg = fmt.Sprintf("hdfs make dir failed.")
+				resp, _ := json.Marshal(msg)
+				rw.Write(resp)
+				return
+			}
 		}
 
 		if err != nil {
@@ -330,9 +371,9 @@ func checkDpConnectHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	var dpconn string
+	var connstr string
 	if paras.Dptype == "hdfs" {
-		dpconn = paras.Username + ":" + paras.Password + "@" + paras.Host + ":" + paras.Port
+		connstr = paras.Host + ":" + paras.Port
 	}
 
 	datapool, err := dpdriver.New(paras.Dptype)
@@ -341,7 +382,7 @@ func checkDpConnectHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	isNormal, err := datapool.CheckDpConnect(dpconn)
+	isNormal, err := datapool.CheckDpConnect(paras.Dpconn, connstr)
 
 	if err == nil && isNormal == true {
 		JsonResult(w, http.StatusOK, cmd.ResultOK, "datapool连接正常", nil)

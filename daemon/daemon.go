@@ -362,7 +362,6 @@ func RunDaemon() {
 	router.POST("/api/datapool/check", checkDpConnectHandler)
 	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
 
-
 	router.NotFound = &mux{}
 
 	server := http.Server{}

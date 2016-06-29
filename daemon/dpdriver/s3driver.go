@@ -190,7 +190,7 @@ func (s3 *s3driver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation
 	return
 }
 
-func (s3 *s3driver) CheckDpConnect(dpconn string) (normal bool, err error) {
+func (s3 *s3driver) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
 	return
 }
 
