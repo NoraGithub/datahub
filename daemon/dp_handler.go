@@ -217,8 +217,8 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if dpid > 0 {
 		//Use "left out join" to get repository/dataitem records, whether it has tags or not.
 		//B.STATUS='A'
-		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), 
-				B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME), B.COMMENT 
+		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH, A.CREATE_TIME,
+				B.TAGNAME, B.DETAIL, B.CREATE_TIME, B.COMMENT
 				FROM DH_DP_RPDM_MAP A LEFT JOIN DH_RPDM_TAG_MAP B
 				ON (A.RPDMID = B.RPDMID)
 				WHERE A.DPID = %v AND A.STATUS='A' `, dpid)

@@ -72,6 +72,7 @@ func dbinit() {
 		//defer db.Close()
 		chk(err)
 		g_ds.Db = db
+		g_ds.DbType = "sqlite"
 	}
 
 	var RetDhRpdmTagMap string
@@ -99,6 +100,9 @@ func dbinit() {
 }
 
 func connectMysql() {
+
+	fmt.Println("------->connectMysql")
+
 	DB_ADDR := os.Getenv("MYSQL_PORT_3306_TCP_ADDR")
 	DB_PORT := os.Getenv("MYSQL_PORT_3306_TCP_PORT")
 	DB_DATABASE := os.Getenv("MYSQL_ENV_MYSQL_DATABASE")
@@ -110,7 +114,8 @@ func connectMysql() {
 		log.Errorf("error: %s\n", err)
 	} else {
 		g_ds.Db = db
-		log.Println("Connect to Mysql successfully!")
+		g_ds.DbType = "mysql"
+		fmt.Println("Connect to Mysql successfully!")
 	}
 }
 

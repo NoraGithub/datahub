@@ -128,7 +128,8 @@ type DpOtherData struct {
 }
 
 type Ds struct {
-	Db *sql.DB
+	Db     *sql.DB
+	DbType string
 }
 
 type RepoInfo struct {
@@ -241,8 +242,7 @@ const CreateMsgTagAdded string = `CREATE TABLE IF NOT EXISTS
 		CREATE_TIME DATETIME,
 		STATUS_TIME DATETIME
 
-	);
-	`
+	);`
 
 type Executer interface {
 	Insert(cmd string) (interface{}, error)
