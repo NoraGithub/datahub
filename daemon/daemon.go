@@ -8,6 +8,7 @@ import (
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/daemon/daemonigo"
 	"github.com/asiainfoLDP/datahub/ds"
+	"github.com/asiainfoLDP/datahub/utils"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/julienschmidt/httprouter"
@@ -28,14 +29,19 @@ var (
 	wg sync.WaitGroup
 
 	staticFileDir string
+
+	DaemonAuthrization string
+
+	DaemonCliServer string = "127.0.0.1:35600"
+
+	CLIEntrypoint string = "127.0.0.1:35600"
 )
 
 const (
-	g_dbfile        string = "/var/lib/datahub/datahub.db"
-	g_strDpPath     string = cmd.GstrDpPath
-	DPFILE          string = "file"
-	DPS3            string = "s3"
-	DaemonCliServer string = "0.0.0.0:35600"
+	g_dbfile    string = "/var/lib/datahub/datahub.db"
+	g_strDpPath string = cmd.GstrDpPath
+	DPFILE      string = "file"
+	DPS3        string = "s3"
 )
 
 type StoppableListener struct {
@@ -282,6 +288,9 @@ func RunDaemon() {
 
 	}
 
+	DaemonAuthrization = utils.Getguid()
+	log.Println("DaemonAuthrization", DaemonAuthrization)
+
 	dbinit()
 
 	if len(DaemonID) == 40 {
@@ -298,12 +307,12 @@ func RunDaemon() {
 	originalListener, err := net.Listen("tcp", DaemonCliServer)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		if err = os.Chmod(cmd.UnixSock, os.ModePerm); err != nil {
-			l := log.Error(err)
-			logq.LogPutqueue(l)
-		}
-	}
+	} //else {
+	// 	if err = os.Chmod(cmd.UnixSock, os.ModePerm); err != nil {
+	// 		l := log.Error(err)
+	// 		logq.LogPutqueue(l)
+	// 	}
+	// }
 
 	sl, err = tcpNew(originalListener)
 	if err != nil {
@@ -361,7 +370,6 @@ func RunDaemon() {
 	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
 	router.POST("/api/datapool/check", checkDpConnectHandler)
 	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
-
 
 	router.NotFound = &mux{}
 
@@ -449,4 +457,13 @@ func init() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
+
+	if daemonServer := os.Getenv("DATAHUB_DAEMON_SERVER"); len(daemonServer) > 0 {
+		DaemonCliServer = daemonServer
+	}
+
+	if cliEp := os.Getenv("DATAHUB_CLI_ENTRYPOINT"); len(cliEp) > 0 {
+		CLIEntrypoint = cliEp
+	}
+
 }

@@ -15,11 +15,12 @@ import (
 )
 
 type Beatbody struct {
-	Daemonid   string   `json:"daemonid"`
-	Entrypoint []string `json:"entrypoint"`
-	Log        []string `json:"log,omitempty"`
-	Role       int      `json:"role"` //0 puller, 1 publisher
-	Errortag   []string `json:"abnormaltags,omitempty"`
+	Daemonid      string   `json:"daemonid"`
+	Entrypoint    []string `json:"entrypoint"`
+	Log           []string `json:"log,omitempty"`
+	Role          int      `json:"role"` //0 puller, 1 publisher
+	Errortag      []string `json:"abnormaltags,omitempty"`
+	CliEntrypoint string   `json:"clientrypoint, omitempty"`
 }
 
 type MessageData struct {
@@ -87,6 +88,8 @@ func HeartBeat() {
 		if len(errortags) != 0 {
 			heartbeatbody.Errortag = errortags
 		}
+
+		heartbeatbody.CliEntrypoint = CLIEntrypoint + "?daemonauth=" + DaemonAuthrization
 
 		jsondata, err := json.Marshal(heartbeatbody)
 		if err != nil {
