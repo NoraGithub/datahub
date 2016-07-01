@@ -300,43 +300,84 @@ func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {
 }
 
 func CreateTable() (err error) {
-	_, err = g_ds.Create(ds.Create_dh_dp)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.CreateDhDaemon)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.CreateDhJob)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
+	if g_ds.DbType == "mysql" {
+		_, err = g_ds.Create(ds.Create_dh_dp_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhDaemon_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhJob_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+
+		_, err = g_ds.Create(ds.CreateMsgTagAdded_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+	} else {
+		_, err = g_ds.Create(ds.Create_dh_dp)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhDaemon)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhJob)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+
+		_, err = g_ds.Create(ds.CreateMsgTagAdded)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
 	}
 
-	_, err = g_ds.Create(ds.CreateMsgTagAdded)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
 	return
 }
 

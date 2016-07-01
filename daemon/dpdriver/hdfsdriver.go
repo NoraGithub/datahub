@@ -5,8 +5,9 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	dfs "github.com/colinmarc/hdfs"
-	"net/url"
+	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
 	"os"
+	"strings"
 )
 
 //type Client struct {
@@ -27,7 +28,7 @@ func (hdfs *hdfsdriver) GetDestFileName(dpconn, itemlocation, filename string) (
 
 func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string {
 
-	log.Infof("Begin to upl	oad %v to %v\n", filename, dp)
+	log.Infof("Begin to upload %v to %v\n", filename, dp)
 
 	client, err := getClient(dpconn)
 	if err != nil {
@@ -146,27 +147,42 @@ func (hdfs *hdfsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemsloca
 	return
 }
 
-func (hdfs *hdfsdriver) CheckDpConnect(dpconn string) (normal bool, err error) {
+func (hdfs *hdfsdriver) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
 
-	client, err := getClient(dpconn)
-	if err == nil && client != nil {
-		return true, nil
+	if index := strings.IndexAny(dpconn, "/"); index != 0 {
+		return
 	}
 
-	return
+	client, err := getClient(connstr)
+	if err == nil && client != nil {
+		return true, nil
+	} else {
+		return
+	}
 }
 
-func getClient(dpconn string) (client *dfs.Client, err error) {
-	log.Info("dpconn:", dpconn)
-	u, err := url.Parse("hdfs://" + dpconn)
+func getClient(connstr string) (client *dfs.Client, err error) {
+	//log.Info("dpconn:", dpconn)
+	//u, err := url.Parse("hdfs://" + dpconn)
+	//if err != nil {
+	//	return
+	//}
+	//userinfo := u.User
+	//username := userinfo.Username()
+	//password :=userinfo.Password()
+	//host := u.Host
+	client, err = dfs.New(connstr)
 	if err != nil {
 		return
 	}
-	userinfo := u.User
-	username := userinfo.Username()
-	//password :=userinfo.Password()
-	host := u.Host
-	client, err = dfs.NewForUser(host, username)
+
+	info, err := client.Stat("/")
+	if err != nil {
+		return
+	}
+	hadoopUser := *info.Sys().(*hadoop_hdfs.HdfsFileStatusProto).Owner
+
+	client, err = dfs.NewForUser(connstr, hadoopUser)
 	if err != nil {
 		return
 	}

@@ -17,7 +17,7 @@ type DatapoolDriver interface {
 	CheckItemLocation(datapool, dpconn, itemdesc string) error
 	CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error)
 	GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error)
-	CheckDpConnect(dpconn string) (normal bool, err error)
+	CheckDpConnect(dpconn, connstr string) (normal bool, err error)
 }
 
 type Datapool struct {
@@ -75,8 +75,8 @@ func (datapool *Datapool) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslo
 	return datapool.driver.GetDpOtherData(allotherdata, itemslocation, dpconn)
 }
 
-func (datapool *Datapool) CheckDpConnect(dpconn string) (normal bool, err error) {
-	return datapool.driver.CheckDpConnect(dpconn)
+func (datapool *Datapool) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
+	return datapool.driver.CheckDpConnect(dpconn, connstr)
 }
 
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {

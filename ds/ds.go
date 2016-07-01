@@ -128,7 +128,8 @@ type DpOtherData struct {
 }
 
 type Ds struct {
-	Db *sql.DB
+	Db     *sql.DB
+	DbType string
 }
 
 type RepoInfo struct {
@@ -164,10 +165,9 @@ type OrderInfo struct {
 type DpParas struct {
 	Dpname string `json:"dpname, omitempty"`
 	Dptype string `json:"dptype, omitempty"`
-	Username string `json:"username, omitempty"`
-	Password string `json:"password, omitempty"`
-	Host string `json:"host, omitempty"`
-	Port string `json:"port, omitempty"`
+	Dpconn string `json:"dpconn, omitempty"`
+	Host   string `json:"host, omitempty"`
+	Port   string `json:"port, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
@@ -242,8 +242,7 @@ const CreateMsgTagAdded string = `CREATE TABLE IF NOT EXISTS
 		CREATE_TIME DATETIME,
 		STATUS_TIME DATETIME
 
-	);
-	`
+	);`
 
 type Executer interface {
 	Insert(cmd string) (interface{}, error)

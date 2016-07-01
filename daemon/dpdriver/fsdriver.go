@@ -80,7 +80,7 @@ func (fs *fsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation
 	return
 }
 
-func (fs *fsdriver) CheckDpConnect(dpconn string) (normal bool, err error) {
+func (fs *fsdriver) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
 
 	if index := strings.IndexAny(dpconn, "/"); index != 0 {
 		return

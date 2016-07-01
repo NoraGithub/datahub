@@ -13,6 +13,8 @@ type FormatDpCreate struct {
 	Name string `json:"dpname, omitempty"`
 	Type string `json:"dptype, omitempty"`
 	Conn string `json:"dpconn, omitempty"`
+	Host string `json:"host, omitempty"`
+	Port string `json:"port, omitempty"`
 }
 
 var DataPoolTypes = []string{"file", "db", "hdfs", "jdbc", "s3", "api", "storm"}
