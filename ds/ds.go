@@ -163,11 +163,12 @@ type OrderInfo struct {
 }
 
 type DpParas struct {
-	Dpname string `json:"dpname, omitempty"`
-	Dptype string `json:"dptype, omitempty"`
-	Dpconn string `json:"dpconn, omitempty"`
-	Host   string `json:"host, omitempty"`
-	Port   string `json:"port, omitempty"`
+	Dpname   string `json:"dpname, omitempty"`
+	Dptype   string `json:"dptype, omitempty"`
+	Username string `json:"username, omitempty"`
+	Password string `json:"password, omitempty"`
+	Host     string `json:"host, omitempty"`
+	Port     string `json:"port, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
