@@ -102,8 +102,6 @@ func JobRm(needLogin bool, args []string) (err error) {
 	//fForce := f.Bool([]string{"-force", "f"}, false, "force cancel a pulling job.")
 	fRmAll := f.Bool([]string{"-all"}, false, "rm all the jobs.")
 
-	fmt.Println(*fRmAll)
-
 	path := "/job"
 	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
 		path += "/" + args[0]
@@ -122,8 +120,6 @@ func JobRm(needLogin bool, args []string) (err error) {
 	//	path += "?opt=force"
 	//}
 	//}
-
-	fmt.Println(*fRmAll, path)
 
 	if (path == "/job") && (*fRmAll == false) {
 		fmt.Println(ErrMsgArgument)
