@@ -100,9 +100,6 @@ func dbinit() {
 }
 
 func connectMysql() {
-
-	fmt.Println("------->connectMysql")
-
 	DB_ADDR := os.Getenv("MYSQL_PORT_3306_TCP_ADDR")
 	DB_PORT := os.Getenv("MYSQL_PORT_3306_TCP_PORT")
 	DB_DATABASE := os.Getenv("MYSQL_ENV_MYSQL_DATABASE")
@@ -115,7 +112,7 @@ func connectMysql() {
 	} else {
 		g_ds.Db = db
 		g_ds.DbType = "mysql"
-		fmt.Println("Connect to Mysql successfully!")
+		log.Println("Connect to Mysql successfully!")
 	}
 }
 
