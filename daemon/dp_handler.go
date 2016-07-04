@@ -20,6 +20,9 @@ import (
 var DPTYPES []string = cmd.DataPoolTypes
 
 func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// if false == authDaemon(rw, r) {
+	// 	return
+	// }
 	r.ParseForm()
 	rw.WriteHeader(http.StatusOK)
 

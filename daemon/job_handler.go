@@ -9,6 +9,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"strconv"
 )
 
 //var DatahubJob = make(map[string]ds.JobInfo) //job[id]=JobInfo
@@ -19,19 +20,38 @@ var DatahubJob = []ds.JobInfo{} //job[id]=JobInfo
 func jobHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	log.Trace("from", req.RemoteAddr, req.Method, req.URL.RequestURI(), req.Proto)
 
-	for i := len(DatahubJob) - 1; i >= 0; i-- {
-		if DatahubJob[i].Stat == "downloading" {
-			DatahubJob[i].Dlsize, _ = GetFileSize(DatahubJob[i].Path)
+	req.ParseForm()
+	all, _ := strconv.Atoi(req.Form.Get("all"))
+	if all == 1 {
+		for i := len(DatahubJob) - 1; i >= 0; i-- {
+			if DatahubJob[i].Stat == "downloading" {
+				DatahubJob[i].Dlsize, _ = GetFileSize(DatahubJob[i].Path)
+			}
 		}
+
+		//r, _ := buildResp(0, "ok", joblist)
+		r, _ := buildResp(0, "ok", DatahubJob)
+		w.WriteHeader(http.StatusOK)
+		w.Write(r)
+
+	} else {
+		var job []ds.JobInfo
+		for _, v := range DatahubJob {
+
+			if v.Stat == "downloading" {
+				v.Dlsize, _ = GetFileSize(v.Path)
+
+				job = append(job, v)
+			}
+		}
+
+		//r, _ := buildResp(0, "ok", joblist)
+		r, _ := buildResp(0, "ok", job)
+		w.WriteHeader(http.StatusOK)
+		w.Write(r)
+
 	}
-
-	//r, _ := buildResp(0, "ok", joblist)
-	r, _ := buildResp(0, "ok", DatahubJob)
-	w.WriteHeader(http.StatusOK)
-	w.Write(r)
-
 	return
-
 }
 
 func jobDetailHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {

@@ -31,6 +31,22 @@ type tk struct {
 	Token string `json:"token"`
 }
 
+func authDaemon(w http.ResponseWriter, r *http.Request) bool {
+	log.Println(r.URL, "|", r.RequestURI, "|", r.RemoteAddr, "|", r.URL.RequestURI(), "|", r.Host)
+	if r.Host == "127.0.0.1:35600" {
+		return true
+	}
+	auth, ok := r.Header["X-Daemon-Auth"]
+	log.Debug("DaemonAuthrization:", DaemonAuthrization)
+	if !ok || auth[0] != DaemonAuthrization {
+		JsonResult(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "", nil)
+		log.Error("connect daemon refused!", auth, ok, r.Header)
+		return false
+	}
+
+	return true
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	url := DefaultServerAPI + "/" //r.URL.Path
 	//r.ParseForm()
