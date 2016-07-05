@@ -89,7 +89,8 @@ func Dp(needLogin bool, args []string) (err error) {
 func dpResp(bDetail bool, RespBody []byte) {
 	if bDetail == false {
 		strcDps := []FormatDp{}
-		result := &ds.Result{Data: &strcDps}
+		pages := &ds.ResultPages{Results: &strcDps}
+		result := &ds.Result{Data: pages}
 		err := json.Unmarshal(RespBody, result)
 		if err != nil {
 			fmt.Println("Error :", err)
