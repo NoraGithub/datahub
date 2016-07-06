@@ -49,6 +49,28 @@ func CheckDataPoolExist(datapoolname string) (bexist bool) {
 	}
 }
 
+func CheckItemExist(repo, item string) (bool, error) {
+	log.Println("check item exist in db")
+
+	sql := fmt.Sprintf(`SELECT COUNT(1) FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, repo, item)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		log.Error("CheckItemExist QueryRow error:", err.Error())
+		return false, err
+	}
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		log.Error("CheckItemExist Scan error:", err.Error())
+		return false, err
+	}
+	if count == 0 {
+		return false, err
+	} else {
+		return true, err
+	}
+}
+
 func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	sqlgetdpconn := fmt.Sprintf("SELECT DPCONN FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
 	//fmt.Println(sqlgetdpconn)
@@ -155,11 +177,14 @@ func GetRepoItemId(repository, dataitem string) (rpdmid int) {
 	}
 }
 
-func InsertItemToDb(repo, item, datapool, itemdesc string) (err error) {
+func InsertItemToDb(repo, item, datapool, itemdesc, createTime string) (err error) {
+	log.Println("Insert item to db")
 	dpid := GetDataPoolDpid(datapool)
 	if dpid > 0 {
+		//sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
+		//	VALUES (null, '%s', '%s', '%s', %d, 'Y',  datetime('now'), 'A')`, repo, item, itemdesc, dpid)
 		sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
-			VALUES (null, '%s', '%s', '%s', %d, 'Y',  datetime('now'), 'A')`, repo, item, itemdesc, dpid)
+			VALUES (null, '%s', '%s', '%s', %d, 'Y', '%s', 'A')`, repo, item, itemdesc, dpid, createTime)
 		_, err = g_ds.Insert(sqlInsertItem)
 		log.Println(sqlInsertItem)
 
@@ -245,6 +270,7 @@ func GetDpnameDpconnDptypeByDpid(dpid int) (dpname, dpconn, dptype string) {
 }
 
 func InsertPubTagToDb(repo, item, tag, fileName, comment string) (err error) {
+	log.Println("Insert pub tag to db.")
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
 		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
@@ -283,6 +309,19 @@ func rollbackInsertPubTagToDb(reponame, itemname, tagname string) error {
 	}
 
 	return nil
+}
+
+func rollbackInsertPubItemToDb(reponame, itemname string) error {
+	log.Println("rollback insert pub item from db")
+	sql := fmt.Sprintf(`DELETE FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	_, err := g_ds.Delete(sql)
+	if err != nil {
+		l := log.Error("rollback pub tag delete item from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return err
 }
 
 func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {

@@ -50,6 +50,7 @@ const (
 	ErrorSqlExec
 	ErrorInsertItem
 	ErrorUnmarshal
+	ErrorIOUtil
 	ErrorMarshal
 	ErrorServiceUnavailable
 	ErrorFileNotExist
@@ -66,6 +67,8 @@ const (
 	ErrorItemNotExist
 	ErrorPublishedItemEmpty
 	ErrorDpConnect
+	ErrorOutMaxLength
+	InternalError
 )
 
 const (
@@ -75,6 +78,9 @@ const (
 	ServerErrResultCode5023 = 5023
 	ServerErrResultCode1009 = 1009
 	ServerErrResultCode1400 = 1400
+	ServerErrResultCode1008 = 1008
+	ServerErrResultCode4010 = 4010
+	ServerErrResultCode1011 = 1011
 )
 
 const (
