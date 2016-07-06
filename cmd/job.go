@@ -55,7 +55,7 @@ func Job(needLogin bool, args []string) (err error) {
 				return err
 			}
 
-			if (path == "/job?all=1") && (*fListall == false) {
+			if *fListall == false {
 				fmt.Println(ErrMsgArgument)
 				jobUsage()
 				return errors.New("Invalid arguments.")
@@ -143,12 +143,10 @@ func JobRm(needLogin bool, args []string) (err error) {
 }
 
 func jobUsage() {
-	fmt.Println("Usage: datahub job ")
-	fmt.Println("List downloading jobs")
-	fmt.Println("Usage: datahub job [JOBID]")
-	fmt.Println("list a job")
-	fmt.Println("Usage: datahub job -a")
-	fmt.Println("List all jobs")
+	fmt.Println("Usage: datahub job [JOBID][OPTION] ")
+	fmt.Println("List downloading jobs\n")
+	fmt.Println("Options:\n")
+	fmt.Println("-a,--all      list all jobs")
 	fmt.Println("\nUsage: datahub job rm [JOBID][--all]")
 	fmt.Println("Remove a job")
 }

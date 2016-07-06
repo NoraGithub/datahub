@@ -349,7 +349,6 @@ func RunDaemon() {
 	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
 
 	router.GET("/api/job", jobHandler)
-	router.GET("/api/job?all=1", jobHandler)
 	router.GET("/api/job/:id", jobDetailHandler)
 	router.DELETE("/api/job/:id", jobRmHandler)
 	router.DELETE("/api/job", jobRmAllHandler)
