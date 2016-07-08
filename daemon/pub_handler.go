@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 var SampleFiles = []string{"sample.md", "Sample.md", "SAMPLE.MD", "sample.MD", "SAMPLE.md"}
@@ -140,7 +141,8 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 			HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,
 				fmt.Sprintf("Mkdir error! %s", err.Error()))
 		} else {
-			err = InsertItemToDb(repo, item, pub.Datapool, pub.ItemDesc, "")
+			createTime := time.Now().String()
+			err = InsertItemToDb(repo, item, pub.Datapool, pub.ItemDesc, createTime)
 			if err != nil {
 				RollBackItem(repo, item)
 				HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,

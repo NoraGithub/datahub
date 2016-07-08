@@ -37,7 +37,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
 	f.Usage = pubUsage
 
-	if len(args) > 3 {
+	if len(args) > 2 {
 		if err = f.Parse(args[2:]); err != nil {
 			fmt.Println("Error : parse parameter error.", err)
 			return err
