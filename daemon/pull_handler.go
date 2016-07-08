@@ -39,6 +39,8 @@ var (
 )
 
 func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	MetaFile := "meta.txt"
+	SampleFile := "sample.txt"
 	log.Println(r.URL.Path + "(pull)")
 	result, _ := ioutil.ReadAll(r.Body)
 	p := ds.DsPull{}
@@ -128,8 +130,45 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		chn := make(chan int)
 		go dl(url, entrypoint, p, w, chn)
 		<-chn
-	}
+		if len(GetMetaData(p.ItemDesc)) > 0 && len(GetSampleData(p.ItemDesc)) > 0 {
+			log.Println("Metafile and Samplefile is already exist")
+		} else {
+			dpconn := GetDataPoolDpconn(p.Datapool)
+			os.MkdirAll(dpconn+"/"+p.ItemDesc+"/", 0777)
 
+			m, err := os.OpenFile(dpconn+"/"+p.ItemDesc+"/"+MetaFile, os.O_RDWR|os.O_CREATE, 0644)
+
+			if err != nil {
+				return
+			}
+			defer m.Close()
+			s, err := os.OpenFile(dpconn+"/"+p.ItemDesc+"/"+SampleFile, os.O_RDWR|os.O_CREATE, 0644)
+
+			if err != nil {
+				return
+			}
+			defer s.Close()
+			path := "/api/repositories/" + ps.ByName("repo") + "/" + ps.ByName("item")
+
+			resp, err := commToServerGetRsp("get", path, nil)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+
+			ms := ds.ItemMs{}
+			retResp := ds.Response{Data: &ms}
+			json.Unmarshal(body, &retResp)
+
+			m.WriteString(ms.Meta)
+			s.WriteString(ms.Sample)
+
+			defer resp.Body.Close()
+
+		}
+	}
 	log.Println(strret)
 
 	return

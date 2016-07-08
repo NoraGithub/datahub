@@ -53,6 +53,11 @@ type MsgResp struct {
 	Msg string `json:"msg"`
 }
 
+type ItemMs struct {
+	Meta   string `json:"meta, omitempty"`
+	Sample string `json:"sample, omitempty"`
+}
+
 type JobInfo struct {
 	ID      string `json:"id"`
 	Tag     string `json:"tag"`
