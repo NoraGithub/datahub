@@ -95,6 +95,7 @@ type TagStatus struct {
 
 type ItemInfo struct {
 	Create_user string `json:"create_user,omitempty"`
+	Optime      string `json:"optime, omitempty"`
 }
 
 type ItemStatus struct {
@@ -173,6 +174,16 @@ type DpParas struct {
 	Dpconn string `json:"dpconn, omitempty"`
 	Host   string `json:"host, omitempty"`
 	Port   string `json:"port, omitempty"`
+}
+
+type PubTagParas struct {
+	Dpname     string `json:"dpname"`
+	Repository string `json:"repository"`
+	Dataitem   string `json:"dataitem"`
+	ItemDesc   string `json:"itemDesc"`
+	Tagname    string `json:"tagname"`
+	Detail     string `json:"detail"`
+	Comment    string `json:"comment, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`

@@ -14,10 +14,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 var DPTYPES []string = cmd.DataPoolTypes
+
+const (
+	MsgOfNoDatapool = "There isn't any datapool."
+)
 
 func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// if false == authDaemon(rw, r) {
@@ -146,35 +151,70 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 }
 
-func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	r.ParseForm()
-	rw.WriteHeader(http.StatusOK)
+const sqlSelectDpCount = "SELECT COUNT(*) FROM DH_DP WHERE STATUS='A'"
 
-	dps := []cmd.FormatDp{}
-	result := &ds.Result{Code: cmd.ResultOK, Data: &dps} //must use a pointer dps to initial Data
-	onedp := cmd.FormatDp{}
-	sqlDp := fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
-	rows, err := g_ds.QueryRows(sqlDp)
+func getDatapoolCount() (count int64, err error) {
+	row, err := g_ds.QueryRow(sqlSelectDpCount)
+	if err != nil {
+		return
+	}
+	row.Scan(&count)
+	return
+}
+
+func getDatapools(count int64, sqlstr string) (err error, existflag bool, dps []cmd.FormatDp) {
+	rows, err := g_ds.QueryRows(sqlstr)
 	if err != nil {
 		log.Error(err)
-		SqlExecError(rw, result, err.Error())
 		return
 	}
 	defer rows.Close()
-	bresultflag := false
+
+	dps = []cmd.FormatDp{}
+	onedp := cmd.FormatDp{}
+	existflag = false
 	for rows.Next() {
-		bresultflag = true
+		existflag = true
 		rows.Scan(&onedp.Name, &onedp.Type)
 		dps = append(dps, onedp)
 	}
-	if bresultflag == false {
-		result.Code = cmd.ErrorNoRecord
-		result.Msg = "There isn't any datapool."
-		log.Info(result.Msg)
+	return
+}
+
+func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	r.ParseForm()
+
+	count, err := getDatapoolCount()
+	if err != nil {
+		logq.LogPutqueue(log.Error(err))
+		JsonResult(rw, http.StatusInternalServerError, cmd.ErrorSqlExec, err.Error(), nil)
+		return
 	}
 
-	resp, _ := json.Marshal(result)
-	rw.Write(resp)
+	sqlstr := ""
+	if size, _ := strconv.Atoi(r.Form.Get("size")); size == -1 {
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
+	} else {
+		offset, limit := optionalOffsetAndSize(r, 30, 1, 100)
+		validateOffsetAndLimit(int64(count), &offset, &limit)
+
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP 
+			WHERE STATUS = 'A' ORDER BY DPID DESC 
+			LIMIT %v OFFSET %v`, limit, offset)
+	}
+
+	err, existflag, dps := getDatapools(count, sqlstr)
+	if err != nil {
+		log.Error(err)
+		JsonResult(rw, http.StatusInternalServerError, cmd.ErrorSqlExec, "", nil)
+		return
+	}
+	if existflag == false {
+		log.Info(MsgOfNoDatapool)
+		JsonResult(rw, http.StatusOK, cmd.ErrorNoRecord, MsgOfNoDatapool, nil)
+	} else {
+		JsonResult(rw, http.StatusOK, cmd.ResultOK, "", newQueryListResult(count, dps))
+	}
 }
 
 func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {

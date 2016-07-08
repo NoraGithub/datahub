@@ -344,7 +344,7 @@ func RunDaemon() {
 	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
 
 	router.POST("/api/repositories/:repo/:item", pubItemHandler)
-	router.POST("/api/repositories/:repo/:item/:tag", pubTagHandler)
+	router.POST("/api/repositories/:repo/:item/:tag", newPubTagHandler)
 
 	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
 
@@ -372,6 +372,7 @@ func RunDaemon() {
 	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
 	router.POST("/api/datapool/check", checkDpConnectHandler)
 	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
+	//router.POST("/api/datapool/newpublishtag", newPublishTagHandler)
 
 	router.NotFound = &mux{}
 

@@ -140,7 +140,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 			HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,
 				fmt.Sprintf("Mkdir error! %s", err.Error()))
 		} else {
-			err = InsertItemToDb(repo, item, pub.Datapool, pub.ItemDesc)
+			err = InsertItemToDb(repo, item, pub.Datapool, pub.ItemDesc, "")
 			if err != nil {
 				RollBackItem(repo, item)
 				HttpNoData(w, http.StatusBadRequest, cmd.ErrorInsertItem,
@@ -309,6 +309,213 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	return
 
+}
+
+func newPubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Println(r.URL.Path, "(pub tag)")
+
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+	tag := ps.ByName("tag")
+	log.Println("repo", repo, "item", item, "tag", tag) //log
+
+	paras := ds.PubPara{}
+
+	reqbody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println("ioutil.ReadAll err:", err)
+		JsonResult(w, http.StatusBadRequest, cmd.ErrorIOUtil, "Internal Error.", nil)
+		return
+	}
+	err = json.Unmarshal(reqbody, &paras)
+	if err != nil {
+		log.Println("json.Unmarshal err:", err)
+		JsonResult(w, http.StatusBadRequest, cmd.ErrorUnmarshal, "Internal Error.", nil)
+		return
+	}
+
+	if !CheckLength(w, repo, MaxRepoLength) || !CheckLength(w, item, MaxItemLength) || !CheckLength(w, tag, MaxTagLength) {
+		JsonResult(w, http.StatusOK, cmd.ErrorOutMaxLength, "repo or item or tag length out of max length.", nil)
+		return
+	}
+
+	isExist, err := CheckItemExist(repo, item)
+	if isExist == false {
+		if paras.Datapool != "" && paras.ItemDesc != "" {
+			isExist := CheckDataPoolExist(paras.Datapool)
+			if isExist == false {
+				JsonResult(w, http.StatusOK, cmd.ErrorDatapoolNotExits, "datapool not exist.", nil)
+				return
+			}
+			url := DefaultServer + "/api/repositories/" + repo + "/" + item
+			log.Println("daemon: connecting to ", url) //log
+
+			req, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				log.Println("http.NewRequest err:", err)
+				JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+				return
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				log.Println("http.DefaultClient.Do err:", err)
+				JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+				return
+			}
+			defer resp.Body.Close()
+
+			respbody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+				return
+			}
+
+			result := ds.Result{}
+			itemInfo := ds.ItemInfo{}
+			result.Data = &itemInfo
+			if resp.StatusCode == http.StatusOK {
+
+				err = json.Unmarshal(respbody, &result)
+				if err != nil {
+					log.Println("json.Unmarshal err:", err)
+					JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+					return
+				}
+			} else {
+				log.Println(string(respbody))
+				err = json.Unmarshal(respbody, &result)
+				if err != nil {
+					log.Println("json.Unmarshal err:", err)
+					JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+					return
+				}
+				JsonResult(w, resp.StatusCode, result.Code, result.Msg, nil)
+				return
+			}
+
+			err = InsertItemToDb(repo, item, paras.Datapool, paras.ItemDesc, itemInfo.Optime)
+			if err != nil {
+				log.Println("InsertItemToDb err:", err)
+				JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+				return
+			}
+		} else {
+			JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "item not been published.", nil)
+			return
+		}
+	}
+
+	//-------------------------------------------这是分割线-----------------------------------------------------
+
+	dpconn, dptype, itemDesc, err := CheckTagAndGetDpPath(repo, item, tag)
+	log.Println("CheckTagAndGetDpPath ret:", dpconn, dptype, itemDesc) //log
+	if err != nil {
+		log.Println("CheckTagAndGetDpPath err:", err)
+		//rollbackInsertPubItem(w, repo, item)
+		msg := fmt.Sprintf("Tag '%s' already exist.", tag)
+		JsonResult(w, http.StatusOK, cmd.ErrorTagAlreadyExist, msg, nil)
+		return
+	}
+	splits := strings.Split(paras.Detail, "/")
+	fileName := splits[len(splits)-1]
+
+	datapool, err := dpdriver.New(dptype)
+	if err != nil {
+		l := log.Error(err.Error())
+		logq.LogPutqueue(l)
+		//rollbackInsertPubItem(w, repo, item)
+		JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+		return
+	}
+
+	exist, size, err := datapool.CheckDataAndGetSize(dpconn, itemDesc, fileName)
+	if err != nil && exist == false {
+		l := log.Error(err.Error())
+		logq.LogPutqueue(l)
+		//rollbackInsertPubItem(w, repo, item)
+		JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+		return
+	}
+
+	if size > 0 {
+		paras.Comment += SizeToStr(size)
+	}
+
+	body, e := json.Marshal(&struct {
+		Comment string `json:"comment"`
+	}{paras.Comment})
+	if e != nil {
+		s := "Pub tag error while marshal struct"
+		log.Println(s)
+		//rollbackInsertPubItem(w, repo, item)
+		JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+		//fmt.Println("Marshal err:", err)
+		return
+	}
+
+	url := DefaultServer + "/api/repositories/" + repo + "/" + item + "/" + tag
+	log.Println("daemon: connecting to ", url) //log
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if len(loginAuthStr) > 0 {
+		req.Header.Set("Authorization", loginAuthStr)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Println("DefaultClient.Do err:", err)
+		//rollbackInsertPubItem(w, repo, item)
+		JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+		return
+	}
+	defer resp.Body.Close()
+
+	//Get server result
+	result := ds.Result{}
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	log.Println(resp.StatusCode, string(respbody)) //log
+
+	if resp.StatusCode == http.StatusOK {
+		err = json.Unmarshal(respbody, &result)
+		if err != nil {
+			log.Println("Unmarshal err:", err)
+			//rollbackInsertPubItem(w, repo, item)
+			JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+			return
+		}
+
+		err = InsertPubTagToDb(repo, item, tag, fileName, paras.Comment)
+		if err != nil {
+			l := log.Error("Insert tag to db error.")
+			logq.LogPutqueue(l)
+			//rollbackInsertPubItem(w, repo, item)
+			JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+			return
+		}
+
+		JsonResult(w, resp.StatusCode, result.Code, result.Msg, nil)
+
+		g_DaemonRole = PUBLISHER
+	} else if resp.StatusCode == http.StatusUnauthorized {
+
+		JsonResult(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "no login.", nil)
+
+		//rollbackInsertPubItem(w, repo, item)
+		return
+
+	} else {
+		err = json.Unmarshal(respbody, &result)
+		if err != nil {
+			log.Println("Unmarshal err:", err)
+			//rollbackInsertPubItem(w, repo, item)
+			JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+			return
+		}
+		log.Println(string(respbody))
+		//rollbackInsertPubItem(w, repo, item)
+		JsonResult(w, resp.StatusCode, result.Code, result.Msg, nil)
+	}
+
+	return
 }
 
 func GetMetaAndSampleAndPricePlan(dpname, itemdesc string) (meta, sample string, plans []PricePlan) {
@@ -585,4 +792,15 @@ func CheckLength(w http.ResponseWriter, data string, length int) bool {
 	}
 
 	return true
+}
+
+func rollbackInsertPubItem(w http.ResponseWriter, repo, item string) {
+	err := rollbackInsertPubItemToDb(repo, item)
+	if err != nil {
+		l := log.Error("rollbackInsertPubTagToDb error :", err)
+		logq.LogPutqueue(l)
+		JsonResult(w, http.StatusBadRequest, cmd.InternalError, "Internal Error.", nil)
+		return
+	}
+	return
 }

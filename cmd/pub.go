@@ -21,6 +21,7 @@ const (
 )
 
 func Pub(needlogin bool, args []string) (err error) {
+
 	if len(args) < 2 {
 		fmt.Println(ErrMsgArgument)
 		pubUsage()
@@ -36,7 +37,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
 	f.Usage = pubUsage
 
-	if len(args) > 2 {
+	if len(args) > 3 {
 		if err = f.Parse(args[2:]); err != nil {
 			fmt.Println("Error : parse parameter error.", err)
 			return err
@@ -50,6 +51,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	}
 
 	argfi = strings.Trim(args[0], "/")
+
 	//deal arg[0]
 	sp := strings.Split(argfi, "/")
 	if len(sp) != 2 {
@@ -59,6 +61,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	}
 	repo = sp[0]
 	sptag := strings.Split(sp[1], ":")
+
 	l := len(sptag)
 	if l == 1 {
 		item = sptag[0]
@@ -76,7 +79,27 @@ func Pub(needlogin bool, args []string) (err error) {
 		item = sptag[0]
 		tag = sptag[1]
 		pub.Detail = args[1]
-		err = PubTag(repo, item, tag, pub, args)
+		if len(args) == 2 {
+			PubTag(repo, item, tag, pub, args)
+		} else {
+
+			if len(strings.Split(args[2], ":")) != 2 || strings.Split(args[2], ":")[0] == "" {
+				fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
+				return
+			}
+			datapool := strings.Split(args[2], ":")[0]
+			pub.Datapool = datapool
+
+			if len(strings.Split(strings.Split(args[2], ":")[1], "//")) != 2 || strings.Split(strings.Split(args[2], ":")[1], "//")[1] == "" {
+				fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
+				return
+			}
+			itemDesc := strings.Split(strings.Split(args[2], ":")[1], "//")[1]
+
+			pub.ItemDesc = itemDesc
+			PubTag(repo, item, tag, pub, args)
+		}
+
 	} else {
 		fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
 		return errors.New("Invalid argument.")
@@ -139,11 +162,11 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 			fmt.Println("Error : Pub error.", err)
 			return err
 		}
-		if result.Code == 1008 {
+		if result.Code == ServerErrResultCode1008 {
 			fmt.Printf("Error : Dataitem '%s' already exists.\n", item)
-		} else if result.Code == 4010 {
+		} else if result.Code == ServerErrResultCode4010 {
 			fmt.Printf("Error : Datapool '%s' not found.\n", p.Datapool)
-		} else if result.Code == 1011 {
+		} else if result.Code == ServerErrResultCode1011 {
 			fmt.Println("Error : Only 50 items should be included within each repository.")
 		} else {
 			fmt.Println("Error :", result.Msg)
@@ -154,6 +177,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 }
 
 func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
+
 	url := repo + "/" + item + "/" + tag
 	if len(p.Detail) == 0 {
 		fmt.Println("DataHub : Publishing tag requires a parameter \"--detail=???\" ")
@@ -172,16 +196,17 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 		return err
 	}
 
-	err = pubResp(url, jsonData, args)
+	pubResp(repo, item, tag, url, jsonData, args)
 
 	return err
 }
 
-func pubResp(url string, jsonData []byte, args []string) (err error) {
+func pubResp(repo, item, tag, url string, jsonData []byte, args []string) {
+
 	resp, err := commToDaemon("POST", "/repositories/"+url, jsonData)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -190,7 +215,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("Error : Pub error.", err) //todo add http code
-			return err
+			return
 		} else {
 			if result.Code == 0 {
 				fmt.Println("DataHub : Successed in publishing.")
@@ -209,16 +234,16 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("Error : Pub error.", err)
-			return err
+			return
 		} else {
-			fmt.Println("Error :", result.Msg)
+			if result.Code == ServerErrResultCode1008 {
+				fmt.Printf("Error : tag '%s' already exists.\n", tag)
+			} else {
+				fmt.Println("Error :", result.Msg)
+			}
 		}
-
-		/*else {
-			fmt.Printf("Error : %v\n", result.Msg)
-		}*/
 	}
-	return err
+	return
 }
 
 func pubUsage() {
