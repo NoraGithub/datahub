@@ -195,7 +195,7 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if size, _ := strconv.Atoi(r.Form.Get("size")); size == -1 {
 		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
 	} else {
-		offset, limit := optionalOffsetAndSize(r, 30, 1, 100)
+		offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
 		validateOffsetAndLimit(int64(count), &offset, &limit)
 
 		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP 

@@ -84,7 +84,7 @@ func TestInsertItemToDb(t *testing.T) {
 	if e := DeleteTagHard(testP.Tag); e != nil {
 		t.Errorf("Recover db for TestInsertItemToDb test fail. Delete %s error, %v", testP.Tag, e)
 	}
-	err := InsertItemToDb(testP.Repository, testP.Dataitem, testP.Datapool, testP.ItemDesc)
+	err := InsertItemToDb(testP.Repository, testP.Dataitem, testP.Datapool, testP.ItemDesc, "")
 	if err != nil {
 		t.Error("1.InsertItemToDb fail-------- ", err)
 	} else {
@@ -94,7 +94,7 @@ func TestInsertItemToDb(t *testing.T) {
 		t.Error("InsertTagToDb fail--------", e)
 	}
 
-	err = InsertItemToDb(testP.Repository, testP.Dataitem, "No_this_datapool", testP.ItemDesc)
+	err = InsertItemToDb(testP.Repository, testP.Dataitem, "No_this_datapool", testP.ItemDesc, "")
 	if err != nil {
 		t.Log("2.InsertItemToDb success:insert item to a non-existent datapool---------")
 	} else {

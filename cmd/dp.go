@@ -45,7 +45,7 @@ func Dp(needLogin bool, args []string) (err error) {
 	}
 
 	if len(args) == 0 {
-		resp, err := commToDaemon("GET", "/datapools", nil)
+		resp, err := commToDaemon("GET", "/datapools?size=-1", nil)
 		if err != nil {
 			fmt.Println(err)
 			return err
