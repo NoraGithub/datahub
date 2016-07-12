@@ -102,7 +102,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		Comment: pub.Comment,
 		Meta:    meta,
 		Sample:  sample}
-	isys := Sys{Supplystyle: "batch"}
+	isys := Sys{Supplystyle: pub.SupplyStyle}
 	icpub.Slabel = Label{Ssys: isys}
 	if len(priceplans) > 0 {
 		log.Info(priceplans)

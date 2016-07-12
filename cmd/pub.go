@@ -18,6 +18,9 @@ import (
 const (
 	PRIVATE = "private"
 	PUBLIC  = "public"
+	BATCH   = "batch"
+	FLOW    = "flow"
+	API     = "api"
 )
 
 func Pub(needlogin bool, args []string) (err error) {
@@ -32,9 +35,10 @@ func Pub(needlogin bool, args []string) (err error) {
 	var repo, item, tag, argfi, argse string
 	f := mflag.NewFlagSet("pub", mflag.ContinueOnError)
 	//f.StringVar(&pub.Datapool, []string{"-datapool", "p"}, "", "datapool name")
-	f.StringVar(&pub.Accesstype, []string{"-accesstype", "t"}, "private", "dataitem accesstype, private or public")
+	f.StringVar(&pub.Accesstype, []string{"-accesstype", "t"}, "private", "dataitem accesstype: private or public")
 	f.StringVar(&pub.Comment, []string{"-comment", "m"}, "", "comments")
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
+	f.StringVar(&pub.SupplyStyle, []string{"-supplystyle", "s"}, "batch", "dataitem supplystyle: batch , flow or api")
 	f.Usage = pubUsage
 
 	if len(args) > 2 {
@@ -117,6 +121,14 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 	p.Accesstype = strings.ToLower(p.Accesstype)
 	if p.Accesstype != PRIVATE && p.Accesstype != PUBLIC {
 		fmt.Println("Error : Invalid accesstype, e.g accesstype=public, private")
+		return
+	}
+	if len(p.SupplyStyle) == 0 {
+		p.SupplyStyle = BATCH
+	}
+	p.SupplyStyle = strings.ToLower(p.SupplyStyle)
+	if p.SupplyStyle != BATCH && p.SupplyStyle != FLOW && p.SupplyStyle != API {
+		fmt.Println("Error : Invalid supplystyle, e.g supplystyle=batch, flow, api")
 		return
 	}
 	if len(p.Datapool) == 0 {
@@ -254,4 +266,5 @@ func pubUsage() {
 	fmt.Println("Options:\n")
 	fmt.Println("  --accesstype,-t   Specify the access type of the dataitem:public or private, default private")
 	fmt.Println("  --comment,-m      Comments about the dataitem or tag")
+	fmt.Println("  --supplystyle,-s   Specify the supplystyle of the dataitem:batch , flow or api, default batch")
 }

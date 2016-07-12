@@ -121,11 +121,12 @@ type Repository struct {
 }
 
 type PubPara struct {
-	Datapool   string `json:"datapool, omitempty"`
-	Detail     string `json:"detail, omitempty"`
-	Accesstype string `json:"itemaccesstype, omitempty"`
-	Comment    string `json:"comment, omitempty"`
-	ItemDesc   string `json:"itemdesc, omitempty"`
+	Datapool    string `json:"datapool, omitempty"`
+	Detail      string `json:"detail, omitempty"`
+	Accesstype  string `json:"itemaccesstype, omitempty"`
+	Comment     string `json:"comment, omitempty"`
+	ItemDesc    string `json:"itemdesc, omitempty"`
+	SupplyStyle string `json:"supplystyle, omitempty"`
 }
 
 type DpOtherData struct {
