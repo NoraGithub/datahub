@@ -167,10 +167,10 @@ func validateDpconn(dpconn, dptype string) bool {
 
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
-	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
-	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
-	fmt.Println("       datahub dp create s3dp s3://mybucket")
-	fmt.Println("       datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
-	fmt.Println("Create a datapool\n")
+	fmt.Println("datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
+	fmt.Println("e.g. datahub dp create dptest file:///home/user/test")
+	fmt.Println("     datahub dp create s3dp s3://mybucket")
+	fmt.Println("     datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
+	fmt.Println("Create a datapool.\n")
 
 }

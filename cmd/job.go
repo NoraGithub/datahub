@@ -143,12 +143,16 @@ func JobRm(needLogin bool, args []string) (err error) {
 }
 
 func jobUsage() {
-	fmt.Println("Usage: datahub job [JOBID][OPTION] ")
-	fmt.Println("List downloading jobs\n")
-	fmt.Println("Options:\n")
-	fmt.Println("-a,--all      list all jobs")
-	fmt.Println("\nUsage: datahub job rm [JOBID][--all]")
-	fmt.Println("Remove a job")
+	fmt.Println("Usage:\ndatahub job [OPTION] ")
+	fmt.Println("\nList downloading jobs.\n")
+	fmt.Println("datahub job [JOBID]")
+	fmt.Println("\nList a job.\n")
+	fmt.Println("Option:\n")
+	fmt.Println("-a,--all      list all jobs\n")
+	fmt.Println("datahub job rm [JOBID]")
+	fmt.Println("\nRemove a job.\n")
+	fmt.Println("datahub job rm [--all]")
+	fmt.Println("\nRemove all jobs.")
 }
 
 func jobResp(resp *http.Response) {
