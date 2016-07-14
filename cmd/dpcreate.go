@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -106,7 +107,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	defer resp.Body.Close()
-	showResponse(resp)
+
+	if resp.StatusCode == http.StatusOK {
+		showResponse(resp)
+	} else {
+		showError(resp)
+	}
 
 	return err
 }

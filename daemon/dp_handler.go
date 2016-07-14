@@ -29,7 +29,6 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	// 	return
 	// }
 	r.ParseForm()
-	rw.WriteHeader(http.StatusOK)
 
 	result, _ := ioutil.ReadAll(r.Body)
 	struDp := cmd.FormatDpCreate{}
@@ -37,7 +36,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		l := log.Error("Invalid argument. json.Unmarshal error", err)
 		logq.LogPutqueue(l)
-		rw.Write([]byte(`{"msg":"Invalid argument."}`))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara, "Invalid argument.", nil)
 		return
 	}
 
@@ -49,17 +48,18 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 	if !allowtype {
 		log.Println("DataHub : Datapool type need to be:", DPTYPES)
-		rw.Write([]byte(fmt.Sprintf(`{"msg":"Datapool type need to be:%s"}`, DPTYPES)))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara,
+			fmt.Sprintf("Datapool type need to be:%v", DPTYPES), nil)
 		return
 	}
 
 	if len(struDp.Name) == 0 || strings.Contains(struDp.Name, "/") == true {
 		log.Println("Invalid argument")
-		rw.Write([]byte(`{"msg":"Invalid argument"}`))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara, "Invalid argument.", nil)
 		return
 	} else {
 		log.Println("Creating datapool with name:", struDp.Name)
-		msg := &ds.MsgResp{}
+
 		var sdpDirName string
 		if len(struDp.Conn) == 0 {
 			struDp.Conn = g_strDpPath
@@ -75,9 +75,8 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("'%s' already exists, please change another name.", struDp.Name)
-			resp, _ := json.Marshal(msg)
-			rw.Write(resp)
+			JsonResult(rw, http.StatusConflict, cmd.ErrorDatapoolAlreadyExits,
+				fmt.Sprintf("'%s' already exists, please change another name.", struDp.Name), nil)
 			return
 		}
 
@@ -93,62 +92,54 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 			client, err := dfs.New(connstr)
 			if err != nil {
-				//fmt.Println("New err:", err)
-				msg.Msg = fmt.Sprintf("hdfs new client failed.")
-				resp, _ := json.Marshal(msg)
-				rw.Write(resp)
+				logq.LogPutqueue(log.Error("New err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs new client failed.", nil)
 				return
 			}
 
 			info, err := client.Stat("/")
 			if err != nil {
-				//fmt.Println("Stat err:", err)
-				msg.Msg = fmt.Sprintf("hdfs get hadoop user failed.")
-				resp, _ := json.Marshal(msg)
-				rw.Write(resp)
+				logq.LogPutqueue(log.Error("Stat err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs get hadoop user failed.", nil)
 				return
 			}
 			hadoopUser := *info.Sys().(*hadoop_hdfs.HdfsFileStatusProto).Owner
 
 			client, err = dfs.NewForUser(connstr, hadoopUser)
 			if err != nil {
-				//fmt.Println("NewForUser err:", err)
-				msg.Msg = fmt.Sprintf("hdfs new client for user failed.")
-				resp, _ := json.Marshal(msg)
-				rw.Write(resp)
+				logq.LogPutqueue(log.Error("NewForUser err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs new client for user failed.", nil)
 				return
 			}
 
 			err = client.MkdirAll(struDp.Conn, 0777)
 			if err != nil {
-				//fmt.Println("MkdirAll err:", err)
-				msg.Msg = fmt.Sprintf("hdfs make dir failed.")
-				resp, _ := json.Marshal(msg)
-				rw.Write(resp)
+				logq.LogPutqueue(log.Error("MkdirAll err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs make dir failed.", nil)
 				return
 			}
 		}
 
 		if err != nil {
-			l := log.Error(err, sdpDirName)
-			logq.LogPutqueue(l)
-			msg.Msg = err.Error()
+			logq.LogPutqueue(log.Error(err, sdpDirName))
+			JsonResult(rw, http.StatusBadRequest, cmd.InternalError, err.Error(), nil)
+			return
 		} else {
-			msg.Msg = fmt.Sprintf("Datapool has been created successfully. Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
 			if _, e := g_ds.Insert(sql_dp_insert); err != nil {
 				//os.Remove(sdpDirName)  //don't delete it. It is maybe used by others
-				l := log.Error(e)
-				logq.LogPutqueue(l)
-				msg.Msg = e.Error()
+				logq.LogPutqueue(log.Error(e))
+				JsonResult(rw, http.StatusBadRequest, cmd.ErrorSqlExec, e.Error(), nil)
+				return
 			}
-		}
-		resp, _ := json.Marshal(msg)
-		rw.Write(resp)
-	}
 
+			JsonResult(rw, http.StatusOK, cmd.ResultOK,
+				fmt.Sprintf("Datapool has been created successfully. Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName), nil)
+			return
+		}
+	}
 }
 
 const sqlSelectDpCount = "SELECT COUNT(*) FROM DH_DP WHERE STATUS='A'"
@@ -175,7 +166,7 @@ func getDatapools(count int64, sqlstr string) (err error, existflag bool, dps []
 	existflag = false
 	for rows.Next() {
 		existflag = true
-		rows.Scan(&onedp.Name, &onedp.Type)
+		rows.Scan(&onedp.Name, &onedp.Type, &onedp.Conn)
 		dps = append(dps, onedp)
 	}
 	return
@@ -193,12 +184,12 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	sqlstr := ""
 	if size, _ := strconv.Atoi(r.Form.Get("size")); size == -1 {
-		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE, DPCONN FROM DH_DP WHERE STATUS = 'A'`)
 	} else {
 		offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
 		validateOffsetAndLimit(int64(count), &offset, &limit)
 
-		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP 
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE, DPCONN FROM DH_DP 
 			WHERE STATUS = 'A' ORDER BY DPID DESC 
 			LIMIT %v OFFSET %v`, limit, offset)
 	}
