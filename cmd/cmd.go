@@ -68,6 +68,7 @@ const (
 	ErrorPublishedItemEmpty
 	ErrorDpConnect
 	ErrorOutMaxLength
+	ErrorDatapoolAlreadyExits
 	InternalError
 )
 

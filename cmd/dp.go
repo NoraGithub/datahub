@@ -14,7 +14,7 @@ import (
 type FormatDp struct {
 	Name string `json:"dpname"`
 	Type string `json:"dptype"`
-	//Conn string `json:"dpconn"`
+	Conn string `json:"dpconn, omitempty"`
 }
 
 type Item struct {
