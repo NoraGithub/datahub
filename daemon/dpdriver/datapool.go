@@ -92,3 +92,13 @@ func Env(name string, required bool) string {
 	log.Debugf("[env][%s] %s\n", name, s)
 	return s
 }
+
+func SetEnv(name string, value string) string {
+	if e := os.Setenv(name, value); e != nil {
+		log.Errorf("[setenv][%s] %s, error:%v\n", name, value, e)
+		return ""
+	}
+
+	log.Debugf("[setenv][%s] %s\n", name, value)
+	return name
+}
