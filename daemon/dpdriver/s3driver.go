@@ -56,7 +56,7 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 	reader, writer := io.Pipe()
 	go func() {
 		gw := gzip.NewWriter(writer)
-		io.Copy(writer, file)
+		io.Copy(gw, file)
 
 		file.Close()
 		gw.Close()
