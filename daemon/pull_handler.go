@@ -88,8 +88,13 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if dpconn := GetDataPoolDpconn(p.Datapool); len(dpconn) == 0 {
 		strret = p.Datapool + " not found. " + p.Tag + " will be pulled into " + g_strDpPath + "/" + p.ItemDesc
 	} else {
-		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found in " +
-			strings.Split(dpconn, "##")[0] + "/" + p.ItemDesc + "/" + p.Tag
+		if len() == 0 {
+			strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found as " +
+				strings.Split(dpconn, "##")[0] + "/" + p.ItemDesc + "/" + p.Tag
+		} else {
+			strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found as " +
+				strings.Split(dpconn, "##")[0] + "/" + p.ItemDesc + "/" + p.DestName
+		}
 	}
 
 	//add to automatic pull list
