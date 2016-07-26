@@ -41,7 +41,6 @@ func Ep(needLogin bool, args []string) (err error) {
 			return
 		}
 
-		fmt.Println("entrypoint:", ep)
 		j := FormatEp{}
 		j.Ep = ep
 

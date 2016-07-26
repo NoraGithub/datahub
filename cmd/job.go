@@ -148,7 +148,7 @@ func jobUsage() {
 	fmt.Println("datahub job [JOBID]")
 	fmt.Println("\nList a job.\n")
 	fmt.Println("Option:\n")
-	fmt.Println("-a,--all      list all jobs\n")
+	fmt.Println("--all,-a      list all jobs\n")
 	fmt.Println("datahub job rm [JOBID]")
 	fmt.Println("\nRemove a job.\n")
 	fmt.Println("datahub job rm [--all]")

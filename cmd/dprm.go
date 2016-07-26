@@ -32,6 +32,9 @@ func DpRm(needLogin bool, args []string) (err error) {
 			}
 		}
 	}
+	if len(args) == 0 {
+		fmt.Println("please write the dpname which you want to delete")
+	}
 	return nil
 }
 
