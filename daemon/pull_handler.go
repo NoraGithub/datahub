@@ -114,7 +114,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	if p.CancelAutomatic == true {
 		AutomaticPullRmqueue(p)
-		strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + "successfully."
+		strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + " successfully."
 		msgret := ds.MsgResp{Msg: strret}
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusOK)
