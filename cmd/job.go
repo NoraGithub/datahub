@@ -100,7 +100,7 @@ func JobRm(needLogin bool, args []string) (err error) {
 
 	f := mflag.NewFlagSet("datahub job rm", mflag.ContinueOnError)
 	//fForce := f.Bool([]string{"-force", "f"}, false, "force cancel a pulling job.")
-	fRmAll := f.Bool([]string{"-all"}, false, "rm all the jobs.")
+	fRmAll := f.Bool([]string{"-all", "a"}, false, "rm all the jobs.")
 
 	path := "/job"
 	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
@@ -149,10 +149,12 @@ func jobUsage() {
 	fmt.Println("\nList a job.\n")
 	fmt.Println("Option:\n")
 	fmt.Println("--all,-a      list all jobs\n")
-	fmt.Println("datahub job rm [JOBID]")
+	fmt.Println("\ndatahub job rm [OPTION]")
+	fmt.Println("\ndelete job.\n")
+	fmt.Println("\ndatahub job rm [JOBID]")
 	fmt.Println("\nRemove a job.\n")
-	fmt.Println("datahub job rm [--all]")
-	fmt.Println("\nRemove all jobs.")
+	fmt.Println("Option:\n")
+	fmt.Println("--all,-a      remove all jobs\n")
 }
 
 func jobResp(resp *http.Response) {
