@@ -36,12 +36,13 @@ type Label struct {
 	Ssys Sys `json:"sys"`
 }
 type ic struct {
-	AccessType string      `json:"itemaccesstype"`
-	Comment    string      `json:"comment"`
-	Meta       string      `json:"meta,omitempty"`
-	Sample     string      `json:"sample,omitempty"`
-	Slabel     Label       `json:"label"`
-	PricePlans []PricePlan `json:"price,omitempty"`
+	AccessType  string      `json:"itemaccesstype"`
+	Comment     string      `json:"comment"`
+	Meta        string      `json:"meta,omitempty"`
+	Sample      string      `json:"sample,omitempty"`
+	Slabel      Label       `json:"label"`
+	PricePlans  []PricePlan `json:"price,omitempty"`
+	Ch_itemname string      `json:"ch_itemname"`
 }
 
 type PricePlan struct {
@@ -101,7 +102,9 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	icpub := ic{AccessType: pub.Accesstype,
 		Comment: pub.Comment,
 		Meta:    meta,
-		Sample:  sample}
+		Sample:  sample,
+		Ch_itemname: item}
+	//{"itemaccesstype":"private","comment":"","meta":"  ","label":{"sys":{"supply_style":"batch"}}}
 	isys := Sys{Supplystyle: pub.SupplyStyle}
 	icpub.Slabel = Label{Ssys: isys}
 	if len(priceplans) > 0 {
@@ -175,6 +178,10 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	log.Println(r.URL.Path, "(pub tag)")
 
 	pub := ds.PubPara{}
+
+	fmt.Println(pub.Comment)
+	return
+
 	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
 		return
 	}
@@ -314,6 +321,7 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 }
 
 func newPubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 	log.Println(r.URL.Path, "(pub tag)")
 
 	repo := ps.ByName("repo")

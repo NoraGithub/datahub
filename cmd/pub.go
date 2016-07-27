@@ -41,6 +41,8 @@ func Pub(needlogin bool, args []string) (err error) {
 	f.StringVar(&pub.SupplyStyle, []string{"-supplystyle", "s"}, "batch", "dataitem supplystyle: batch , flow or api")
 	f.Usage = pubUsage
 
+
+
 	if len(args) > 2 {
 		if err = f.Parse(args[2:]); err != nil {
 			fmt.Println("Error : parse parameter error.", err)
@@ -83,10 +85,10 @@ func Pub(needlogin bool, args []string) (err error) {
 		item = sptag[0]
 		tag = sptag[1]
 		pub.Detail = args[1]
-		if len(args) == 2 {
+
+		if len(args) == 2 || len(args) == 3 {
 			PubTag(repo, item, tag, pub, args)
 		} else {
-
 			if len(strings.Split(args[2], ":")) != 2 || strings.Split(args[2], ":")[0] == "" {
 				fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
 				return
@@ -114,6 +116,7 @@ func Pub(needlogin bool, args []string) (err error) {
 }
 
 func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
+
 	url := repo + "/" + item
 	if len(p.Accesstype) == 0 {
 		p.Accesstype = PRIVATE
