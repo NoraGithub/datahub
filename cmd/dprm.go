@@ -32,7 +32,7 @@ func DpRm(needLogin bool, args []string) (err error) {
 			}
 		}
 	}
-	if len(args) == 0{
+	if len(args) == 0 {
 		fmt.Println("please write the dpname which you want to delete")
 	}
 	return nil
@@ -40,6 +40,6 @@ func DpRm(needLogin bool, args []string) (err error) {
 
 func dprUseage() {
 	fmt.Println("Usage of datahub dp rm:")
-	fmt.Println("  datahub dp rm DATAPOOL")
-	fmt.Println("Remove a datapool")
+	fmt.Println("datahub dp rm DATAPOOL")
+	fmt.Println("Remove a datapool.")
 }

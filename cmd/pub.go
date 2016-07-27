@@ -22,7 +22,7 @@ const (
 
 func Pub(needlogin bool, args []string) (err error) {
 	if len(args) < 2 {
-		fmt.Println(ErrMsgArgument)
+		//fmt.Println(ErrMsgArgument)
 		pubUsage()
 		return errors.New("args len error!")
 	}
@@ -222,11 +222,13 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 }
 
 func pubUsage() {
-	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
-	fmt.Println("Publish a dataitem\n")
-	fmt.Printf("  %s pub REPO/DATAITEM:TAG TAGDETAIL\n", os.Args[0])
-	fmt.Println("Publish a tag\n")
+	fmt.Printf("Usage: \n%s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
+	fmt.Println("\nPublish a dataitem.\n")
 	fmt.Println("Options:\n")
-	fmt.Println("  --accesstype,-t   Specify the access type of the dataitem:public or private, default private")
-	fmt.Println("  --comment,-m      Comments about the dataitem or tag")
+	fmt.Println("--accesstype,-t   Specify the access type of the dataitem:public or private, default private")
+	fmt.Println("--comment,-m      Comments about the dataitem")
+	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL [OPTION]\n", os.Args[0])
+	fmt.Println("\nPublish a tag.\n")
+	fmt.Println("Option:\n")
+	fmt.Println("--comment,-m      Comments about the tag")
 }

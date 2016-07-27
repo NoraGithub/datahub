@@ -148,8 +148,8 @@ func GetResultMsg(RespBody []byte, bprint bool) (sMsgResp string) {
 }
 
 func dpUsage() {
-	fmt.Printf("Usage:  %s dp [DATAPOOL]\n", os.Args[0])
-	fmt.Println("List all the datapools or one datapool\n")
+	fmt.Printf("Usage:\n%s dp [DATAPOOL]\n", os.Args[0])
+	fmt.Println("\nList all the datapools or one datapool.\n")
 	dpcUseage()
 	dprUseage()
 	//fmt.Printf("\n", os.Args[0])
