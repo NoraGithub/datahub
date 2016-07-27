@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type FormatDp struct {
@@ -66,20 +67,27 @@ func Dp(needLogin bool, args []string) (err error) {
 		//support: dp name1 name2 name3
 		for _, v := range args {
 			if len(v) > 0 && v[0] != '-' {
+				if strings.Contains(v, "/") == true {
+					fmt.Printf("DataHub : The name of datapool can't contain '/': \"%v\"\n", v)
+					return
+				}
 				strdp := fmt.Sprintf("/datapools/%s", v)
 				resp, err := commToDaemon("GET", strdp, nil)
 				if err != nil {
 					fmt.Println(err)
 					return err
 				}
-				body, _ := ioutil.ReadAll(resp.Body)
+
 				if resp.StatusCode == http.StatusOK {
+					body, _ := ioutil.ReadAll(resp.Body)
 					dpResp(true, body)
 				} else {
-					fmt.Println(resp.StatusCode)
+					showError(resp)
 					err = errors.New(string(resp.StatusCode))
 				}
+
 				resp.Body.Close()
+
 			}
 		}
 	}
