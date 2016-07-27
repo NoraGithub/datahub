@@ -86,7 +86,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		tag = sptag[1]
 		pub.Detail = args[1]
 
-		if len(args) == 2 || len(args) == 3 {
+		if len(args) == 2 || (len(args) == 3 && strings.Contains(args[2], "-")){
 			PubTag(repo, item, tag, pub, args)
 		} else {
 			if len(strings.Split(args[2], ":")) != 2 || strings.Split(args[2], ":")[0] == "" {
@@ -269,8 +269,8 @@ func pubUsage() {
 	fmt.Println("--comment,-m      Comments about the dataitem")
 	fmt.Println("--supplystyle,-s   Specify the supplystyle of the dataitem:batch , flow or api, default batch\n")
 	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL [OPTION]\n", os.Args[0])
+	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL DPNAME://ITEMDESC [OPTION]   if you have already published the item on the web page \n", os.Args[0])
 	fmt.Println("\nPublish a tag.\n")
 	fmt.Println("Option:\n")
 	fmt.Println("--comment,-m      Comments about the tag")
-
 }
