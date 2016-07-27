@@ -113,8 +113,12 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	if p.CancelAutomatic == true {
-		AutomaticPullRmqueue(p)
-		strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + " successfully."
+
+		if true == AutomaticPullRmqueue(p) {
+			strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + " successfully."
+		} else {
+			strret = "you have already cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem
+		}
 		msgret := ds.MsgResp{Msg: strret}
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusOK)
@@ -433,7 +437,8 @@ func AutomaticPullPutqueue(p ds.DsPull) {
 	AutomaticPullList.PushBack(p)
 }
 
-func AutomaticPullRmqueue(p ds.DsPull) {
+func AutomaticPullRmqueue(p ds.DsPull) (exist bool) {
+	exist = false
 	pullmu.Lock()
 	defer pullmu.Unlock()
 
@@ -441,6 +446,7 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 	for e := AutomaticPullList.Front(); e != nil; e = next {
 		v := e.Value.(ds.DsPull)
 		if v.Repository == p.Repository && v.Dataitem == p.Dataitem {
+			exist = true
 			AutomaticPullList.Remove(e)
 			log.Info(v, "removed from the queue.")
 			break
@@ -448,6 +454,7 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 			next = e.Next()
 		}
 	}
+	return
 }
 
 func CheckExistInQueue(p ds.DsPull) (exist bool) {
