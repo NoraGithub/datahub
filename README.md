@@ -283,6 +283,10 @@ Pub success,  OK
 ```shell
 datahub pub %REPOSITORY/%DATAITEM:$Tag $TAGDETAIL --comment=" "
 ```
+说明：如果DataItem已经在网页上发布过了，那么在发布Tag的时候需要指定`$DATAPOOL`和`$DATAPOOL`下的子路径`$LOCATION`
+```shell
+datahub pub %REPOSITORY/%DATAITEM:$Tag $TAGDETAIL $DATAPOOL://$LOCATION --comment=" "
+```
 输出
 ```
 Pub success, OK
@@ -291,7 +295,9 @@ Pub success, OK
 ```
 $ datahub pub music_1/migu:migu_user_info migu_user_info.txt
 Pub success, OK
-$
+
+$datahub pub music_1/migu:migu_user_info migu_user_info.txt mydp://dirmigu
+Pub success, OK
 ```
 
 #### 6. repo命令
