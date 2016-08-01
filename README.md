@@ -296,7 +296,7 @@ Pub success, OK
 $ datahub pub music_1/migu:migu_user_info migu_user_info.txt
 Pub success, OK
 
-$datahub pub music_1/migu:migu_user_info migu_user_info.txt mydp://dirmigu
+$ datahub pub music_1/migu:migu_user_info migu_user_info.txt mydp://dirmigu
 Pub success, OK
 ```
 
