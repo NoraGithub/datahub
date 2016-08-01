@@ -37,6 +37,17 @@ type Messages struct {
 	Data      MessageData `json:"data,omitempty"`
 }
 
+type Event struct {
+	Type string      `json:"type"`
+	Time time.Time   `json:"time"`
+	Data interface{} `json:"data, omitempty"`
+}
+
+type ItemDel struct {
+	Repname  string `json:"repname"`
+	Itemname string `json:"itemname"`
+}
+
 var (
 	EntryPoint       string
 	EntryPointStatus = "not available"
@@ -57,6 +68,8 @@ const (
 
 	PUBLISHER = 1
 	PULLER    = 0
+
+	TYPE_ITEM_DEL = "0x00020002"
 )
 
 func HeartBeat() {
@@ -118,6 +131,7 @@ func HeartBeat() {
 		log.Tracef("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
 
 		result := ds.Result{}
+		result.Data = &Event{}
 		if err := json.Unmarshal(body, &result); err == nil {
 			if result.Code == 0 {
 				EntryPointStatus = "available"
@@ -125,8 +139,36 @@ func HeartBeat() {
 				EntryPointStatus = "not available"
 			}
 		}
+		if result.Data != nil && result.Data.(*Event).Type == TYPE_ITEM_DEL {
+			deleteItemsAccordingToHeartbeat(body)
+		}
 
 		time.Sleep(heartbeatTimeout)
+	}
+}
+
+func deleteItemsAccordingToHeartbeat(body []byte) {
+	result := ds.Result{}
+	itemEvent := &Event{}
+	result.Data = itemEvent
+	itemsdelete := []ItemDel{}
+	itemEvent.Data = itemsdelete
+
+	if err := json.Unmarshal(body, &result); err == nil {
+		for _, v := range itemsdelete {
+
+			err := delTagsForDelItem(v.Repname, v.Itemname)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			err = delItem(v.Repname, v.Itemname)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
 	}
 }
 

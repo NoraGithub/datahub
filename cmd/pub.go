@@ -33,7 +33,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	pub := ds.PubPara{}
 	//var largs []string = args
 	var repo, item, tag, argfi, argse string
-	f := mflag.NewFlagSet("pub", mflag.ContinueOnError)
+	f := mflag.NewFlagSet("datahub pub", mflag.ContinueOnError)
 	//f.StringVar(&pub.Datapool, []string{"-datapool", "p"}, "", "datapool name")
 	f.StringVar(&pub.Accesstype, []string{"-accesstype", "t"}, "private", "dataitem accesstype: private or public")
 	f.StringVar(&pub.Comment, []string{"-comment", "m"}, "", "comments")

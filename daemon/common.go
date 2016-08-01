@@ -699,7 +699,7 @@ func delItem(reponame, itemname string) (err error) {
 
 func delTagsForDelItem(reponame, itemname string) error {
 	log.Println("TODO remove tags for remove item from db")
-	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 	var rpdmId int
 
 	row, err := g_ds.QueryRow(sqlrpdmid)
