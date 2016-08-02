@@ -17,6 +17,7 @@ type DatapoolDriver interface {
 	CheckItemLocation(datapool, dpconn, itemdesc string) error
 	CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error)
 	GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error)
+	CheckDpConnect(dpconn, connstr string) (normal bool, err error)
 }
 
 type Datapool struct {
@@ -25,7 +26,7 @@ type Datapool struct {
 
 var datapooldrivers = make(map[string]DatapoolDriver)
 
-var gDpPath string = cmd.GstrDpPath
+const gDpPath string = cmd.GstrDpPath
 
 func register(name string, datapooldriver DatapoolDriver) {
 	if datapooldriver == nil {
@@ -74,6 +75,10 @@ func (datapool *Datapool) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslo
 	return datapool.driver.GetDpOtherData(allotherdata, itemslocation, dpconn)
 }
 
+func (datapool *Datapool) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
+	return datapool.driver.CheckDpConnect(dpconn, connstr)
+}
+
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
 	return handler.driver.DoUnbind(myServiceInfo, mycredentials)
 }
@@ -86,4 +91,14 @@ func Env(name string, required bool) string {
 	}
 	log.Debugf("[env][%s] %s\n", name, s)
 	return s
+}
+
+func SetEnv(name string, value string) string {
+	if e := os.Setenv(name, value); e != nil {
+		log.Errorf("[setenv][%s] %s, error:%v\n", name, value, e)
+		return ""
+	}
+
+	log.Debugf("[setenv][%s] %s\n", name, value)
+	return name
 }

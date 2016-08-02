@@ -6,16 +6,14 @@ import (
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	dfs "github.com/colinmarc/hdfs"
 	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
-	"github.com/colinmarc/hdfs/rpc"
-	//"github.com/asiainfoLDP/datahub/utils/logq"
-	"net/url"
 	"os"
+	"strings"
 )
 
-type Client struct {
-	namenode *rpc.NamenodeConnection
-	defaults *hadoop_hdfs.FsServerDefaultsProto
-}
+//type Client struct {
+//	namenode *rpc.NamenodeConnection
+//	defaults *hadoop_hdfs.FsServerDefaultsProto
+//}
 
 type hdfsdriver struct {
 }
@@ -47,7 +45,6 @@ func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, de
 		return status
 	}
 
-
 	hdfsfile := "/" + itemlocation + "/" + destfile
 	err = client.CopyToRemote(filename, hdfsfile)
 	if err != nil {
@@ -55,7 +52,6 @@ func (hdfs *hdfsdriver) StoreFile(status, filename, dpconn, dp, itemlocation, de
 		status = "put to hdfs err"
 		return status
 	}
-
 
 	status = "put to hdfs ok"
 	log.Info("Successfully uploaded to", itemlocation, "in hdfs")
@@ -151,17 +147,42 @@ func (hdfs *hdfsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemsloca
 	return
 }
 
-func getClient(dpconn string) (client *dfs.Client, err error) {
-	log.Info("dpconn:", dpconn)
-	u, err := url.Parse("hdfs://" + dpconn)
+func (hdfs *hdfsdriver) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
+
+	if index := strings.IndexAny(dpconn, "/"); index != 0 {
+		return
+	}
+
+	client, err := getClient(connstr)
+	if err == nil && client != nil {
+		return true, nil
+	} else {
+		return
+	}
+}
+
+func getClient(connstr string) (client *dfs.Client, err error) {
+	//log.Info("dpconn:", dpconn)
+	//u, err := url.Parse("hdfs://" + dpconn)
+	//if err != nil {
+	//	return
+	//}
+	//userinfo := u.User
+	//username := userinfo.Username()
+	//password :=userinfo.Password()
+	//host := u.Host
+	client, err = dfs.New(connstr)
 	if err != nil {
 		return
 	}
-	userinfo := u.User
-	username := userinfo.Username()
-	//password :=userinfo.Password()
-	host := u.Host
-	client, err = dfs.NewForUser(host, username)
+
+	info, err := client.Stat("/")
+	if err != nil {
+		return
+	}
+	hadoopUser := *info.Sys().(*hadoop_hdfs.HdfsFileStatusProto).Owner
+
+	client, err = dfs.NewForUser(connstr, hadoopUser)
 	if err != nil {
 		return
 	}

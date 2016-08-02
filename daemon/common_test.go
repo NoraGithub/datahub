@@ -62,7 +62,7 @@ func TestGetDataPoolDpid(t *testing.T) {
 }
 
 func TestInsertTagToDb(t *testing.T) {
-	if e := InsertTagToDb(true, testP); e != nil {
+	if e := InsertTagToDb(true, testP, "comment test"); e != nil {
 		t.Error("1.InsertTagToDb fail--------", e)
 	} else {
 		t.Log("1.InsertTagToDb success--------")
@@ -84,17 +84,17 @@ func TestInsertItemToDb(t *testing.T) {
 	if e := DeleteTagHard(testP.Tag); e != nil {
 		t.Errorf("Recover db for TestInsertItemToDb test fail. Delete %s error, %v", testP.Tag, e)
 	}
-	err := InsertItemToDb(testP.Repository, testP.Dataitem, testP.Datapool, testP.ItemDesc)
+	err := InsertItemToDb(testP.Repository, testP.Dataitem, testP.Datapool, testP.ItemDesc, "")
 	if err != nil {
 		t.Error("1.InsertItemToDb fail-------- ", err)
 	} else {
 		t.Log("1.InsertItemToDb success---------")
 	}
-	if e := InsertTagToDb(true, testP); e != nil {
+	if e := InsertTagToDb(true, testP, "comment lll"); e != nil {
 		t.Error("InsertTagToDb fail--------", e)
 	}
 
-	err = InsertItemToDb(testP.Repository, testP.Dataitem, "No_this_datapool", testP.ItemDesc)
+	err = InsertItemToDb(testP.Repository, testP.Dataitem, "No_this_datapool", testP.ItemDesc, "")
 	if err != nil {
 		t.Log("2.InsertItemToDb success:insert item to a non-existent datapool---------")
 	} else {
@@ -153,7 +153,7 @@ func TestGetDpnameDpconnItemdesc(t *testing.T) {
 func TestInsertPubTagToDb(t *testing.T) {
 	tag := "tagTest2"
 	file := "tagTest2file.csv"
-	e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file)
+	e := InsertPubTagToDb(testP.Repository, testP.Dataitem, tag, file, "comment TestInsertPubTagToDb")
 	if e == nil {
 		t.Log("1.InsertPubTagToDb success--------")
 	} else {
@@ -163,7 +163,7 @@ func TestInsertPubTagToDb(t *testing.T) {
 		t.Errorf("Recover db for InsertPubTagToDb test fail. Delete %s error, %v", tag, e)
 	}
 
-	e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file)
+	e = InsertPubTagToDb("No_this_repo", testP.Dataitem, tag, file, "comment aaa")
 	if e != nil {
 		t.Log("2.InsertPubTagToDb with a non-existent repository success--------")
 	} else {

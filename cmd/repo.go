@@ -128,8 +128,16 @@ func Repo(login bool, args []string) (err error) {
 }
 
 func repoUsage() {
-	fmt.Printf("Usage: %s repo [URL]/[REPO]/[ITEM]\n", os.Args[0])
-	fmt.Println("\nShow the repository , dataitem and tag")
+	fmt.Printf("Usage:\n%s repo\n", os.Args[0])
+	fmt.Println("\nShow all repositories which have write permission.\n")
+	fmt.Printf("%s repo [REPO]\n", os.Args[0])
+	fmt.Println("\nShow the detail of repository.\n")
+	fmt.Printf("%s repo [REPO]/[ITEM]\n", os.Args[0])
+	fmt.Println("\nShow the detail of item.\n")
+	fmt.Printf("%s repo [REPO]/[ITEM]:[TAG]\n", os.Args[0])
+	fmt.Println("\nShow the detail of tag.\n")
+	fmt.Printf("%s repo rm [REPO]/[ITEM]:[TAG]\n", os.Args[0])
+	fmt.Println("\nDelete the dataitem and tag.")
 }
 
 func repoResp(icmd int, respbody []byte, repo, item, tag string) {

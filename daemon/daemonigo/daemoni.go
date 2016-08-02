@@ -49,6 +49,8 @@ var AppName = "datahub daemon"
 
 var PidFile = "/var/run/datahub.pid"
 var logfile = cmd.GstrDpPath + "\\Log\\datahub.log"
+var OutPutLogScreen = "SCREENLOG"
+var sCREENLOG = "1"
 
 // Pointer to PID file to keep file-lock alive.
 var pidFile *os.File

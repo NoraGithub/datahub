@@ -29,6 +29,7 @@ func ItemOrTagRm(needLogin bool, args []string) error {
 		itemortagrmUsage()
 		return errors.New(ValidateErrMsgArgument)
 	}
+
 	var repository string
 	var dataitem string
 	var tag string

@@ -41,7 +41,6 @@ func Ep(needLogin bool, args []string) (err error) {
 			return
 		}
 
-		fmt.Println("entrypoint:", ep)
 		j := FormatEp{}
 		j.Ep = ep
 
@@ -68,7 +67,8 @@ func Ep(needLogin bool, args []string) (err error) {
 }
 
 func epUsage() {
-	fmt.Printf("Usage: %s ep [http://HOST:PORT]\n\nSpecify the entrypoint\n", os.Args[0])
+	fmt.Printf("Usage: \n%s ep \n\ncheck whether the entrypoint has set up.\n\n", os.Args[0])
+	fmt.Printf("%s ep [http://HOST:PORT] \n\nspecify the entrypoint.\n", os.Args[0])
 }
 
 func parseEp(s string) (ep string) {

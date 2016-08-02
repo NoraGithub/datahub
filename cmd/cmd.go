@@ -26,10 +26,11 @@ type UserInfo struct {
 }
 
 var (
-	User     = UserInfo{}
-	UnixSock = "/var/run/datahub.sock"
-	Logged   = false
-	pidFile  = "/var/run/datahub.pid"
+	User          = UserInfo{}
+	UnixSock      = "/var/run/datahub.sock"
+	Logged        = false
+	pidFile       = "/var/run/datahub.pid"
+	CmdHttpServer = "localhost:35600"
 )
 
 type Command struct {
@@ -51,6 +52,7 @@ const (
 	ErrorSqlExec
 	ErrorInsertItem
 	ErrorUnmarshal
+	ErrorIOUtil
 	ErrorMarshal
 	ErrorServiceUnavailable
 	ErrorFileNotExist
@@ -66,6 +68,10 @@ const (
 	ErrorUnknowError
 	ErrorItemNotExist
 	ErrorPublishedItemEmpty
+	ErrorDpConnect
+	ErrorOutMaxLength
+	ErrorDatapoolAlreadyExits
+	InternalError
 )
 
 const (
@@ -75,6 +81,9 @@ const (
 	ServerErrResultCode5023 = 5023
 	ServerErrResultCode1009 = 1009
 	ServerErrResultCode1400 = 1400
+	ServerErrResultCode1008 = 1008
+	ServerErrResultCode4010 = 4010
+	ServerErrResultCode1011 = 1011
 )
 
 const (
@@ -206,7 +215,7 @@ func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, er
 		req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
 	}
 	*/
-	conn, err := net.Dial("tcp", "127.0.0.1:35600")
+	conn, err := net.Dial("tcp", CmdHttpServer)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Datahub daemon not running? Use 'datahub --daemon' to start daemon.")
@@ -248,6 +257,7 @@ func showResponse(resp *http.Response) {
 }
 
 func showError(resp *http.Response) {
+
 	if resp.StatusCode == http.StatusMovedPermanently {
 		fmt.Println(ErrMsgArgument)
 		return
@@ -278,8 +288,8 @@ func StopP2P() error {
 		}
 	}*/
 
-	commToDaemon("get", "/stop", nil)
-	return nil
+	_, err := commToDaemon("get", "/stop", nil)
+	return err
 }
 
 func ShowUsage() {

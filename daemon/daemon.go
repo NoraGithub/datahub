@@ -27,11 +27,19 @@ var (
 
 	wg sync.WaitGroup
 
-         staticFileDir string
+	staticFileDir string
+
+	DaemonAuthrization string
 
 	g_strDpPath string = cmd.GstrDpPath
 	g_dbfile    string = g_strDpPath + "\\DB\\datahub.db"
 	logfile            = g_strDpPath + "\\LOG\\datahub.log"
+
+
+
+	DaemonCliServer string = "127.0.0.1:35600"
+
+	CLIEntrypoint string = "127.0.0.1:35600"
 )
 
 const (
@@ -75,6 +83,7 @@ func dbinit() {
 		//defer db.Close()
 		chk(err)
 		g_ds.Db = db
+		g_ds.DbType = "sqlite"
 	}
 
 	var RetDhRpdmTagMap string
@@ -86,13 +95,14 @@ func dbinit() {
 	}
 	row.Scan(&RetDhRpdmTagMap)
 	if len(RetDhRpdmTagMap) > 1 {
-		if false == strings.Contains(RetDhRpdmTagMap, "TAGID") {
-			UpdateSql04To05()
+		if false == strings.Contains(RetDhRpdmTagMap, "COMMENT") {
+			//	UpdateSql04To05()
+			UpdateSql16To17()
 		}
 	}
-	if err := UpgradeSql07To08(); err != nil {
-		panic(err)
-	}
+	//if err := UpgradeSql07To08(); err != nil {
+	//	panic(err)
+	//}
 	if err := CreateTable(); err != nil {
 		l := log.Error("Get CreateTable error!", err)
 		logq.LogPutqueue(l)
@@ -112,6 +122,7 @@ func connectMysql() {
 		log.Errorf("error: %s\n", err)
 	} else {
 		g_ds.Db = db
+		g_ds.DbType = "mysql"
 		log.Println("Connect to Mysql successfully!")
 	}
 }
@@ -294,6 +305,9 @@ func RunDaemon() {
 
 	log.SetLogFile(logfile)
 
+	DaemonAuthrization = utils.Getguid()
+	log.Println("DaemonAuthrization", DaemonAuthrization)
+
 	dbinit()
 
 	if len(DaemonID) == 40 {
@@ -307,7 +321,7 @@ func RunDaemon() {
 	LoadJobFromDB()
 
 	os.Chdir(g_strDpPath)
-	originalListener, err := net.Listen("tcp", "127.0.0.1:35600")
+	originalListener, err := net.Listen("tcp", DaemonCliServer)
 	if err != nil {
 		log.Fatal(err)
 	} else {
@@ -345,7 +359,7 @@ func RunDaemon() {
 	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
 
 	router.POST("/api/repositories/:repo/:item", pubItemHandler)
-	router.POST("/api/repositories/:repo/:item/:tag", pubTagHandler)
+	router.POST("/api/repositories/:repo/:item/:tag", newPubTagHandler)
 
 	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
 
@@ -371,7 +385,9 @@ func RunDaemon() {
 	router.GET("/api/datapool/pulled/:dpname", pulledOfDatapoolHandler)
 	router.GET("/api/datapool/published/:dpname/:repo", publishedOfRepoHandler)
 	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
+	router.POST("/api/datapool/check", checkDpConnectHandler)
 	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
+	//router.POST("/api/datapool/newpublishtag", newPublishTagHandler)
 
 	router.NotFound = &mux{}
 
@@ -398,7 +414,7 @@ func RunDaemon() {
 		go startP2PServer()
 		go HeartBeat()
 		go CheckHealthClock()
-		go datapoolMonitor()
+		//go datapoolMonitor()  //Temporarily not use
 		go GetMessages()
 		go PullTagAutomatic()
 	} else {
@@ -419,7 +435,7 @@ func RunDaemon() {
 		wg.Wait()
 	}
 
-	//daemonigo.UnlockPidFile()
+	daemonigo.UnlockPidFile()
 	g_ds.Db.Close()
 
 	log.Info("daemon exit....")
@@ -459,4 +475,13 @@ func init() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.SetLogLevel(log.LOG_LEVEL_INFO)
+
+	if daemonServer := os.Getenv("DATAHUB_DAEMON_SERVER"); len(daemonServer) > 0 {
+		DaemonCliServer = daemonServer
+	}
+
+	if cliEp := os.Getenv("DATAHUB_CLI_ENTRYPOINT"); len(cliEp) > 0 {
+		CLIEntrypoint = cliEp
+	}
+
 }
