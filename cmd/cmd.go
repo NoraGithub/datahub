@@ -15,7 +15,7 @@ import (
 	//"syscall"
 )
 
-const GstrDpPath string = Env("APPDATA", true) + "\\DATAHUB"
+const GstrDpPath = Env("APPDATA", true) + "\\DATAHUB"
 
 type UserInfo struct {
 	userName string
