@@ -148,15 +148,17 @@ func HeartBeat() {
 }
 
 func deleteItemsAccordingToHeartbeat(body []byte) {
+	log.Debug("deleteItemsAccordingToHeartbeat() BEGIN:", string(body))
 	result := ds.Result{}
 	itemEvent := &Event{}
 	result.Data = itemEvent
 	itemsdelete := []ItemDel{}
-	itemEvent.Data = itemsdelete
+	itemEvent.Data = &itemsdelete
 
 	if err := json.Unmarshal(body, &result); err == nil {
+		log.Debug("items delete:", itemsdelete)
 		for _, v := range itemsdelete {
-
+			log.Debugf("delete item according to heartbeat: %v/%v\n", v.Repname, v.Itemname)
 			err := delTagsForDelItem(v.Repname, v.Itemname)
 			if err != nil {
 				log.Error(err)
@@ -168,7 +170,10 @@ func deleteItemsAccordingToHeartbeat(body []byte) {
 				log.Error(err)
 				return
 			}
+			log.Infof("Delete data item %v/%v according to heartbeat successfully.\n", v.Repname, v.Itemname)
 		}
+	} else {
+		log.Warn("Unmarshal error:", err)
 	}
 }
 
