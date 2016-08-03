@@ -79,6 +79,10 @@ func (fs *fsdriver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation
 	return
 }
 
+func (fs *fsdriver) CheckDpConnect(dpconn, connstr string) (normal bool, err error)  {
+	return
+}
+
 func init() {
 	//fmt.Println("fs")
 	register("file", &fsdriver{})
