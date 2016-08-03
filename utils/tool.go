@@ -1,6 +1,13 @@
 package utils
 
-import "fmt"
+import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"io"
+)
 
 func MaxLenString(strarray []string) (maxlen int, maxstr string) {
 	for _, str := range strarray {
@@ -14,10 +21,10 @@ func MaxLenString(strarray []string) (maxlen int, maxstr string) {
 
 func PrintFmt(a ...[]string) {
 	var i, j int
-	for i = 0; i < len(a[0]); i ++ {
+	for i = 0; i < len(a[0]); i++ {
 		//fmt.Println(len(a[i]))
 		//fmt.Println(maxlen)
-		for j = 0; j < len(a); j++  {
+		for j = 0; j < len(a); j++ {
 			maxlen, _ := MaxLenString(a[j])
 
 			//fmt.Println(len(a))
@@ -37,4 +44,19 @@ func PrintFmt(a ...[]string) {
 
 	}
 
+}
+
+func getmd5string(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func Getguid() string {
+	b := make([]byte, 48)
+
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return ""
+	}
+	return getmd5string(base64.URLEncoding.EncodeToString(b))
 }
