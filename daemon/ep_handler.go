@@ -45,7 +45,7 @@ func epPostHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	EntryPoint = ep.Ep
 	saveEntryPoint(EntryPoint)
 
-	msg := ds.MsgResp{Msg: "OK. your entrypoint is: " + EntryPoint + "\n" + "The entrypoint is setted successfully. You can check whether it is available in one minute."}
+	msg := ds.MsgResp{Msg: "OK. your entrypoint is: " + EntryPoint + "\n" + "The entrypoint is setted successfully.  You can check whether it is available in one minute."}
 	log.Info(msg.Msg)
 	resp, _ := json.Marshal(&msg)
 	fmt.Fprintln(w, string(resp))

@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -10,7 +11,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 type ItemInDatapool struct {
@@ -407,4 +407,3 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 
 	return
 }
-

@@ -13,13 +13,13 @@ import (
 )
 
 func Test_getAccessToken(t *testing.T) {
-	tmp := DefaultServer
+	tmp := DefaultServerAPI
 
 	w := httptest.NewRecorder()
 	server := mockServerFor_getAccessToken(1, "http://localhost:60000")
 	defer server.Close()
 	t.Logf("Started httptest.Server on %v", server.URL)
-	DefaultServer = server.URL
+	DefaultServerAPI = server.URL
 	loginAuthStr = "Token 3281f6af065790adc9e79eec4588d905="
 	token, entrypoint, err := getAccessToken("/transaction/rtest/itest/ttest", w)
 	if err != nil {
@@ -32,7 +32,7 @@ func Test_getAccessToken(t *testing.T) {
 	server2 := mockServerFor_getAccessToken(2, "")
 	defer server2.Close()
 	t.Logf("Started httptest.Server on %v", server2.URL)
-	DefaultServer = server2.URL
+	DefaultServerAPI = server2.URL
 	token, entrypoint, err = getAccessToken("/transaction/rtest/itest/ttest", w2)
 	if token == "" && entrypoint == "" && err != nil {
 		t.Log("2.getAccessToken success-------")
@@ -40,7 +40,7 @@ func Test_getAccessToken(t *testing.T) {
 		t.Error("2.getAccessToken fail-------", token, entrypoint, err)
 	}
 
-	DefaultServer = tmp
+	DefaultServerAPI = tmp
 }
 
 // *********************** Mock transcation Server ********************* //

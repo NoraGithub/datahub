@@ -88,7 +88,7 @@ var con = []Context{
 									"dptype":"file",
 									"dpconn":"/var/lib/datahub/datahub-Unit-Test"						
 							 }`,
-		out: "Invalid argument",
+		out: "Invalid argument.",
 	},
 	Context{
 		desc: "5.create datapool no conn --------",

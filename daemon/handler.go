@@ -11,6 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,22 @@ type UserForJson struct {
 
 type tk struct {
 	Token string `json:"token"`
+}
+
+func authDaemon(w http.ResponseWriter, r *http.Request) bool {
+	log.Println(r.URL, "|", r.RequestURI, "|", r.RemoteAddr, "|", r.URL.RequestURI(), "|", r.Host)
+	if r.Host == "127.0.0.1:35600" {
+		return true
+	}
+	auth, ok := r.Header["X-Daemon-Auth"]
+	log.Debug("DaemonAuthrization:", DaemonAuthrization)
+	if !ok || auth[0] != DaemonAuthrization {
+		JsonResult(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "", nil)
+		log.Error("connect daemon refused!", auth, ok, r.Header)
+		return false
+	}
+
+	return true
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -292,4 +309,72 @@ func getJsonBuildingErrorJson() []byte {
 
 	return []byte(log.Infof(`{"code": %d, "msg": %s}`, cmd.ErrorMarshal, "Json building error"))
 
+}
+
+type QueryListResult struct {
+	Total   int64       `json:"total"`
+	Results interface{} `json:"results"`
+}
+
+func newQueryListResult(count int64, results interface{}) *QueryListResult {
+	return &QueryListResult{Total: count, Results: results}
+}
+
+func validateOffsetAndLimit(count int64, offset *int64, limit *int) {
+	if *limit < 1 {
+		*limit = 1
+	}
+	if *offset >= count {
+		*offset = count - int64(*limit)
+	}
+	if *offset < 0 {
+		*offset = 0
+	}
+	if *offset+int64(*limit) > count {
+		*limit = int(count - *offset)
+	}
+}
+
+func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, maxSize int64) (int64, int) {
+	size := optionalIntParamInQuery(r, "size", defaultSize)
+	if size == -1 {
+		return 0, -1
+	}
+
+	page := optionalIntParamInQuery(r, "page", 0)
+	if page < 1 {
+		page = 1
+	}
+	page -= 1
+
+	if minSize < 1 {
+		minSize = 1
+	}
+	if maxSize < 1 {
+		maxSize = 1
+	}
+	if minSize > maxSize {
+		minSize, maxSize = maxSize, minSize
+	}
+
+	if size < minSize {
+		size = minSize
+	} else if size > maxSize {
+		size = maxSize
+	}
+
+	return page * size, int(size)
+}
+
+func optionalIntParamInQuery(r *http.Request, paramName string, defaultInt int64) int64 {
+	if r.Form.Get(paramName) == "" {
+		return defaultInt
+	}
+
+	i, err := strconv.ParseInt(r.Form.Get(paramName), 10, 64)
+	if err != nil {
+		return defaultInt
+	} else {
+		return i
+	}
 }

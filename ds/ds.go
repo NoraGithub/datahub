@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v1.6.0"
+	DATAHUB_VERSION = "v2.0.0"
 )
 
 type DsPull struct {
@@ -51,6 +51,11 @@ type ResultPages struct {
 
 type MsgResp struct {
 	Msg string `json:"msg"`
+}
+
+type ItemMs struct {
+	Meta   string `json:"meta, omitempty"`
+	Sample string `json:"sample, omitempty"`
 }
 
 type JobInfo struct {
@@ -90,6 +95,7 @@ type TagStatus struct {
 
 type ItemInfo struct {
 	Create_user string `json:"create_user,omitempty"`
+	Optime      string `json:"optime, omitempty"`
 }
 
 type ItemStatus struct {
@@ -115,11 +121,12 @@ type Repository struct {
 }
 
 type PubPara struct {
-	Datapool   string `json:"datapool, omitempty"`
-	Detail     string `json:"detail, omitempty"`
-	Accesstype string `json:"itemaccesstype, omitempty"`
-	Comment    string `json:"comment, omitempty"`
-	ItemDesc   string `json:"itemdesc, omitempty"`
+	Datapool    string `json:"datapool, omitempty"`
+	Detail      string `json:"detail, omitempty"`
+	Accesstype  string `json:"itemaccesstype, omitempty"`
+	Comment     string `json:"comment, omitempty"`
+	ItemDesc    string `json:"itemdesc, omitempty"`
+	SupplyStyle string `json:"supplystyle, omitempty"`
 }
 
 type DpOtherData struct {
@@ -128,7 +135,8 @@ type DpOtherData struct {
 }
 
 type Ds struct {
-	Db *sql.DB
+	Db     *sql.DB
+	DbType string
 }
 
 type RepoInfo struct {
@@ -159,6 +167,24 @@ type PulledItemInfo struct {
 
 type OrderInfo struct {
 	Signtime time.Time `json:"signtime, omitempty"`
+}
+
+type DpParas struct {
+	Dpname string `json:"dpname, omitempty"`
+	Dptype string `json:"dptype, omitempty"`
+	Dpconn string `json:"dpconn, omitempty"`
+	Host   string `json:"host, omitempty"`
+	Port   string `json:"port, omitempty"`
+}
+
+type PubTagParas struct {
+	Dpname     string `json:"dpname"`
+	Repository string `json:"repository"`
+	Dataitem   string `json:"dataitem"`
+	ItemDesc   string `json:"itemDesc"`
+	Tagname    string `json:"tagname"`
+	Detail     string `json:"detail"`
+	Comment    string `json:"comment, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
@@ -198,7 +224,8 @@ const Create_dh_repo_ditem_tag_map string = `CREATE TABLE IF NOT EXISTS
         RPDMID       INTEGER,
         DETAIL       VARCHAR(256),
         CREATE_TIME  DATETIME,
-        STATUS       CHAR(2)
+        STATUS       CHAR(2),
+        COMMENT		 VARCHAR(256)
     );`
 
 const CreateDhDaemon string = `CREATE TABLE IF NOT EXISTS 
@@ -232,8 +259,7 @@ const CreateMsgTagAdded string = `CREATE TABLE IF NOT EXISTS
 		CREATE_TIME DATETIME,
 		STATUS_TIME DATETIME
 
-	);
-	`
+	);`
 
 type Executer interface {
 	Insert(cmd string) (interface{}, error)

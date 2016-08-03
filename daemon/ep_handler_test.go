@@ -34,7 +34,7 @@ func Test_epPostHandler(t *testing.T) {
 			desc:        "1.Post ep",
 			requestBody: `{"entrypoint":"http://localhost:8888"}`,
 			rw:          httptest.NewRecorder(),
-			out:         "OK. your entrypoint is: http://localhost:8888",
+			out:         "OK. your entrypoint is: http://localhost:8888\nThe entrypoint is setted successfully.  You can check whether it is available in one minute.",
 		},
 		Context{
 			desc:        "2.Post ep with err json",

@@ -1,12 +1,12 @@
 package daemon
 
 import (
+	"fmt"
+	"github.com/asiainfoLDP/datahub/cmd"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
-	"fmt"
-	"github.com/asiainfoLDP/datahub/cmd"
 )
 
 func subsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

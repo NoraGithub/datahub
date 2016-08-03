@@ -9,6 +9,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"strconv"
 )
 
 //var DatahubJob = make(map[string]ds.JobInfo) //job[id]=JobInfo
