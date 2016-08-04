@@ -686,7 +686,7 @@ func GetLocalfilePath() (localfilepath []string) {
 }
 
 func delItem(reponame, itemname string) (err error) {
-	log.Println("TODO remove item from db")
+	log.Println("Begin to remove item from db")
 	sql := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS = 'N' WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
 	if _, err := g_ds.Update(sql); err != nil {
 		l := log.Error("delete item error:", err)
@@ -698,9 +698,8 @@ func delItem(reponame, itemname string) (err error) {
 }
 
 func delTagsForDelItem(reponame, itemname string) error {
-	log.Println("TODO remove tags for remove item from db")
-	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
-	var rpdmId int
+	log.Println("Begin to remove tags for remove item from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 
 	row, err := g_ds.QueryRow(sqlrpdmid)
 	if err != nil {
@@ -708,9 +707,15 @@ func delTagsForDelItem(reponame, itemname string) error {
 		logq.LogPutqueue(l)
 		return err
 	}
+	var rpdmId int
 	row.Scan(&rpdmId)
+	if rpdmId == 0 {
+		log.Debug(reponame, itemname, "not exist.")
+		return nil
+	}
 	sqldeltag := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE RPDMID=%d`, rpdmId)
 	_, err = g_ds.Update(sqldeltag)
+	log.Info("sqldeltag", sqldeltag)
 	if err != nil {
 		l := log.Error("delete tag error:", err)
 		logq.LogPutqueue(l)
