@@ -313,6 +313,28 @@ func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 }
 
+func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "tags pulled of dataitem")
+
+	dpname := ps.ByName("dpname")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Pulled tags of %s is empty.", item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been pulled of %s", item)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, pulledTagsOfItem)
+	}
+}
+
 func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
