@@ -169,6 +169,12 @@ type OrderInfo struct {
 	Signtime time.Time `json:"signtime, omitempty"`
 }
 
+type PulledTagsOfItem struct {
+	TagName string `json:"tag_name, omitempty"`
+	DownloadTime *time.Time `json:"download_time, omitempty"`
+	Content string `json:"content, omitempty"`
+}
+
 type DpParas struct {
 	Dpname string `json:"dpname, omitempty"`
 	Dptype string `json:"dptype, omitempty"`
@@ -205,7 +211,7 @@ const Create_dh_dp_repo_ditem_map string = `CREATE TABLE IF NOT EXISTS
     DH_DP_RPDM_MAP ( 
     	RPDMID       INTEGER PRIMARY KEY AUTOINCREMENT, 
         REPOSITORY   VARCHAR(128), 
-        DATAITEM     VARCHAR(128), 
+		DATAITEM     VARCHAR(128),
         DPID         INTEGER, 
         ITEMDESC     VARCHAR(256),
         PUBLISH      CHAR(2), 

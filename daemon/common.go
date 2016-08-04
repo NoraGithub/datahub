@@ -1026,7 +1026,7 @@ func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 		status = "N"
 	}
 
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1078,7 +1078,7 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 
 	publishedRepoInfo.RepositoryName = repoName
 
-	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1123,7 +1123,7 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 
 	pulledRepoInfo.RepositoryName = repoName
 
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1193,4 +1193,54 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 	pulledRepoInfo.PulledDataItems = pulledItemInfos
 
 	return &pulledRepoInfo, err
+}
+
+func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, error) {
+
+	pulledTagOfItem := ds.PulledTagsOfItem{}
+	pulledTagsOfItem := make([]ds.PulledTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY  = '%s' AND DATAITEM = '%s' AND DPID = %d AND PUBLISH = 'N' AND STATUS = 'A';`,repo, item, dpid)
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	row.Scan(&rpdmid)
+
+	sql = fmt.Sprintf(`SELECT TAGNAME, CREATE_TIME, COMMENT FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A';`, rpdmid)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var tagName string
+	var createTime *time.Time
+	var content string
+
+	for rows.Next() {
+		rows.Scan(&tagName, &createTime, &content)
+		pulledTagOfItem.TagName = tagName
+		pulledTagOfItem.DownloadTime = createTime
+		pulledTagOfItem.Content = content
+		pulledTagsOfItem = append(pulledTagsOfItem, pulledTagOfItem)
+	}
+
+	return pulledTagsOfItem, err
 }

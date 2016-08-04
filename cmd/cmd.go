@@ -66,6 +66,7 @@ const (
 	ErrorUnknowError
 	ErrorItemNotExist
 	ErrorPublishedItemEmpty
+	ErrorPulledTagEmpty
 	ErrorDpConnect
 	ErrorOutMaxLength
 	ErrorDatapoolAlreadyExits
