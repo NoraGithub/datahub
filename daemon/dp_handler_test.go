@@ -140,7 +140,7 @@ func Test_dpGetAllHandler(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/datapools", strings.NewReader(""))
 	rw := httptest.NewRecorder()
 	dpGetAllHandler(rw, req, nil)
-	if !ExpectResult(t, rw, "", cmd.ResultOK) {
+	if !ExpectResult(t, rw, "OK", cmd.ResultOK) {
 		t.Logf("1.Get all datapools -------- fail")
 	} else {
 		t.Logf("1.Get all datapools -------- success")
