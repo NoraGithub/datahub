@@ -41,8 +41,6 @@ func Pub(needlogin bool, args []string) (err error) {
 	f.StringVar(&pub.SupplyStyle, []string{"-supplystyle", "s"}, "batch", "dataitem supplystyle: batch , flow or api")
 	f.Usage = pubUsage
 
-
-
 	if len(args) > 2 {
 		if err = f.Parse(args[2:]); err != nil {
 			fmt.Println("Error : parse parameter error.", err)
@@ -86,7 +84,7 @@ func Pub(needlogin bool, args []string) (err error) {
 		tag = sptag[1]
 		pub.Detail = args[1]
 
-		if len(args) == 2 || (len(args) == 3 && strings.Contains(args[2], "-")){
+		if len(args) == 2 || (len(args) == 3 && strings.Contains(args[2], "-")) {
 			PubTag(repo, item, tag, pub, args)
 		} else {
 			if len(strings.Split(args[2], ":")) != 2 || strings.Split(args[2], ":")[0] == "" {

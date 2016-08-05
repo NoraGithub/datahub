@@ -1216,7 +1216,7 @@ func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, 
 	var dpid int
 	row.Scan(&dpid)
 
-	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY  = '%s' AND DATAITEM = '%s' AND DPID = %d AND PUBLISH = 'N' AND STATUS = 'A';`,repo, item, dpid)
+	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY  = '%s' AND DATAITEM = '%s' AND DPID = %d AND PUBLISH = 'N' AND STATUS = 'A';`, repo, item, dpid)
 	row, err = g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
