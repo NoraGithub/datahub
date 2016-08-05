@@ -163,6 +163,7 @@ type PulledRepoInfo struct {
 type PulledItemInfo struct {
 	ItemName string     `json:"itemname, omitempty"`
 	SignTime *time.Time `json:"signtime, omitempty"`
+	Location string     `json:"location, omitempty"`
 }
 
 type OrderInfo struct {
