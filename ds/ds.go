@@ -171,9 +171,17 @@ type OrderInfo struct {
 }
 
 type PulledTagsOfItem struct {
-	TagName      string     `json:"tagname"`
+	TagName      string     `json:"tagname, omitempty"`
 	DownloadTime *time.Time `json:"downloadtime, omitempty"`
 	Content      string     `json:"content, omitempty"`
+}
+
+type PublishedTagsOfItem struct {
+	FileName    string     `json:"filename, omitempty"`
+	TagName     string     `json:"tagname, omitempty"`
+	PublishTime *time.Time `json:"publishtime, omitempty"`
+	Location    string     `json:"location, omitempty"`
+	Status      string     `json:"status, omitempty"`
 }
 
 type DpParas struct {

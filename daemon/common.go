@@ -1250,7 +1250,7 @@ func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.P
 	return pulledItemInfos, err
 }
 
-func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, error) {
+func GetPulledTagsOfItemInfo(dpname, repo, item string, offset int64, limit int) ([]ds.PulledTagsOfItem, error) {
 
 	pulledTagOfItem := ds.PulledTagsOfItem{}
 	pulledTagsOfItem := make([]ds.PulledTagsOfItem, 0)
@@ -1266,7 +1266,13 @@ func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, 
 	var dpid int
 	row.Scan(&dpid)
 
-	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY  = '%s' AND DATAITEM = '%s' AND DPID = %d AND PUBLISH = 'N' AND STATUS = 'A';`, repo, item, dpid)
+	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'N'
+				AND STATUS = 'A';`, repo, item, dpid)
+
 	row, err = g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1277,7 +1283,7 @@ func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, 
 	var rpdmid int
 	row.Scan(&rpdmid)
 
-	sql = fmt.Sprintf(`SELECT TAGNAME, CREATE_TIME, COMMENT FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A';`, rpdmid)
+	sql = fmt.Sprintf(`SELECT TAGNAME, CREATE_TIME, COMMENT FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A' LIMIT %v OFFSET %v;`, rpdmid, limit, offset)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1285,17 +1291,89 @@ func GetPulledTagsOfItemInfo(dpname, repo, item string) ([]ds.PulledTagsOfItem, 
 		return nil, err
 	}
 
-	var tagName string
-	var createTime *time.Time
-	var content string
-
 	for rows.Next() {
-		rows.Scan(&tagName, &createTime, &content)
-		pulledTagOfItem.TagName = tagName
-		pulledTagOfItem.DownloadTime = createTime
-		pulledTagOfItem.Content = content
+		rows.Scan(&pulledTagOfItem.TagName, &pulledTagOfItem.DownloadTime, &pulledTagOfItem.Content)
 		pulledTagsOfItem = append(pulledTagsOfItem, pulledTagOfItem)
 	}
 
 	return pulledTagsOfItem, err
+}
+
+func getPulledTagCount(datapool, repo, item string) (int64, error) {
+
+	sql := fmt.Sprintf(`SELECT COUNT(*)
+		FROM DH_RPDM_TAG_MAP
+		WHERE RPDMID = (SELECT RPDMID FROM DH_DP_RPDM_MAP
+					WHERE REPOSITORY  = '%s'
+					AND DATAITEM = '%s'
+
+					AND PUBLISH = 'N'
+					AND STATUS = 'A'
+					AND DPID = (SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A'))
+		AND STATUS = 'A';`, repo, item, datapool)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	var count int64
+	row.Scan(&count)
+	log.Debug("Published repository count:", count)
+	return count, err
+}
+
+func GetPublishedTagsOfItemInfo(dpname, repo, item string) ([]ds.PublishedTagsOfItem, error) {
+
+	publishedTagOfItem := ds.PublishedTagsOfItem{}
+	publishedTagsOfItem := make([]ds.PublishedTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	var dpconn string
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'Y'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	var itemdesc string
+	row.Scan(&rpdmid, &itemdesc)
+
+	sql = fmt.Sprintf(`SELECT DETAIL, TAGNAME, CREATE_TIME FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A';`, rpdmid)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&publishedTagOfItem.FileName, &publishedTagOfItem.TagName, &publishedTagOfItem.PublishTime)
+		publishedTagOfItem.Location = dpconn + "/" + itemdesc
+		publishedTagOfItem.Status = "已发布"
+		publishedTagsOfItem = append(publishedTagsOfItem, publishedTagOfItem)
+	}
+
+	return publishedTagsOfItem, err
 }

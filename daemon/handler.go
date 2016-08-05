@@ -315,12 +315,22 @@ func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug(r.URL.Path, "tags pulled of dataitem")
+	r.ParseForm()
 
 	dpname := ps.ByName("dpname")
 	repo := ps.ByName("repo")
 	item := ps.ByName("item")
 
-	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item)
+	count, err := getPulledTagCount(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	log.Debug("offset, limit", offset, limit)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item, offset, limit)
 	if err != nil {
 		log.Debug(err)
 		return
@@ -331,17 +341,32 @@ func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httproute
 		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
 	} else {
 		msg := fmt.Sprintf("All tags had been pulled of %s/%s", repo, item)
-		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, pulledTagsOfItem)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
 	}
 }
 
 func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug(r.URL.Path, "tags published of dataitem")
+	r.ParseForm()
 
 	dpname := ps.ByName("dpname")
 	repo := ps.ByName("repo")
 	item := ps.ByName("item")
 
+	publishedTagsOfItem, err := GetPublishedTagsOfItemInfo(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Published tags of %s/%s is empty.", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been published of %s/%s", repo, item)
+		//JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedTagsOfItem)
+	}
 }
 
 func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
