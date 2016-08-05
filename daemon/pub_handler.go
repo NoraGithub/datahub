@@ -178,10 +178,6 @@ func pubTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	log.Println(r.URL.Path, "(pub tag)")
 
 	pub := ds.PubPara{}
-
-	fmt.Println(pub.Comment)
-	return
-
 	if CheckLength(w, pub.Comment, MaxCommentLength) == false {
 		return
 	}
