@@ -145,10 +145,9 @@ func Logout(login bool, args []string) error {
 }
 
 func loginUsage() {
-	fmt.Printf("Usage: %s login\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
 	fmt.Printf("Usage:\n%s login\n\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
 }
+
 func logoutUsage() {
-	fmt.Printf("Usage: %s logout\nSend a logout request to the datahub.\n", os.Args[0])
 	fmt.Printf("Usage:\n%s logout\n\nSend a logout request to the datahub.\n", os.Args[0])
 }

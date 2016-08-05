@@ -207,14 +207,19 @@ func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	log.Debug(r.URL.Path, "published of a datapool")
+	log.Debug(r.URL.Path, "published of a datapool", r)
+	r.ParseForm()
 	datapool := ps.ByName("dpname")
 	status := "published"
 
-	repoInfos := make([]ds.RepoInfo, 0)
-	repoInfos, err := GetRepoInfo(datapool, status)
+	count := getRepoCountByDp(datapool, status)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	log.Debug("offset, limit", offset, limit)
+	validateOffsetAndLimit(count, &offset, &limit)
 
-	log.Debug(repoInfos)
+	repoInfos, err := GetRepoInfo(datapool, status, offset, limit)
+
+	log.Debug(repoInfos, offset, limit)
 
 	if err != nil {
 		log.Error(err)
@@ -222,20 +227,25 @@ func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	}
 
 	if len(repoInfos) == 0 {
-		msg := fmt.Sprintf("Published DataItem of %s is empty.", datapool)
+		msg := fmt.Sprintf("No published dataitem in %s.", datapool)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All DataItem has been published of %s.", datapool)
-		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+		msg := fmt.Sprintf("Dataitems have been published into %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &repoInfos))
 	}
 }
 
 func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug(r.URL.Path, "pulled of a datapool")
+	r.ParseForm()
 	dpName := ps.ByName("dpname")
 	status := "pulled"
 
-	repoInfos, err := GetRepoInfo(dpName, status)
+	count := getRepoCountByDp(dpName, status)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	repoInfos, err := GetRepoInfo(dpName, status, offset, limit)
 
 	if err != nil {
 		log.Error(err)
@@ -243,51 +253,119 @@ func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	if len(repoInfos) == 0 {
-		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", dpName)
+		msg := fmt.Sprintf("No pulled dataitem in %s.", dpName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All DataItem has been pulled of %s.", dpName)
-		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, &repoInfos)
+		msg := fmt.Sprintf("Dataitems have been pulled into %s.", dpName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &repoInfos))
 	}
 }
 
 func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug(r.URL.Path, "item published of a repository")
+	r.ParseForm()
 	dpName := ps.ByName("dpname")
 	repoName := ps.ByName("repo")
 
-	publishedRepo, err := GetPublishedRepoInfo(dpName, repoName)
+	isPublished := "Y"
+	count := getItemCountByDpRepo(dpName, repoName, isPublished)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	publishedRepoItems, err := GetPublishedRepoInfo(dpName, repoName, offset, limit)
 	if err != nil {
 		log.Debug(err)
 		return
 	}
 
-	if len(publishedRepo.PublishedDataItems) == 0 {
+	if len(publishedRepoItems) == 0 {
 		msg := fmt.Sprintf("Pushlied DataItem of %s is empty.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
 		msg := fmt.Sprintf("All DataItem had been published of %s.", repoName)
-		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedRepo)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, publishedRepoItems))
 	}
 }
 
 func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug(r.URL.Path, "item pulled of a repository")
+	r.ParseForm()
 	dpName := ps.ByName("dpname")
 	repoName := ps.ByName("repo")
 
-	pulledRepoInfo, err := GetPulledRepoInfo(dpName, repoName)
+	isPublished := "N"
+	count := getItemCountByDpRepo(dpName, repoName, isPublished)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	pulledRepoItems, err := GetPulledRepoInfo(dpName, repoName, offset, limit)
 	if err != nil {
 		log.Debug(err)
 		return
 	}
 
-	if len(pulledRepoInfo.PulledDataItems) == 0 {
+	if len(pulledRepoItems) == 0 {
 		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
 		msg := fmt.Sprintf("All DataItem had been pulled of %s.", repoName)
-		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, pulledRepoInfo)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, pulledRepoItems))
+	}
+}
+
+func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "tags pulled of dataitem")
+	r.ParseForm()
+
+	dpname := ps.ByName("dpname")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	count, err := getPulledTagCount(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	log.Debug("offset, limit", offset, limit)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item, offset, limit)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Pulled tags of %s/%s is empty.", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been pulled of %s/%s", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
+	}
+}
+
+func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "tags published of dataitem")
+	r.ParseForm()
+
+	dpname := ps.ByName("dpname")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	publishedTagsOfItem, err := GetPublishedTagsOfItemInfo(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Published tags of %s/%s is empty.", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been published of %s/%s", repo, item)
+		//JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedTagsOfItem)
 	}
 }
 
@@ -340,7 +418,6 @@ func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, ma
 	if size == -1 {
 		return 0, -1
 	}
-
 	page := optionalIntParamInQuery(r, "page", 0)
 	if page < 1 {
 		page = 1
@@ -368,11 +445,13 @@ func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, ma
 
 func optionalIntParamInQuery(r *http.Request, paramName string, defaultInt int64) int64 {
 	if r.Form.Get(paramName) == "" {
+		log.Debug("paramName nil", paramName, r.Form)
 		return defaultInt
 	}
 
 	i, err := strconv.ParseInt(r.Form.Get(paramName), 10, 64)
 	if err != nil {
+		log.Debug("ParseInt", err)
 		return defaultInt
 	} else {
 		return i

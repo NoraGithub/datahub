@@ -128,6 +128,7 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tags")
 			return
 		}
+
 		resp, err := commToServerGetRsp("delete", r.URL.Path, reqBody)
 		if err != nil {
 			log.Error(err)

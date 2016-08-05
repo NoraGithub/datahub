@@ -140,33 +140,48 @@ type Ds struct {
 }
 
 type RepoInfo struct {
-	RepositoryName string `json:"repositoryName, omitempty"`
-	ItemCount      int    `json:"itemCount, omitempty"`
+	RepositoryName string `json:"repositoryname, omitempty"`
+	ItemCount      int    `json:"itemcount, omitempty"`
 }
 
 type PublishedRepoInfo struct {
-	RepositoryName     string              `json:"repositoryName, omitempty"`
-	PublishedDataItems []PublishedItemInfo `json:"publishedDataItems, omitempty"`
+	RepositoryName     string              `json:"repositoryname, omitempty"`
+	PublishedDataItems []PublishedItemInfo `json:"publisheddataitems, omitempty"`
 }
 
 type PublishedItemInfo struct {
-	ItemName   string    `json:"itemName, omitempty"`
-	CreateTime time.Time `json:"createTime, omitempty"`
+	ItemName   string    `json:"itemname, omitempty"`
+	CreateTime time.Time `json:"createtime, omitempty"`
 	Location   string    `json:"location, omitempty"`
 }
 
 type PulledRepoInfo struct {
-	RepositoryName  string           `json:"repositoryName, omitempty"`
-	PulledDataItems []PulledItemInfo `json:"pulledDataItems, omitempty"`
+	RepositoryName  string           `json:"repositoryname, omitempty"`
+	PulledDataItems []PulledItemInfo `json:"pulleddataitems, omitempty"`
 }
 
 type PulledItemInfo struct {
-	ItemName string     `json:"itemName, omitempty"`
-	SignTime *time.Time `json:"signTime, omitempty"`
+	ItemName string     `json:"itemname, omitempty"`
+	SignTime *time.Time `json:"signtime, omitempty"`
+	Location string     `json:"location, omitempty"`
 }
 
 type OrderInfo struct {
 	Signtime time.Time `json:"signtime, omitempty"`
+}
+
+type PulledTagsOfItem struct {
+	TagName      string     `json:"tagname, omitempty"`
+	DownloadTime *time.Time `json:"downloadtime, omitempty"`
+	Content      string     `json:"content, omitempty"`
+}
+
+type PublishedTagsOfItem struct {
+	FileName    string     `json:"filename, omitempty"`
+	TagName     string     `json:"tagname, omitempty"`
+	PublishTime *time.Time `json:"publishtime, omitempty"`
+	Location    string     `json:"location, omitempty"`
+	Status      string     `json:"status, omitempty"`
 }
 
 type DpParas struct {
@@ -181,7 +196,7 @@ type PubTagParas struct {
 	Dpname     string `json:"dpname"`
 	Repository string `json:"repository"`
 	Dataitem   string `json:"dataitem"`
-	ItemDesc   string `json:"itemDesc"`
+	ItemDesc   string `json:"itemdesc"`
 	Tagname    string `json:"tagname"`
 	Detail     string `json:"detail"`
 	Comment    string `json:"comment, omitempty"`
@@ -205,7 +220,7 @@ const Create_dh_dp_repo_ditem_map string = `CREATE TABLE IF NOT EXISTS
     DH_DP_RPDM_MAP ( 
     	RPDMID       INTEGER PRIMARY KEY AUTOINCREMENT, 
         REPOSITORY   VARCHAR(128), 
-        DATAITEM     VARCHAR(128), 
+		DATAITEM     VARCHAR(128),
         DPID         INTEGER, 
         ITEMDESC     VARCHAR(256),
         PUBLISH      CHAR(2), 

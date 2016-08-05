@@ -100,9 +100,9 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	meta, sample, priceplans := GetMetaAndSampleAndPricePlan(pub.Datapool, pub.ItemDesc)
 	icpub := ic{AccessType: pub.Accesstype,
-		Comment: pub.Comment,
-		Meta:    meta,
-		Sample:  sample,
+		Comment:     pub.Comment,
+		Meta:        meta,
+		Sample:      sample,
 		Ch_itemname: item}
 	//{"itemaccesstype":"private","comment":"","meta":"  ","label":{"sys":{"supply_style":"batch"}}}
 	isys := Sys{Supplystyle: pub.SupplyStyle}
@@ -749,7 +749,6 @@ func DeleteItemOrTag(repo, item, tag string) (err error) {
 
 func GetFileSize(file string) (size int64, e error) {
 	f, e := os.Stat(file)
-	log.Debug(f, e, f.Size())
 	if e != nil {
 		return 0, e
 	}

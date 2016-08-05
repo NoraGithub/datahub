@@ -181,6 +181,8 @@ func InsertItemToDb(repo, item, datapool, itemdesc, createTime string) (err erro
 	log.Println("Insert item to db")
 	dpid := GetDataPoolDpid(datapool)
 	if dpid > 0 {
+		//sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
+		//	VALUES (null, '%s', '%s', '%s', %d, 'Y',  datetime('now'), 'A')`, repo, item, itemdesc, dpid)
 		sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
 			VALUES (null, '%s', '%s', '%s', %d, 'Y', '%s', 'A')`, repo, item, itemdesc, dpid, createTime)
 		_, err = g_ds.Insert(sqlInsertItem)
@@ -684,7 +686,7 @@ func GetLocalfilePath() (localfilepath []string) {
 }
 
 func delItem(reponame, itemname string) (err error) {
-	log.Println("TODO remove item from db")
+	log.Println("Begin to remove item from db")
 	sql := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS = 'N' WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
 	if _, err := g_ds.Update(sql); err != nil {
 		l := log.Error("delete item error:", err)
@@ -696,9 +698,8 @@ func delItem(reponame, itemname string) (err error) {
 }
 
 func delTagsForDelItem(reponame, itemname string) error {
-	log.Println("TODO remove tags for remove item from db")
-	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
-	var rpdmId int
+	log.Println("Begin to remove tags for remove item from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 
 	row, err := g_ds.QueryRow(sqlrpdmid)
 	if err != nil {
@@ -706,9 +707,15 @@ func delTagsForDelItem(reponame, itemname string) error {
 		logq.LogPutqueue(l)
 		return err
 	}
+	var rpdmId int
 	row.Scan(&rpdmId)
+	if rpdmId == 0 {
+		log.Debug(reponame, itemname, "not exist.")
+		return nil
+	}
 	sqldeltag := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE RPDMID=%d`, rpdmId)
 	_, err = g_ds.Update(sqldeltag)
+	log.Info("sqldeltag", sqldeltag)
 	if err != nil {
 		l := log.Error("delete tag error:", err)
 		logq.LogPutqueue(l)
@@ -1016,7 +1023,34 @@ func GetItemslocationInDatapool(itemslocation map[string]string, dpname string, 
 	return err
 }
 
-func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
+func getRepoCountByDp(datapool, status string) int64 {
+	if status == "published" {
+		status = "Y"
+	} else {
+		status = "N"
+	}
+
+	sql := fmt.Sprintf(`SELECT COUNT(DISTINCT REPOSITORY) 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID IN
+		(SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A')
+		AND PUBLISH= '%s' 
+		AND STATUS = 'A';`, datapool, status)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0
+	}
+
+	var count int64
+	row.Scan(&count)
+	log.Debug("Published repository count:", count)
+	return count
+}
+
+func GetRepoInfo(dpName, status string, offset int64, limit int) ([]ds.RepoInfo, error) {
 
 	if status == "published" {
 		status = "Y"
@@ -1024,7 +1058,7 @@ func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 		status = "N"
 	}
 
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1035,7 +1069,11 @@ func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 	var dpid int
 	row.Scan(&dpid)
 
-	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY FROM DH_DP_RPDM_MAP WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A';`, dpid, status)
+	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A'
+		ORDER BY RPDMID  
+		LIMIT %v OFFSET %v;`, dpid, status, limit, offset)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1068,15 +1106,35 @@ func GetRepoInfo(dpName, status string) ([]ds.RepoInfo, error) {
 	return repoInfos, err
 }
 
-func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error) {
+func getItemCountByDpRepo(datapool, repo, isPublished string) (count int64) {
+	sql := fmt.Sprintf(`SELECT COUNT(*) 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID IN
+		(SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A')
+		AND REPOSITORY = '%s'
+		AND PUBLISH = '%s' 
+		AND STATUS = 'A';`, datapool, repo, isPublished)
 
-	var publishedRepoInfo ds.PublishedRepoInfo
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0
+	}
+
+	row.Scan(&count)
+	log.Debugf("Dataitems count of repository %v: %v", repo, count)
+
+	return
+}
+
+func GetPublishedRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.PublishedItemInfo, error) {
+
 	var publishedItemInfo ds.PublishedItemInfo
 	publishedItemInfos := make([]ds.PublishedItemInfo, 0)
 
-	publishedRepoInfo.RepositoryName = repoName
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 
-	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1088,7 +1146,11 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 	var dpid int
 	row.Scan(&dpid, &dpconn)
 
-	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A';`, dpid, repoName)
+	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A' 
+		ORDER BY RPDMID 
+		LIMIT %v OFFSET %v;`, dpid, repoName, limit, offset)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1096,32 +1158,20 @@ func GetPublishedRepoInfo(dpName, repoName string) (*ds.PublishedRepoInfo, error
 		return nil, err
 	}
 
-	var dataitem string
-	var createTime time.Time
-	var itemDesc string
-
 	for rows.Next() {
-		rows.Scan(&dataitem, &createTime, &itemDesc)
-		publishedItemInfo.ItemName = dataitem
-		publishedItemInfo.CreateTime = createTime
-		publishedItemInfo.Location = dpconn + "/" + itemDesc
+		rows.Scan(&publishedItemInfo.ItemName, &publishedItemInfo.CreateTime, &publishedItemInfo.Location)
 		publishedItemInfos = append(publishedItemInfos, publishedItemInfo)
 	}
 
-	publishedRepoInfo.PublishedDataItems = publishedItemInfos
-
-	return &publishedRepoInfo, err
+	return publishedItemInfos, err
 }
 
-func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
+func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.PulledItemInfo, error) {
 
-	var pulledRepoInfo ds.PulledRepoInfo
 	var pulledItemInfo ds.PulledItemInfo
 	pulledItemInfos := make([]ds.PulledItemInfo, 0)
 
-	pulledRepoInfo.RepositoryName = repoName
-
-	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1132,7 +1182,11 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 	var dpid int
 	row.Scan(&dpid)
 
-	sql = fmt.Sprintf(`SELECT DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'N' AND STATUS = 'A';`, dpid, repoName)
+	sql = fmt.Sprintf(`SELECT DATAITEM ,ITEMDESC
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'N' AND STATUS = 'A' 
+		ORDER BY RPDMID 
+		LIMIT %v OFFSET %v;`, dpid, repoName, limit, offset)
 	rows, err := g_ds.QueryRows(sql)
 	if err != nil {
 		l := log.Error(err)
@@ -1148,10 +1202,9 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 	result.Data = &pages
 
 	for rows.Next() {
-		rows.Scan(&dataitem)
-		pulledItemInfo.ItemName = dataitem
+		rows.Scan(&pulledItemInfo.ItemName, &pulledItemInfo.Location)
 
-		path := "/subscriptions/pull/" + repoName + "/" + dataitem
+		path := "/api/subscriptions/pull/" + repoName + "/" + dataitem
 		resp, err := commToServerGetRsp("get", path, nil)
 		if err != nil {
 			l := log.Error(err)
@@ -1162,6 +1215,7 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 
 		if resp.StatusCode == http.StatusUnauthorized {
 			pulledItemInfo.SignTime = nil
+			log.Debug("resp.StatusCode == http.StatusUnauthorized")
 		} else if resp.StatusCode != http.StatusOK {
 			err = errors.New("request subscriptions api failed.")
 			l := log.Error(err)
@@ -1183,12 +1237,143 @@ func GetPulledRepoInfo(dpName, repoName string) (*ds.PulledRepoInfo, error) {
 				}
 				for _, v := range orderInfoSlice {
 					pulledItemInfo.SignTime = &v.Signtime
-					pulledItemInfos = append(pulledItemInfos, pulledItemInfo)
+
+					log.Debug("pulledItemInfo.SignTime:", pulledItemInfo.SignTime)
 				}
 			}
 		}
+		pulledItemInfos = append(pulledItemInfos, pulledItemInfo)
 	}
-	pulledRepoInfo.PulledDataItems = pulledItemInfos
 
-	return &pulledRepoInfo, err
+	log.Debug(pulledItemInfos)
+
+	return pulledItemInfos, err
+}
+
+func GetPulledTagsOfItemInfo(dpname, repo, item string, offset int64, limit int) ([]ds.PulledTagsOfItem, error) {
+
+	pulledTagOfItem := ds.PulledTagsOfItem{}
+	pulledTagsOfItem := make([]ds.PulledTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'N'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	row.Scan(&rpdmid)
+
+	sql = fmt.Sprintf(`SELECT TAGNAME, CREATE_TIME, COMMENT FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A' LIMIT %v OFFSET %v;`, rpdmid, limit, offset)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&pulledTagOfItem.TagName, &pulledTagOfItem.DownloadTime, &pulledTagOfItem.Content)
+		pulledTagsOfItem = append(pulledTagsOfItem, pulledTagOfItem)
+	}
+
+	return pulledTagsOfItem, err
+}
+
+func getPulledTagCount(datapool, repo, item string) (int64, error) {
+
+	sql := fmt.Sprintf(`SELECT COUNT(*)
+		FROM DH_RPDM_TAG_MAP
+		WHERE RPDMID = (SELECT RPDMID FROM DH_DP_RPDM_MAP
+					WHERE REPOSITORY  = '%s'
+					AND DATAITEM = '%s'
+
+					AND PUBLISH = 'N'
+					AND STATUS = 'A'
+					AND DPID = (SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A'))
+		AND STATUS = 'A';`, repo, item, datapool)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	var count int64
+	row.Scan(&count)
+	log.Debug("Published repository count:", count)
+	return count, err
+}
+
+func GetPublishedTagsOfItemInfo(dpname, repo, item string) ([]ds.PublishedTagsOfItem, error) {
+
+	publishedTagOfItem := ds.PublishedTagsOfItem{}
+	publishedTagsOfItem := make([]ds.PublishedTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	var dpconn string
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'Y'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	var itemdesc string
+	row.Scan(&rpdmid, &itemdesc)
+
+	sql = fmt.Sprintf(`SELECT DETAIL, TAGNAME, CREATE_TIME FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A';`, rpdmid)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&publishedTagOfItem.FileName, &publishedTagOfItem.TagName, &publishedTagOfItem.PublishTime)
+		publishedTagOfItem.Location = dpconn + "/" + itemdesc
+		publishedTagOfItem.Status = "已发布"
+		publishedTagsOfItem = append(publishedTagsOfItem, publishedTagOfItem)
+	}
+
+	return publishedTagsOfItem, err
 }

@@ -190,7 +190,7 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 		validateOffsetAndLimit(int64(count), &offset, &limit)
 
 		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE, DPCONN FROM DH_DP 
-			WHERE STATUS = 'A' ORDER BY DPID DESC 
+			WHERE STATUS = 'A' ORDER BY DPID 
 			LIMIT %v OFFSET %v`, limit, offset)
 	}
 
@@ -204,7 +204,7 @@ func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 		log.Info(MsgOfNoDatapool)
 		JsonResult(rw, http.StatusOK, cmd.ErrorNoRecord, MsgOfNoDatapool, nil)
 	} else {
-		JsonResult(rw, http.StatusOK, cmd.ResultOK, "", newQueryListResult(count, dps))
+		JsonResult(rw, http.StatusOK, cmd.ResultOK, "OK", newQueryListResult(count, dps))
 	}
 }
 
