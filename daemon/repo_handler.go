@@ -116,16 +116,16 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		}
 
 	} else if ensure == 1 {
-		err = delTagsForDelItem(repository, dataitem)
-		if err != nil {
-			log.Error(err)
-			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tags")
-			return
-		}
 		err := delItem(repository, dataitem)
 		if err != nil {
 			log.Error(err)
 			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete item")
+			return
+		}
+		err = delTagsForDelItem(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tags")
 			return
 		}
 
