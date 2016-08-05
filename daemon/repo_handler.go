@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -10,8 +11,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"errors"
 )
+
+type ItemInDatapool struct {
+	Dpname       string `json:"dpname", omitempty`
+	Dptype       string `json:"dptype", omitempty`
+	Dpconn       string `json:"dpconn", omitempty`
+	ItemLocation string `json:"itemlocation", omitempty`
+}
 
 func repoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Println(r.URL.Path, "(repo)")
@@ -71,7 +78,7 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	if ensure == 0 {
-		path := "/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
+		path := "/api/subscriptions/push/" + repository + "/" + dataitem + "?phase=1"
 
 		retResp := ds.Response{}
 		Pages := ds.ResultPages{}
@@ -109,18 +116,19 @@ func repoDelOneItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		}
 
 	} else if ensure == 1 {
-		err := delItem(repository, dataitem)
-		if err != nil {
-			log.Error(err)
-			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete item")
-			return
-		}
 		err = delTagsForDelItem(repository, dataitem)
 		if err != nil {
 			log.Error(err)
 			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete tags")
 			return
 		}
+		err := delItem(repository, dataitem)
+		if err != nil {
+			log.Error(err)
+			HttpNoData(w, http.StatusInternalServerError, cmd.ErrorSqlExec, "error while delete item")
+			return
+		}
+
 		resp, err := commToServerGetRsp("delete", r.URL.Path, reqBody)
 		if err != nil {
 			log.Error(err)
@@ -185,7 +193,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 					return
 				}
 
-				path := "/repositories/" + repository + "/" + dataitem + "/" + tagname
+				path := "/api/repositories/" + repository + "/" + dataitem + "/" + tagname
 				resp, err := commToServerGetRsp("delete", path, reqBody)
 				if err != nil {
 					log.Error(err)
@@ -233,7 +241,7 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		path := "/repositories/" + repository + "/" + dataitem + "/" + tag
+		path := "/api/repositories/" + repository + "/" + dataitem + "/" + tag
 		resp, err := commToServerGetRsp("delete", path, reqBody)
 		if err != nil {
 			log.Error(err)
@@ -323,7 +331,7 @@ func judgeTagExistHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, err error) {
 
-	path := "/repositories/" + repository + "/" + dataitem
+	path := "/api/repositories/" + repository + "/" + dataitem
 
 	exist = false
 
@@ -364,7 +372,7 @@ func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, 
 
 func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, err error) {
 
-	path := "/repositories/" + repository + "/" + dataitem + "/" + tag
+	path := "/api/repositories/" + repository + "/" + dataitem + "/" + tag
 
 	exist = false
 
@@ -400,4 +408,3 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 
 	return
 }
-

@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -38,9 +39,17 @@ var (
 )
 
 func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	MetaFile := "meta.txt"
+	SampleFile := "sample.txt"
 	log.Println(r.URL.Path + "(pull)")
 	result, _ := ioutil.ReadAll(r.Body)
 	p := ds.DsPull{}
+	p.ItemDesc = strings.Trim(p.ItemDesc, "/")
+	if strings.Contains(p.ItemDesc, "/") == true {
+		log.Println("The path of item can't contain '/'.", p.ItemDesc)
+		w.Write([]byte(`{"msg":"The path of item can't contain '/'."}`))
+		return
+	}
 
 	if err := json.Unmarshal(result, &p); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -79,7 +88,13 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if dpconn := GetDataPoolDpconn(p.Datapool); len(dpconn) == 0 {
 		strret = p.Datapool + " not found. " + p.Tag + " will be pulled into " + g_strDpPath + "/" + p.ItemDesc
 	} else {
-		strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found in " + dpconn + "/" + p.ItemDesc + "/" + p.Tag
+		if len(p.DestName) == 0 {
+			strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found as " +
+				strings.Split(dpconn, "##")[0] + "/" + p.ItemDesc + "/" + p.Tag
+		} else {
+			strret = p.Repository + "/" + p.Dataitem + ":" + p.Tag + " will be pulled soon and can be found as " +
+				strings.Split(dpconn, "##")[0] + "/" + p.ItemDesc + "/" + p.DestName
+		}
 	}
 
 	//add to automatic pull list
@@ -98,8 +113,12 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	if p.CancelAutomatic == true {
-		AutomaticPullRmqueue(p)
-		strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + "successfully."
+
+		if true == AutomaticPullRmqueue(p) {
+			strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + " successfully."
+		} else {
+			strret = "you have already cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem
+		}
 		msgret := ds.MsgResp{Msg: strret}
 		resp, _ := json.Marshal(msgret)
 		w.WriteHeader(http.StatusOK)
@@ -121,8 +140,45 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		chn := make(chan int)
 		go dl(url, entrypoint, p, w, chn)
 		<-chn
-	}
+		if len(GetMetaData(p.ItemDesc)) > 0 && len(GetSampleData(p.ItemDesc)) > 0 {
+			log.Println("Metafile and Samplefile is already exist")
+		} else {
+			dpconn := GetDataPoolDpconn(p.Datapool)
+			os.MkdirAll(dpconn+"/"+p.ItemDesc+"/", 0777)
 
+			m, err := os.OpenFile(dpconn+"/"+p.ItemDesc+"/"+MetaFile, os.O_RDWR|os.O_CREATE, 0644)
+
+			if err != nil {
+				return
+			}
+			defer m.Close()
+			s, err := os.OpenFile(dpconn+"/"+p.ItemDesc+"/"+SampleFile, os.O_RDWR|os.O_CREATE, 0644)
+
+			if err != nil {
+				return
+			}
+			defer s.Close()
+			path := "/api/repositories/" + ps.ByName("repo") + "/" + ps.ByName("item")
+
+			resp, err := commToServerGetRsp("get", path, nil)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+
+			ms := ds.ItemMs{}
+			retResp := ds.Response{Data: &ms}
+			json.Unmarshal(body, &retResp)
+
+			m.WriteString(ms.Meta)
+			s.WriteString(ms.Sample)
+
+			defer resp.Body.Close()
+
+		}
+	}
 	log.Println(strret)
 
 	return
@@ -287,7 +343,7 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 }
 
 func GetTagComment(repo, item, tag string) string {
-	path := "/repositories/" + repo + "/" + item + "/" + tag
+	path := "/api/repositories/" + repo + "/" + item + "/" + tag
 
 	resp, err := commToServerGetRsp("get", path, nil)
 	if err != nil {
@@ -338,8 +394,8 @@ func MoveFromTmp(src, dest string) (err error) {
 
 func getAccessToken(url string, w http.ResponseWriter) (token, entrypoint string, err error) {
 
-	log.Println("daemon: connecting to", DefaultServer+url, "to get accesstoken")
-	req, err := http.NewRequest("POST", DefaultServer+url, nil)
+	log.Println("daemon: connecting to", DefaultServerAPI+url, "to get accesstoken")
+	req, err := http.NewRequest("POST", DefaultServerAPI+url, nil)
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
 	}
@@ -381,7 +437,8 @@ func AutomaticPullPutqueue(p ds.DsPull) {
 	AutomaticPullList.PushBack(p)
 }
 
-func AutomaticPullRmqueue(p ds.DsPull) {
+func AutomaticPullRmqueue(p ds.DsPull) (exist bool) {
+	exist = false
 	pullmu.Lock()
 	defer pullmu.Unlock()
 
@@ -389,6 +446,7 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 	for e := AutomaticPullList.Front(); e != nil; e = next {
 		v := e.Value.(ds.DsPull)
 		if v.Repository == p.Repository && v.Dataitem == p.Dataitem {
+			exist = true
 			AutomaticPullList.Remove(e)
 			log.Info(v, "removed from the queue.")
 			break
@@ -396,6 +454,7 @@ func AutomaticPullRmqueue(p ds.DsPull) {
 			next = e.Next()
 		}
 	}
+	return
 }
 
 func CheckExistInQueue(p ds.DsPull) (exist bool) {

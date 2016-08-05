@@ -9,12 +9,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type FormatDp struct {
 	Name string `json:"dpname"`
 	Type string `json:"dptype"`
-	//Conn string `json:"dpconn"`
+	Conn string `json:"dpconn, omitempty"`
 }
 
 type Item struct {
@@ -45,7 +46,7 @@ func Dp(needLogin bool, args []string) (err error) {
 	}
 
 	if len(args) == 0 {
-		resp, err := commToDaemon("GET", "/datapools", nil)
+		resp, err := commToDaemon("GET", "/datapools?size=-1", nil)
 		if err != nil {
 			fmt.Println(err)
 			return err
@@ -66,20 +67,27 @@ func Dp(needLogin bool, args []string) (err error) {
 		//support: dp name1 name2 name3
 		for _, v := range args {
 			if len(v) > 0 && v[0] != '-' {
+				if strings.Contains(v, "/") == true {
+					fmt.Printf("DataHub : The name of datapool can't contain '/': \"%v\"\n", v)
+					return
+				}
 				strdp := fmt.Sprintf("/datapools/%s", v)
 				resp, err := commToDaemon("GET", strdp, nil)
 				if err != nil {
 					fmt.Println(err)
 					return err
 				}
-				body, _ := ioutil.ReadAll(resp.Body)
+
 				if resp.StatusCode == http.StatusOK {
+					body, _ := ioutil.ReadAll(resp.Body)
 					dpResp(true, body)
 				} else {
-					fmt.Println(resp.StatusCode)
+					showError(resp)
 					err = errors.New(string(resp.StatusCode))
 				}
+
 				resp.Body.Close()
+
 			}
 		}
 	}
@@ -89,7 +97,8 @@ func Dp(needLogin bool, args []string) (err error) {
 func dpResp(bDetail bool, RespBody []byte) {
 	if bDetail == false {
 		strcDps := []FormatDp{}
-		result := &ds.Result{Data: &strcDps}
+		pages := &ds.ResultPages{Results: &strcDps}
+		result := &ds.Result{Data: pages}
 		err := json.Unmarshal(RespBody, result)
 		if err != nil {
 			fmt.Println("Error :", err)
@@ -148,8 +157,8 @@ func GetResultMsg(RespBody []byte, bprint bool) (sMsgResp string) {
 }
 
 func dpUsage() {
-	fmt.Printf("Usage:  %s dp [DATAPOOL]\n", os.Args[0])
-	fmt.Println("List all the datapools or one datapool\n")
+	fmt.Printf("Usage:\n%s dp [DATAPOOL]\n", os.Args[0])
+	fmt.Println("\nList all the datapools or one datapool.\n")
 	dpcUseage()
 	dprUseage()
 	//fmt.Printf("\n", os.Args[0])

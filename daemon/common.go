@@ -7,6 +7,8 @@ import (
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -47,6 +49,28 @@ func CheckDataPoolExist(datapoolname string) (bexist bool) {
 	}
 }
 
+func CheckItemExist(repo, item string) (bool, error) {
+	log.Println("check item exist in db")
+
+	sql := fmt.Sprintf(`SELECT COUNT(1) FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, repo, item)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		log.Error("CheckItemExist QueryRow error:", err.Error())
+		return false, err
+	}
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		log.Error("CheckItemExist Scan error:", err.Error())
+		return false, err
+	}
+	if count == 0 {
+		return false, err
+	} else {
+		return true, err
+	}
+}
+
 func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	sqlgetdpconn := fmt.Sprintf("SELECT DPCONN FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
 	//fmt.Println(sqlgetdpconn)
@@ -58,6 +82,20 @@ func GetDataPoolDpconn(datapoolname string) (dpconn string) {
 	} else {
 		row.Scan(&dpconn)
 		return dpconn
+	}
+}
+
+func GetDataPoolInfo(datapoolname string) (dpid int, dptype, dpconn string) {
+	sqlget := fmt.Sprintf("SELECT DPID, DPTYPE, DPCONN FROM DH_DP WHERE DPNAME='%s'  AND STATUS='A'", datapoolname)
+	//fmt.Println(sqlgetdpconn)
+	row, err := g_ds.QueryRow(sqlget)
+	if err != nil {
+		l := log.Error("QueryRow error:", err)
+		logq.LogPutqueue(l)
+		return 0, "", ""
+	} else {
+		row.Scan(&dpid, &dptype, &dpconn)
+		return dpid, dptype, dpconn
 	}
 }
 
@@ -139,11 +177,14 @@ func GetRepoItemId(repository, dataitem string) (rpdmid int) {
 	}
 }
 
-func InsertItemToDb(repo, item, datapool, itemdesc string) (err error) {
+func InsertItemToDb(repo, item, datapool, itemdesc, createTime string) (err error) {
+	log.Println("Insert item to db")
 	dpid := GetDataPoolDpid(datapool)
 	if dpid > 0 {
+		//sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
+		//	VALUES (null, '%s', '%s', '%s', %d, 'Y',  datetime('now'), 'A')`, repo, item, itemdesc, dpid)
 		sqlInsertItem := fmt.Sprintf(`INSERT INTO DH_DP_RPDM_MAP (RPDMID, REPOSITORY, DATAITEM, ITEMDESC, DPID, PUBLISH, CREATE_TIME, STATUS)
-			VALUES (null, '%s', '%s', '%s', %d, 'Y',  datetime('now'), 'A')`, repo, item, itemdesc, dpid)
+			VALUES (null, '%s', '%s', '%s', %d, 'Y', '%s', 'A')`, repo, item, itemdesc, dpid, createTime)
 		_, err = g_ds.Insert(sqlInsertItem)
 		log.Println(sqlInsertItem)
 
@@ -229,6 +270,7 @@ func GetDpnameDpconnDptypeByDpid(dpid int) (dpname, dpconn, dptype string) {
 }
 
 func InsertPubTagToDb(repo, item, tag, fileName, comment string) (err error) {
+	log.Println("Insert pub tag to db.")
 	rpdmid := GetRepoItemId(repo, item)
 	if rpdmid == 0 {
 		return errors.New("Dataitem is not found which need to be published before publishing tag. ")
@@ -269,6 +311,19 @@ func rollbackInsertPubTagToDb(reponame, itemname, tagname string) error {
 	return nil
 }
 
+func rollbackInsertPubItemToDb(reponame, itemname string) error {
+	log.Println("rollback insert pub item from db")
+	sql := fmt.Sprintf(`DELETE FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
+	_, err := g_ds.Delete(sql)
+	if err != nil {
+		l := log.Error("rollback pub tag delete item from DH_DP_RPDM_MAP error:", err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	return err
+}
+
 func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {
 	getItemDesc := fmt.Sprintf("SELECT ITEMDESC FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A'", Repository, Dataitem)
 	//log.Println(ItemDesc)
@@ -284,43 +339,84 @@ func GetItemDesc(Repository, Dataitem string) (ItemDesc string, err error) {
 }
 
 func CreateTable() (err error) {
-	_, err = g_ds.Create(ds.Create_dh_dp)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.CreateDhDaemon)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
-	_, err = g_ds.Create(ds.CreateDhJob)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
+	if g_ds.DbType == "mysql" {
+		_, err = g_ds.Create(ds.Create_dh_dp_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhDaemon_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhJob_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+
+		_, err = g_ds.Create(ds.CreateMsgTagAdded_mysql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+	} else {
+		_, err = g_ds.Create(ds.Create_dh_dp)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_dp_repo_ditem_map)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.Create_dh_repo_ditem_tag_map)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhDaemon)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+		_, err = g_ds.Create(ds.CreateDhJob)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
+
+		_, err = g_ds.Create(ds.CreateMsgTagAdded)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return err
+		}
 	}
 
-	_, err = g_ds.Create(ds.CreateMsgTagAdded)
-	if err != nil {
-		l := log.Error(err)
-		logq.LogPutqueue(l)
-		return err
-	}
 	return
 }
 
@@ -590,7 +686,7 @@ func GetLocalfilePath() (localfilepath []string) {
 }
 
 func delItem(reponame, itemname string) (err error) {
-	log.Println("TODO remove item from db")
+	log.Println("Begin to remove item from db")
 	sql := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS = 'N' WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
 	if _, err := g_ds.Update(sql); err != nil {
 		l := log.Error("delete item error:", err)
@@ -602,9 +698,8 @@ func delItem(reponame, itemname string) (err error) {
 }
 
 func delTagsForDelItem(reponame, itemname string) error {
-	log.Println("TODO remove tags for remove item from db")
-	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s';`, reponame, itemname)
-	var rpdmId int
+	log.Println("Begin to remove tags for remove item from db")
+	sqlrpdmid := fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP WHERE REPOSITORY='%s' AND DATAITEM='%s' AND STATUS='A';`, reponame, itemname)
 
 	row, err := g_ds.QueryRow(sqlrpdmid)
 	if err != nil {
@@ -612,9 +707,15 @@ func delTagsForDelItem(reponame, itemname string) error {
 		logq.LogPutqueue(l)
 		return err
 	}
+	var rpdmId int
 	row.Scan(&rpdmId)
+	if rpdmId == 0 {
+		log.Debug(reponame, itemname, "not exist.")
+		return nil
+	}
 	sqldeltag := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS='N' WHERE RPDMID=%d`, rpdmId)
 	_, err = g_ds.Update(sqldeltag)
+	log.Info("sqldeltag", sqldeltag)
 	if err != nil {
 		l := log.Error("delete tag error:", err)
 		logq.LogPutqueue(l)
@@ -899,4 +1000,380 @@ func AlterDhJob() (err error) {
 		return err
 	}
 	return nil
+}
+
+func GetItemslocationInDatapool(itemslocation map[string]string, dpname string, dpid int, dpconn string) error {
+
+	sql := fmt.Sprintf("SELECT DISTINCT ITEMDESC, REPOSITORY, DATAITEM FROM DH_DP_RPDM_MAP WHERE DPID=%v AND STATUS='A';", dpid)
+	log.Debug(sql)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Errorf("datapool name %s, dpid %v, dpconn %v, error:%v", dpname, dpid, dpconn, err)
+		logq.LogPutqueue(l)
+		return err
+	}
+
+	var location, repo, item string
+	for rows.Next() {
+		rows.Scan(&location, &repo, &item)
+		log.Debug(location, repo, item)
+		itemslocation[location] = repo + "/" + item
+	}
+	log.Trace(itemslocation)
+	return err
+}
+
+func getRepoCountByDp(datapool, status string) int64 {
+	if status == "published" {
+		status = "Y"
+	} else {
+		status = "N"
+	}
+
+	sql := fmt.Sprintf(`SELECT COUNT(DISTINCT REPOSITORY) 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID IN
+		(SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A')
+		AND PUBLISH= '%s' 
+		AND STATUS = 'A';`, datapool, status)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0
+	}
+
+	var count int64
+	row.Scan(&count)
+	log.Debug("Published repository count:", count)
+	return count
+}
+
+func GetRepoInfo(dpName, status string, offset int64, limit int) ([]ds.RepoInfo, error) {
+
+	if status == "published" {
+		status = "Y"
+	} else {
+		status = "N"
+	}
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND PUBLISH = '%s' AND STATUS = 'A'
+		ORDER BY RPDMID  
+		LIMIT %v OFFSET %v;`, dpid, status, limit, offset)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var repository string
+	var itemCount int
+	repoinfo := ds.RepoInfo{}
+	repoInfos := make([]ds.RepoInfo, 0)
+	for rows.Next() {
+		rows.Scan(&repository)
+
+		repoinfo.RepositoryName = repository
+		sql = fmt.Sprintf(`SELECT COUNT(*) FROM DH_DP_RPDM_MAP WHERE REPOSITORY = '%s' AND PUBLISH = '%s' AND STATUS = 'A';`, repository, status)
+		row, err := g_ds.QueryRow(sql)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		}
+
+		row.Scan(&itemCount)
+		repoinfo.ItemCount = itemCount
+
+		repoInfos = append(repoInfos, repoinfo)
+	}
+
+	return repoInfos, err
+}
+
+func getItemCountByDpRepo(datapool, repo, isPublished string) (count int64) {
+	sql := fmt.Sprintf(`SELECT COUNT(*) 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID IN
+		(SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A')
+		AND REPOSITORY = '%s'
+		AND PUBLISH = '%s' 
+		AND STATUS = 'A';`, datapool, repo, isPublished)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0
+	}
+
+	row.Scan(&count)
+	log.Debugf("Dataitems count of repository %v: %v", repo, count)
+
+	return
+}
+
+func GetPublishedRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.PublishedItemInfo, error) {
+
+	var publishedItemInfo ds.PublishedItemInfo
+	publishedItemInfos := make([]ds.PublishedItemInfo, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpconn string
+	var dpid int
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC 
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'Y' AND STATUS = 'A' 
+		ORDER BY RPDMID 
+		LIMIT %v OFFSET %v;`, dpid, repoName, limit, offset)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&publishedItemInfo.ItemName, &publishedItemInfo.CreateTime, &publishedItemInfo.Location)
+		publishedItemInfos = append(publishedItemInfos, publishedItemInfo)
+	}
+
+	return publishedItemInfos, err
+}
+
+func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.PulledItemInfo, error) {
+
+	var pulledItemInfo ds.PulledItemInfo
+	pulledItemInfos := make([]ds.PulledItemInfo, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT DATAITEM ,ITEMDESC
+		FROM DH_DP_RPDM_MAP 
+		WHERE DPID = %d AND REPOSITORY = '%s' AND PUBLISH = 'N' AND STATUS = 'A' 
+		ORDER BY RPDMID 
+		LIMIT %v OFFSET %v;`, dpid, repoName, limit, offset)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dataitem string
+	result := ds.Result{}
+	pages := ds.ResultPages{}
+	orderInfoSlice := []ds.OrderInfo{}
+	pages.Results = &orderInfoSlice
+	result.Data = &pages
+
+	for rows.Next() {
+		rows.Scan(&pulledItemInfo.ItemName, &pulledItemInfo.Location)
+
+		path := "/api/subscriptions/pull/" + repoName + "/" + dataitem
+		resp, err := commToServerGetRsp("get", path, nil)
+		if err != nil {
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusUnauthorized {
+			pulledItemInfo.SignTime = nil
+			log.Debug("resp.StatusCode == http.StatusUnauthorized")
+		} else if resp.StatusCode != http.StatusOK {
+			err = errors.New("request subscriptions api failed.")
+			l := log.Error(err)
+			logq.LogPutqueue(l)
+			return nil, err
+		} else {
+			respbody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				l := log.Error(err)
+				logq.LogPutqueue(l)
+				return nil, err
+			} else {
+				err = json.Unmarshal(respbody, &result)
+				if err != nil {
+					err = errors.New("unmarshal failed.")
+					l := log.Error(err)
+					logq.LogPutqueue(l)
+					return nil, err
+				}
+				for _, v := range orderInfoSlice {
+					pulledItemInfo.SignTime = &v.Signtime
+
+					log.Debug("pulledItemInfo.SignTime:", pulledItemInfo.SignTime)
+				}
+			}
+		}
+		pulledItemInfos = append(pulledItemInfos, pulledItemInfo)
+	}
+
+	log.Debug(pulledItemInfos)
+
+	return pulledItemInfos, err
+}
+
+func GetPulledTagsOfItemInfo(dpname, repo, item string, offset int64, limit int) ([]ds.PulledTagsOfItem, error) {
+
+	pulledTagOfItem := ds.PulledTagsOfItem{}
+	pulledTagsOfItem := make([]ds.PulledTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	row.Scan(&dpid)
+
+	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'N'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	row.Scan(&rpdmid)
+
+	sql = fmt.Sprintf(`SELECT TAGNAME, CREATE_TIME, COMMENT FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A' LIMIT %v OFFSET %v;`, rpdmid, limit, offset)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&pulledTagOfItem.TagName, &pulledTagOfItem.DownloadTime, &pulledTagOfItem.Content)
+		pulledTagsOfItem = append(pulledTagsOfItem, pulledTagOfItem)
+	}
+
+	return pulledTagsOfItem, err
+}
+
+func getPulledTagCount(datapool, repo, item string) (int64, error) {
+
+	sql := fmt.Sprintf(`SELECT COUNT(*)
+		FROM DH_RPDM_TAG_MAP
+		WHERE RPDMID = (SELECT RPDMID FROM DH_DP_RPDM_MAP
+					WHERE REPOSITORY  = '%s'
+					AND DATAITEM = '%s'
+
+					AND PUBLISH = 'N'
+					AND STATUS = 'A'
+					AND DPID = (SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS='A'))
+		AND STATUS = 'A';`, repo, item, datapool)
+
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	var count int64
+	row.Scan(&count)
+	log.Debug("Published repository count:", count)
+	return count, err
+}
+
+func GetPublishedTagsOfItemInfo(dpname, repo, item string) ([]ds.PublishedTagsOfItem, error) {
+
+	publishedTagOfItem := ds.PublishedTagsOfItem{}
+	publishedTagsOfItem := make([]ds.PublishedTagsOfItem, 0)
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpname)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var dpid int
+	var dpconn string
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'Y'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	var rpdmid int
+	var itemdesc string
+	row.Scan(&rpdmid, &itemdesc)
+
+	sql = fmt.Sprintf(`SELECT DETAIL, TAGNAME, CREATE_TIME FROM DH_RPDM_TAG_MAP WHERE RPDMID = %d AND STATUS = 'A';`, rpdmid)
+	rows, err := g_ds.QueryRows(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return nil, err
+	}
+
+	for rows.Next() {
+		rows.Scan(&publishedTagOfItem.FileName, &publishedTagOfItem.TagName, &publishedTagOfItem.PublishTime)
+		publishedTagOfItem.Location = dpconn + "/" + itemdesc
+		publishedTagOfItem.Status = "已发布"
+		publishedTagsOfItem = append(publishedTagsOfItem, publishedTagOfItem)
+	}
+
+	return publishedTagsOfItem, err
 }

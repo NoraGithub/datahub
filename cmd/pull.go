@@ -21,7 +21,7 @@ func Pull(login bool, args []string) (err error) {
 	pbCancelAutomatic := f.Bool([]string{"-cancel", "c"}, false, "Cancel the automatical pulling of a dataitem")
 
 	if len(args) < 2 || (len(args) >= 2 && (args[0][0] == '-' || args[1][0] == '-')) {
-		fmt.Println(ErrMsgArgument)
+		//fmt.Println(ErrMsgArgument)
 		pullUsage()
 		return
 	}
@@ -139,9 +139,13 @@ func Pull(login bool, args []string) (err error) {
 //}
 
 func pullUsage() {
-	fmt.Printf("Usage: %s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [--destname] [--automatic] [--cancel]\n", os.Args[0])
-	fmt.Println("\nPull a tag from the provider\n")
-	fmt.Println("  --destname, -d = name  Indicates the name that tag will be stored as")
-	fmt.Println("  --automatic, -a        Pull the new tags of a dataitem automatically")
-	fmt.Println("  --cancel, -c           Cancel the automatical pulling of a dataitem")
+	fmt.Printf("Usage:\n%s pull [REPO]/[ITEM][:TAG]  DATAPOOL[://LOCATION]  [OPTION]\n", os.Args[0])
+	fmt.Println("\nPull a tag from the provider.")
+	fmt.Println("\nOption:\n")
+	fmt.Println("--destname, -d        Indicate the name that tag will be stored as\n")
+	fmt.Printf("%s pull [REPO]/[ITEM] DATAPOOL [OPTION]\n", os.Args[0])
+	fmt.Println("\nset or cancel the automatical pulling of tags.")
+	fmt.Println("\nOptions:\n")
+	fmt.Println("--automatic, -a        Pull the new tags of a dataitem automatically")
+	fmt.Println("--cancel, -c           Cancel the automatical pulling of a dataitem")
 }

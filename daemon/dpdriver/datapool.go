@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"os"
 	"reflect"
@@ -15,6 +16,8 @@ type DatapoolDriver interface {
 	GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string)
 	CheckItemLocation(datapool, dpconn, itemdesc string) error
 	CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error)
+	GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error)
+	CheckDpConnect(dpconn, connstr string) (normal bool, err error)
 }
 
 type Datapool struct {
@@ -68,6 +71,14 @@ func (datapool *Datapool) CheckDataAndGetSize(dpconn, itemlocation, fileName str
 	return datapool.driver.CheckDataAndGetSize(dpconn, itemlocation, fileName)
 }
 
+func (datapool *Datapool) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
+	return datapool.driver.GetDpOtherData(allotherdata, itemslocation, dpconn)
+}
+
+func (datapool *Datapool) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
+	return datapool.driver.CheckDpConnect(dpconn, connstr)
+}
+
 /*func (handler *Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
 	return handler.driver.DoUnbind(myServiceInfo, mycredentials)
 }
@@ -80,4 +91,14 @@ func Env(name string, required bool) string {
 	}
 	log.Debugf("[env][%s] %s\n", name, s)
 	return s
+}
+
+func SetEnv(name string, value string) string {
+	if e := os.Setenv(name, value); e != nil {
+		log.Errorf("[setenv][%s] %s, error:%v\n", name, value, e)
+		return ""
+	}
+
+	log.Debugf("[setenv][%s] %s\n", name, value)
+	return name
 }

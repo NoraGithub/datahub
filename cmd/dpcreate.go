@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/utils/mflag"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -13,6 +14,8 @@ type FormatDpCreate struct {
 	Name string `json:"dpname, omitempty"`
 	Type string `json:"dptype, omitempty"`
 	Conn string `json:"dpconn, omitempty"`
+	Host string `json:"host, omitempty"`
+	Port string `json:"port, omitempty"`
 }
 
 var DataPoolTypes = []string{"file", "db", "hdfs", "jdbc", "s3", "api", "storm"}
@@ -104,7 +107,12 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		return err
 	}
 	defer resp.Body.Close()
-	showResponse(resp)
+
+	if resp.StatusCode == http.StatusOK {
+		showResponse(resp)
+	} else {
+		showError(resp)
+	}
 
 	return err
 }
@@ -165,10 +173,10 @@ func validateDpconn(dpconn, dptype string) bool {
 
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
-	fmt.Println("  datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
-	fmt.Println("  e.g. datahub dp create dptest file:///home/user/test")
-	fmt.Println("       datahub dp create s3dp s3://mybucket")
-	fmt.Println("       datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
-	fmt.Println("Create a datapool\n")
+	fmt.Println("datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET##ID##KEY##REGION]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
+	fmt.Println("e.g. datahub dp create dptest file:///home/user/test")
+	fmt.Println("     datahub dp create s3dp s3://mybucket##ABCDEFGHIGKLMNSSSLSS##lC4SBSSBx5HC/bSfniihhlnH3qpCJjgkLKDDSWAf##cn-north-1")
+	fmt.Println("     datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
+	fmt.Println("Create a datapool.\n")
 
 }

@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"compress/gzip"
 	"errors"
+	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"os"
+	"strings"
 )
 
 var (
@@ -25,15 +27,18 @@ type s3driver struct {
 
 func (s3 *s3driver) GetDestFileName(dpconn, itemlocation, filename string) (destfilename, tmpdir, tmpfile string) {
 	//for s3 dp , use /var/lib/datahub/:BUCKET as the destdir
-	destfilename = gDpPath + "/" + dpconn + "/" + itemlocation + "/" + filename
-	tmpdir = gDpPath + "/" + dpconn + "/" + itemlocation + "/tmp"
+	bucket := getOnlyBucket(dpconn)
+	destfilename = gDpPath + "/" + bucket + "/" + itemlocation + "/" + filename
+	tmpdir = gDpPath + "/" + bucket + "/" + itemlocation + "/tmp"
 	tmpfile = tmpdir + "/" + filename
 	return
 }
 
 func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfile string) string {
-	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
-	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	bucket := getAwsInfoFromDpconn(dpconn)
+
+	//AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	//AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
 	AWS_REGION = Env("AWS_REGION", false)
 
 	file, err := os.Open(filename)
@@ -51,7 +56,7 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 	reader, writer := io.Pipe()
 	go func() {
 		gw := gzip.NewWriter(writer)
-		io.Copy(writer, file)
+		io.Copy(gw, file)
 
 		file.Close()
 		gw.Close()
@@ -63,7 +68,7 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 	//uploader := s3manager.NewUploader(session.New(aws.NewConfig()))
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Body:   reader,
-		Bucket: aws.String(dpconn),
+		Bucket: aws.String(bucket),
 		Key:    aws.String( /*dp + "/" + */ itemlocation + "/" + destfile + ".gz"),
 	})
 	if err != nil {
@@ -78,20 +83,22 @@ func (s3 *s3driver) StoreFile(status, filename, dpconn, dp, itemlocation, destfi
 
 func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail string) (filepathname string) {
 
-	e := os.MkdirAll(gDpPath+"/"+dpconn+"/"+itemlocation, 0777)
+	bucket := getAwsInfoFromDpconn(dpconn)
+
+	e := os.MkdirAll(gDpPath+"/"+bucket+"/"+itemlocation, 0777)
 	if e != nil {
 		log.Error(e)
 		return
 	}
 
-	filepathname = gDpPath + "/" + dpconn + "/" + itemlocation + "/" + tagdetail
+	filepathname = gDpPath + "/" + bucket + "/" + itemlocation + "/" + tagdetail
 
 	if true == isFileExists(filepathname) {
 		return
 	}
 
-	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
-	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	//AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	//AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
 	AWS_REGION = Env("AWS_REGION", false)
 	file, err := os.Create(filepathname)
 	if err != nil {
@@ -103,7 +110,7 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 	downloader := s3manager.NewDownloader(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
 	numBytes, err := downloader.Download(file,
 		&s3aws.GetObjectInput{
-			Bucket: aws.String(dpconn),
+			Bucket: aws.String(bucket),
 			Key:    aws.String( /*dpname + "/" + */ itemlocation + "/" + tagdetail),
 		})
 	if err != nil {
@@ -118,13 +125,13 @@ func (s3 *s3driver) GetFileTobeSend(dpconn, dpname, itemlocation, tagdetail stri
 }
 
 func (s3 *s3driver) CheckItemLocation(datapoolname, dpconn, itemlocation string) error {
-	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
-	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	bucket := getAwsInfoFromDpconn(dpconn)
+
 	AWS_REGION = Env("AWS_REGION", false)
 
 	svc := s3aws.New(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
 	//result, err := svc.ListBuckets(&s3aws.ListBucketsInput{})
-	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(dpconn),
+	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(bucket),
 		Prefix: aws.String(itemlocation)})
 	if err != nil {
 		log.Println("Failed to list buckets content", err)
@@ -139,19 +146,19 @@ func (s3 *s3driver) CheckItemLocation(datapoolname, dpconn, itemlocation string)
 	bexist := true
 	for _, objects := range result.Contents {
 		log.Infof("object:%s, %s \n", aws.StringValue(objects.Key), aws.StringValue(objects.ETag))
-		if aws.StringValue(objects.Key) == dpconn {
+		if aws.StringValue(objects.Key) == bucket {
 			bexist = true
 		}
 	}
 
 	if bexist == false {
-		l := log.Infof("Bucket %s does not exist on s3.", dpconn)
+		l := log.Infof("Bucket %s does not exist on s3.", bucket)
 		logq.LogPutqueue(l)
 		return errors.New(l)
 	}
 
-	log.Println(gDpPath + "/" + dpconn + "/" + itemlocation)
-	err = os.MkdirAll(gDpPath+"/"+dpconn+"/"+itemlocation, 0777)
+	log.Println(gDpPath + "/" + bucket + "/" + itemlocation)
+	err = os.MkdirAll(gDpPath+"/"+bucket+"/"+itemlocation, 0777)
 	if err != nil {
 		log.Error(err)
 	}
@@ -159,14 +166,15 @@ func (s3 *s3driver) CheckItemLocation(datapoolname, dpconn, itemlocation string)
 }
 
 func (s3 *s3driver) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (exist bool, size int64, err error) {
-	destFullPathFileName := dpconn + "/" + itemlocation + "/" + fileName
+	bucket := getAwsInfoFromDpconn(dpconn)
+
+	destFullPathFileName := bucket + "/" + itemlocation + "/" + fileName
 	log.Info(destFullPathFileName)
-	AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
-	AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+
 	AWS_REGION = Env("AWS_REGION", false)
 
 	svc := s3aws.New(session.New(&aws.Config{Region: aws.String(AWS_REGION)}))
-	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(dpconn),
+	result, err := svc.ListObjects(&s3aws.ListObjectsInput{Bucket: aws.String(bucket),
 		Prefix: aws.String(itemlocation + "/" + fileName)})
 	if err != nil {
 		log.Error("Failed to list objects", err)
@@ -185,6 +193,14 @@ func (s3 *s3driver) CheckDataAndGetSize(dpconn, itemlocation, fileName string) (
 	return
 }
 
+func (s3 *s3driver) GetDpOtherData(allotherdata *[]ds.DpOtherData, itemslocation map[string]string, dpconn string) (err error) {
+	return
+}
+
+func (s3 *s3driver) CheckDpConnect(dpconn, connstr string) (normal bool, err error) {
+	return
+}
+
 func init() {
 	//fmt.Println("s3")
 
@@ -198,4 +214,42 @@ func isFileExists(file string) bool {
 		return !fi.IsDir()
 	}
 	return os.IsExist(err)
+}
+
+func getAwsInfoFromDpconn(dpconn string) (bucket string) {
+	// AWS_SECRET_ACCESS_KEY = Env("AWS_SECRET_ACCESS_KEY", false)
+	// AWS_ACCESS_KEY_ID = Env("AWS_ACCESS_KEY_ID", false)
+	// AWS_REGION = Env("AWS_REGION", false)
+
+	conf := strings.Split(dpconn, "##")
+	n := len(conf)
+
+	if n == 3 {
+		bucket = conf[0]
+		AWS_ACCESS_KEY_ID = conf[1]
+		AWS_SECRET_ACCESS_KEY = conf[2]
+		AWS_REGION = "cn-north-1"
+	} else if n == 4 {
+		bucket = conf[0]
+		AWS_ACCESS_KEY_ID = conf[1]
+		AWS_SECRET_ACCESS_KEY = conf[2]
+		AWS_REGION = conf[3]
+	} else {
+		return ""
+	}
+
+	//set S3 env
+	SetEnv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
+	SetEnv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
+	SetEnv("AWS_REGION", AWS_REGION)
+
+	return
+}
+
+func getOnlyBucket(dpconn string) (bucket string) {
+	conf := strings.Split(dpconn, "##")
+	if len(conf) > 0 {
+		return conf[0]
+	}
+	return ""
 }

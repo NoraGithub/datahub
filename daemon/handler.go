@@ -3,12 +3,15 @@ package daemon
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -17,7 +20,8 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "https://hub.dataos.io/api"
+	DefaultServer     = "https://hub.dataos.io"
+	DefaultServerAPI  = DefaultServer + "/api"
 )
 
 type UserForJson struct {
@@ -28,8 +32,24 @@ type tk struct {
 	Token string `json:"token"`
 }
 
+func authDaemon(w http.ResponseWriter, r *http.Request) bool {
+	log.Println(r.URL, "|", r.RequestURI, "|", r.RemoteAddr, "|", r.URL.RequestURI(), "|", r.Host)
+	if r.Host == "127.0.0.1:35600" {
+		return true
+	}
+	auth, ok := r.Header["X-Daemon-Auth"]
+	log.Debug("DaemonAuthrization:", DaemonAuthrization)
+	if !ok || auth[0] != DaemonAuthrization {
+		JsonResult(w, http.StatusUnauthorized, cmd.ErrorUnAuthorization, "", nil)
+		log.Error("connect daemon refused!", auth, ok, r.Header)
+		return false
+	}
+
+	return true
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	url := DefaultServer + "/" //r.URL.Path
+	url := DefaultServerAPI + "/" //r.URL.Path
 	//r.ParseForm()
 
 	if _, ok := r.Header["Authorization"]; !ok {
@@ -92,7 +112,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request)  {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout.")
 	if loginAuthStr == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -150,4 +170,290 @@ func commToServerGetRsp(method, path string, buffer []byte) (resp *http.Response
 	}
 
 	return resp, nil
+}
+
+func whoamiHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	code := 0
+	msg := "OK"
+	httpcode := http.StatusOK
+	userstru := &ds.User{}
+	if len(loginAuthStr) > 0 {
+		userstru.Username = gstrUsername
+	} else {
+		userstru.Username = ""
+		code = cmd.ErrorUnAuthorization
+		msg = "Not login."
+		httpcode = http.StatusUnauthorized
+	}
+
+	b, _ := buildResp(code, msg, userstru)
+	w.WriteHeader(httpcode)
+	w.Write(b)
+}
+
+func itemPulledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled or not")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	itemInfo := ItemInDatapool{}
+	itemInfo.Dpname, itemInfo.Dpconn, itemInfo.Dptype, itemInfo.ItemLocation = GetDpnameDpconnItemdesc(repo, item)
+
+	if len(itemInfo.ItemLocation) == 0 {
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "The DataItem hasn't been pulled.", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "The DataItem has been pulled.", &itemInfo)
+	}
+}
+
+func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "published of a datapool", r)
+	r.ParseForm()
+	datapool := ps.ByName("dpname")
+	status := "published"
+
+	count := getRepoCountByDp(datapool, status)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	log.Debug("offset, limit", offset, limit)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	repoInfos, err := GetRepoInfo(datapool, status, offset, limit)
+
+	log.Debug(repoInfos, offset, limit)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("No published dataitem in %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("Dataitems have been published into %s.", datapool)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &repoInfos))
+	}
+}
+
+func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "pulled of a datapool")
+	r.ParseForm()
+	dpName := ps.ByName("dpname")
+	status := "pulled"
+
+	count := getRepoCountByDp(dpName, status)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	repoInfos, err := GetRepoInfo(dpName, status, offset, limit)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if len(repoInfos) == 0 {
+		msg := fmt.Sprintf("No pulled dataitem in %s.", dpName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("Dataitems have been pulled into %s.", dpName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &repoInfos))
+	}
+}
+
+func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item published of a repository")
+	r.ParseForm()
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	isPublished := "Y"
+	count := getItemCountByDpRepo(dpName, repoName, isPublished)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	publishedRepoItems, err := GetPublishedRepoInfo(dpName, repoName, offset, limit)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedRepoItems) == 0 {
+		msg := fmt.Sprintf("Pushlied DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been published of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, publishedRepoItems))
+	}
+}
+
+func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "item pulled of a repository")
+	r.ParseForm()
+	dpName := ps.ByName("dpname")
+	repoName := ps.ByName("repo")
+
+	isPublished := "N"
+	count := getItemCountByDpRepo(dpName, repoName, isPublished)
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	pulledRepoItems, err := GetPulledRepoInfo(dpName, repoName, offset, limit)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledRepoItems) == 0 {
+		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All DataItem had been pulled of %s.", repoName)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, pulledRepoItems))
+	}
+}
+
+func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "tags pulled of dataitem")
+	r.ParseForm()
+
+	dpname := ps.ByName("dpname")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	count, err := getPulledTagCount(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+	log.Debug("offset, limit", offset, limit)
+	validateOffsetAndLimit(count, &offset, &limit)
+
+	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item, offset, limit)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(pulledTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Pulled tags of %s/%s is empty.", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been pulled of %s/%s", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
+	}
+}
+
+func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	log.Debug(r.URL.Path, "tags published of dataitem")
+	r.ParseForm()
+
+	dpname := ps.ByName("dpname")
+	repo := ps.ByName("repo")
+	item := ps.ByName("item")
+
+	publishedTagsOfItem, err := GetPublishedTagsOfItemInfo(dpname, repo, item)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	if len(publishedTagsOfItem) == 0 {
+		msg := fmt.Sprintf("Published tags of %s/%s is empty.", repo, item)
+		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
+	} else {
+		msg := fmt.Sprintf("All tags had been published of %s/%s", repo, item)
+		//JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
+		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedTagsOfItem)
+	}
+}
+
+func JsonResult(w http.ResponseWriter, statusCode int, code int, msg string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	result := ds.Result{Code: code, Msg: msg, Data: data}
+	jsondata, err := json.Marshal(&result)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(getJsonBuildingErrorJson()))
+	} else {
+		w.WriteHeader(statusCode)
+		w.Write(jsondata)
+	}
+}
+
+func getJsonBuildingErrorJson() []byte {
+
+	return []byte(log.Infof(`{"code": %d, "msg": %s}`, cmd.ErrorMarshal, "Json building error"))
+
+}
+
+type QueryListResult struct {
+	Total   int64       `json:"total"`
+	Results interface{} `json:"results"`
+}
+
+func newQueryListResult(count int64, results interface{}) *QueryListResult {
+	return &QueryListResult{Total: count, Results: results}
+}
+
+func validateOffsetAndLimit(count int64, offset *int64, limit *int) {
+	if *limit < 1 {
+		*limit = 1
+	}
+	if *offset >= count {
+		*offset = count - int64(*limit)
+	}
+	if *offset < 0 {
+		*offset = 0
+	}
+	if *offset+int64(*limit) > count {
+		*limit = int(count - *offset)
+	}
+}
+
+func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, maxSize int64) (int64, int) {
+	size := optionalIntParamInQuery(r, "size", defaultSize)
+	if size == -1 {
+		return 0, -1
+	}
+	page := optionalIntParamInQuery(r, "page", 0)
+	if page < 1 {
+		page = 1
+	}
+	page -= 1
+
+	if minSize < 1 {
+		minSize = 1
+	}
+	if maxSize < 1 {
+		maxSize = 1
+	}
+	if minSize > maxSize {
+		minSize, maxSize = maxSize, minSize
+	}
+
+	if size < minSize {
+		size = minSize
+	} else if size > maxSize {
+		size = maxSize
+	}
+
+	return page * size, int(size)
+}
+
+func optionalIntParamInQuery(r *http.Request, paramName string, defaultInt int64) int64 {
+	if r.Form.Get(paramName) == "" {
+		log.Debug("paramName nil", paramName, r.Form)
+		return defaultInt
+	}
+
+	i, err := strconv.ParseInt(r.Form.Get(paramName), 10, 64)
+	if err != nil {
+		log.Debug("ParseInt", err)
+		return defaultInt
+	} else {
+		return i
+	}
 }

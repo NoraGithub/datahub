@@ -88,7 +88,7 @@ var con = []Context{
 									"dptype":"file",
 									"dpconn":"/var/lib/datahub/datahub-Unit-Test"						
 							 }`,
-		out: "Invalid argument",
+		out: "Invalid argument.",
 	},
 	Context{
 		desc: "5.create datapool no conn --------",
@@ -140,7 +140,7 @@ func Test_dpGetAllHandler(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/datapools", strings.NewReader(""))
 	rw := httptest.NewRecorder()
 	dpGetAllHandler(rw, req, nil)
-	if !ExpectResult(t, rw, "", cmd.ResultOK) {
+	if !ExpectResult(t, rw, "OK", cmd.ResultOK) {
 		t.Logf("1.Get all datapools -------- fail")
 	} else {
 		t.Logf("1.Get all datapools -------- success")

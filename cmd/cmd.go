@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strconv"
+	//"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 )
 
 const GstrDpPath string = "/var/lib/datahub"
@@ -24,10 +24,11 @@ type UserInfo struct {
 }
 
 var (
-	User     = UserInfo{}
-	UnixSock = "/var/run/datahub.sock"
-	Logged   = false
-	pidFile  = "/var/run/datahub.pid"
+	User          = UserInfo{}
+	UnixSock      = "/var/run/datahub.sock"
+	Logged        = false
+	pidFile       = "/var/run/datahub.pid"
+	CmdHttpServer = "localhost:35600"
 )
 
 type Command struct {
@@ -49,6 +50,7 @@ const (
 	ErrorSqlExec
 	ErrorInsertItem
 	ErrorUnmarshal
+	ErrorIOUtil
 	ErrorMarshal
 	ErrorServiceUnavailable
 	ErrorFileNotExist
@@ -62,6 +64,13 @@ const (
 	ErrorNoDatapoolDriver
 	ErrorOtherError
 	ErrorUnknowError
+	ErrorItemNotExist
+	ErrorPublishedItemEmpty
+	ErrorPulledTagEmpty
+	ErrorDpConnect
+	ErrorOutMaxLength
+	ErrorDatapoolAlreadyExits
+	InternalError
 )
 
 const (
@@ -71,6 +80,9 @@ const (
 	ServerErrResultCode5023 = 5023
 	ServerErrResultCode1009 = 1009
 	ServerErrResultCode1400 = 1400
+	ServerErrResultCode1008 = 1008
+	ServerErrResultCode4010 = 4010
+	ServerErrResultCode1011 = 1011
 )
 
 const (
@@ -190,9 +202,9 @@ func login(interactive bool) {
 }
 
 func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, err error) {
-	//fmt.Println(method, path, string(jsonData))
+	//fmt.Println(method, "/api"+path, string(jsonData))
 
-	req, err := http.NewRequest(strings.ToUpper(method), path, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(strings.ToUpper(method), "/api"+path, bytes.NewBuffer(jsonData))
 
 	if len(User.userName) > 0 {
 		req.SetBasicAuth(User.userName, User.password)
@@ -202,7 +214,7 @@ func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, er
 		req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
 	}
 	*/
-	conn, err := net.Dial("unix", UnixSock)
+	conn, err := net.Dial("tcp", CmdHttpServer)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Datahub daemon not running? Use 'datahub --daemon' to start daemon.")
@@ -263,7 +275,7 @@ func showError(resp *http.Response) {
 
 func StopP2P() error {
 
-	data, err := ioutil.ReadFile(pidFile)
+	/*data, err := ioutil.ReadFile(pidFile)
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -273,9 +285,10 @@ func StopP2P() error {
 		if pid, err := strconv.Atoi(string(data)); err == nil {
 			return syscall.Kill(pid, syscall.SIGQUIT)
 		}
-	}
+	}*/
+
+	_, err := commToDaemon("get", "/stop", nil)
 	return err
-	//commToDaemon("get", "/stop", nil)
 }
 
 func ShowUsage() {

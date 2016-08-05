@@ -18,22 +18,27 @@ import (
 const (
 	PRIVATE = "private"
 	PUBLIC  = "public"
+	BATCH   = "batch"
+	FLOW    = "flow"
+	API     = "api"
 )
 
 func Pub(needlogin bool, args []string) (err error) {
+
 	if len(args) < 2 {
-		fmt.Println(ErrMsgArgument)
+		//fmt.Println(ErrMsgArgument)
 		pubUsage()
 		return errors.New("args len error!")
 	}
 	pub := ds.PubPara{}
 	//var largs []string = args
 	var repo, item, tag, argfi, argse string
-	f := mflag.NewFlagSet("pub", mflag.ContinueOnError)
+	f := mflag.NewFlagSet("datahub pub", mflag.ContinueOnError)
 	//f.StringVar(&pub.Datapool, []string{"-datapool", "p"}, "", "datapool name")
-	f.StringVar(&pub.Accesstype, []string{"-accesstype", "t"}, "private", "dataitem accesstype, private or public")
+	f.StringVar(&pub.Accesstype, []string{"-accesstype", "t"}, "private", "dataitem accesstype: private or public")
 	f.StringVar(&pub.Comment, []string{"-comment", "m"}, "", "comments")
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
+	f.StringVar(&pub.SupplyStyle, []string{"-supplystyle", "s"}, "batch", "dataitem supplystyle: batch , flow or api")
 	f.Usage = pubUsage
 
 	if len(args) > 2 {
@@ -50,6 +55,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	}
 
 	argfi = strings.Trim(args[0], "/")
+
 	//deal arg[0]
 	sp := strings.Split(argfi, "/")
 	if len(sp) != 2 {
@@ -59,6 +65,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	}
 	repo = sp[0]
 	sptag := strings.Split(sp[1], ":")
+
 	l := len(sptag)
 	if l == 1 {
 		item = sptag[0]
@@ -76,7 +83,27 @@ func Pub(needlogin bool, args []string) (err error) {
 		item = sptag[0]
 		tag = sptag[1]
 		pub.Detail = args[1]
-		err = PubTag(repo, item, tag, pub, args)
+
+		if len(args) == 2 || (len(args) == 3 && strings.Contains(args[2], "-")) {
+			PubTag(repo, item, tag, pub, args)
+		} else {
+			if len(strings.Split(args[2], ":")) != 2 || strings.Split(args[2], ":")[0] == "" {
+				fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
+				return
+			}
+			datapool := strings.Split(args[2], ":")[0]
+			pub.Datapool = datapool
+
+			if len(strings.Split(strings.Split(args[2], ":")[1], "//")) != 2 || strings.Split(strings.Split(args[2], ":")[1], "//")[1] == "" {
+				fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
+				return
+			}
+			itemDesc := strings.Split(strings.Split(args[2], ":")[1], "//")[1]
+
+			pub.ItemDesc = itemDesc
+			PubTag(repo, item, tag, pub, args)
+		}
+
 	} else {
 		fmt.Printf("DataHub : Invalid argument.\nSee '%s --help'.\n", f.Name())
 		return errors.New("Invalid argument.")
@@ -87,6 +114,7 @@ func Pub(needlogin bool, args []string) (err error) {
 }
 
 func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
+
 	url := repo + "/" + item
 	if len(p.Accesstype) == 0 {
 		p.Accesstype = PRIVATE
@@ -94,6 +122,14 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 	p.Accesstype = strings.ToLower(p.Accesstype)
 	if p.Accesstype != PRIVATE && p.Accesstype != PUBLIC {
 		fmt.Println("Error : Invalid accesstype, e.g accesstype=public, private")
+		return
+	}
+	if len(p.SupplyStyle) == 0 {
+		p.SupplyStyle = BATCH
+	}
+	p.SupplyStyle = strings.ToLower(p.SupplyStyle)
+	if p.SupplyStyle != BATCH && p.SupplyStyle != FLOW && p.SupplyStyle != API {
+		fmt.Println("Error : Invalid supplystyle, e.g supplystyle=batch, flow, api")
 		return
 	}
 	if len(p.Datapool) == 0 {
@@ -139,11 +175,11 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 			fmt.Println("Error : Pub error.", err)
 			return err
 		}
-		if result.Code == 1008 {
+		if result.Code == ServerErrResultCode1008 {
 			fmt.Printf("Error : Dataitem '%s' already exists.\n", item)
-		} else if result.Code == 4010 {
+		} else if result.Code == ServerErrResultCode4010 {
 			fmt.Printf("Error : Datapool '%s' not found.\n", p.Datapool)
-		} else if result.Code == 1011 {
+		} else if result.Code == ServerErrResultCode1011 {
 			fmt.Println("Error : Only 50 items should be included within each repository.")
 		} else {
 			fmt.Println("Error :", result.Msg)
@@ -154,6 +190,7 @@ func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
 }
 
 func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
+
 	url := repo + "/" + item + "/" + tag
 	if len(p.Detail) == 0 {
 		fmt.Println("DataHub : Publishing tag requires a parameter \"--detail=???\" ")
@@ -172,16 +209,17 @@ func PubTag(repo, item, tag string, p ds.PubPara, args []string) (err error) {
 		return err
 	}
 
-	err = pubResp(url, jsonData, args)
+	pubResp(repo, item, tag, url, jsonData, args)
 
 	return err
 }
 
-func pubResp(url string, jsonData []byte, args []string) (err error) {
+func pubResp(repo, item, tag, url string, jsonData []byte, args []string) {
+
 	resp, err := commToDaemon("POST", "/repositories/"+url, jsonData)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -190,7 +228,7 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("Error : Pub error.", err) //todo add http code
-			return err
+			return
 		} else {
 			if result.Code == 0 {
 				fmt.Println("DataHub : Successed in publishing.")
@@ -209,24 +247,28 @@ func pubResp(url string, jsonData []byte, args []string) (err error) {
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("Error : Pub error.", err)
-			return err
+			return
 		} else {
-			fmt.Println("Error :", result.Msg)
+			if result.Code == ServerErrResultCode1008 {
+				fmt.Printf("Error : tag '%s' already exists.\n", tag)
+			} else {
+				fmt.Println("Error :", result.Msg)
+			}
 		}
-
-		/*else {
-			fmt.Printf("Error : %v\n", result.Msg)
-		}*/
 	}
-	return err
+	return
 }
 
 func pubUsage() {
-	fmt.Printf("Usage: \n  %s pub REPO/DATAITEM  DPNAME://ITEMDESC\n", os.Args[0])
-	fmt.Println("Publish a dataitem\n")
-	fmt.Printf("  %s pub REPO/DATAITEM:TAG TAGDETAIL\n", os.Args[0])
-	fmt.Println("Publish a tag\n")
+	fmt.Printf("Usage: \n%s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
+	fmt.Println("\nPublish a dataitem.\n")
 	fmt.Println("Options:\n")
-	fmt.Println("  --accesstype,-t   Specify the access type of the dataitem:public or private, default private")
-	fmt.Println("  --comment,-m      Comments about the dataitem or tag")
+	fmt.Println("--accesstype,-t   Specify the access type of the dataitem:public or private, default private")
+	fmt.Println("--comment,-m      Comments about the dataitem")
+	fmt.Println("--supplystyle,-s   Specify the supplystyle of the dataitem:batch , flow or api, default batch\n")
+	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL [OPTION]\n", os.Args[0])
+	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL DPNAME://ITEMDESC [OPTION]   if you have already published the item on the web page \n", os.Args[0])
+	fmt.Println("\nPublish a tag.\n")
+	fmt.Println("Option:\n")
+	fmt.Println("--comment,-m      Comments about the tag")
 }

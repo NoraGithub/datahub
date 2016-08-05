@@ -13,6 +13,7 @@ import (
 
 func init() {
 	DefaultServer = "http://localhost:35888"
+	DefaultServerAPI = DefaultServer + "/api"
 	//go testserver()
 }
 
@@ -81,9 +82,9 @@ func Test_loginHandler(t *testing.T) {
 	defer server.Close()
 	t.Logf("Started httptest.Server on %v", server.URL)
 	//url, _ := url.Parse(server.URL)
-	tmp := DefaultServer
-	DefaultServer = server.URL
-	defer func() { DefaultServer = tmp }()
+	tmp := DefaultServerAPI
+	DefaultServerAPI = server.URL
+	defer func() { DefaultServerAPI = tmp }()
 
 	req, _ := http.NewRequest("GET", "/", strings.NewReader(`{"username":"yuanwm@asiainfo.com"}`))
 	req.Header.Set("Authorization", "Basic eXVhbndtQGFzaWFpbmZvLmNvbToxMTQ0NmZjM2ZjMTBhMjdjMTJiZjM1NjI3MmQ4OTg0OAo=")

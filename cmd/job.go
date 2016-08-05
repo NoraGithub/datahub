@@ -13,42 +13,94 @@ import (
 func Job(needLogin bool, args []string) (err error) {
 
 	f := mflag.NewFlagSet("datahub job", mflag.ContinueOnError)
-	//fListall := f.Bool([]string{"-all", "a"}, false, "list all jobs")
+	fListall := f.Bool([]string{"-all", "a"}, false, "list all jobs")
+
 	f.Usage = jobUsage
-	path := "/job"
-	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
-		path += "/" + args[0]
-	} else {
-		if err := f.Parse(args); err != nil {
-			return err
+	if len(args) > 0 {
+		if args[0][0] != '-' {
+			path := "/job"
+			if len(args) > 0 && len(args[0]) > 0 {
+				path += "/" + args[0]
+			} else {
+				if err := f.Parse(args); err != nil {
+					return err
+				}
+				//if *fListall {
+				//	path += "?opt=all"
+				//}
+			}
+			resp, err := commToDaemon("GET", path, nil)
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				showError(resp)
+			} else {
+				//body, _ := ioutil.ReadAll(resp.Body)
+				//fmt.Println(string(body))
+				jobResp(resp)
+			}
+
+			//if *fForce {
+			//	path += "?opt=force"
+			//}
+			//}
+		} else {
+
+			path := "/job?all=1"
+
+			if err := f.Parse(args); err != nil {
+				return err
+			}
+
+			if *fListall == false {
+				fmt.Println(ErrMsgArgument)
+				jobUsage()
+				return errors.New("Invalid arguments.")
+			}
+
+			resp, err := commToDaemon("GET", path, nil)
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				showError(resp)
+			} else {
+				//body, _ := ioutil.ReadAll(resp.Body)
+				//fmt.Println(string(body))
+				jobResp(resp)
+			}
 		}
-		//if *fListall {
-		//	path += "?opt=all"
-		//}
-	}
 
-	resp, err := commToDaemon("GET", path, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		showError(resp)
 	} else {
-		//body, _ := ioutil.ReadAll(resp.Body)
-		//fmt.Println(string(body))
-		jobResp(resp)
-	}
+		path := "/job"
 
+		resp, err := commToDaemon("GET", path, nil)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			showError(resp)
+		} else {
+			//body, _ := ioutil.ReadAll(resp.Body)
+			//fmt.Println(string(body))
+			jobResp(resp)
+		}
+
+	}
 	return err
 }
-
 func JobRm(needLogin bool, args []string) (err error) {
 
 	f := mflag.NewFlagSet("datahub job rm", mflag.ContinueOnError)
 	//fForce := f.Bool([]string{"-force", "f"}, false, "force cancel a pulling job.")
-	fRmAll := f.Bool([]string{"-all"}, false, "rm all the jobs.")
+	fRmAll := f.Bool([]string{"-all", "a"}, false, "rm all the jobs.")
 
 	path := "/job"
 	if len(args) > 0 && len(args[0]) > 0 && args[0][0] != '-' {
@@ -91,10 +143,18 @@ func JobRm(needLogin bool, args []string) (err error) {
 }
 
 func jobUsage() {
-	fmt.Println("Usage: datahub job [JOBID]")
-	fmt.Println("List jobs")
-	fmt.Println("\nUsage: datahub job rm [JOBID][--all]")
-	fmt.Println("Remove a job")
+	fmt.Println("Usage:\ndatahub job [OPTION] ")
+	fmt.Println("\nList downloading jobs.\n")
+	fmt.Println("datahub job [JOBID]")
+	fmt.Println("\nList a job.\n")
+	fmt.Println("Option:\n")
+	fmt.Println("--all,-a      list all jobs\n")
+	fmt.Println("\ndatahub job rm [OPTION]")
+	fmt.Println("\ndelete job.\n")
+	fmt.Println("\ndatahub job rm [JOBID]")
+	fmt.Println("\nRemove a job.\n")
+	fmt.Println("Option:\n")
+	fmt.Println("--all,-a      remove all jobs\n")
 }
 
 func jobResp(resp *http.Response) {

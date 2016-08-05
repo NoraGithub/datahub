@@ -2,8 +2,10 @@ package ds
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"time"
 )
 
 const (
@@ -18,7 +20,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v1.8.0"
+	DATAHUB_VERSION = "v2.0.0"
 )
 
 type DsPull struct {
@@ -33,9 +35,13 @@ type DsPull struct {
 }
 
 type Result struct {
-	Code int         `json:"code,omitempty"`
+	Code int         `json:"code"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
+}
+
+type User struct {
+	Username string `json:"username,omitempty"`
 }
 
 type ResultPages struct {
@@ -45,6 +51,11 @@ type ResultPages struct {
 
 type MsgResp struct {
 	Msg string `json:"msg"`
+}
+
+type ItemMs struct {
+	Meta   string `json:"meta, omitempty"`
+	Sample string `json:"sample, omitempty"`
 }
 
 type JobInfo struct {
@@ -84,6 +95,7 @@ type TagStatus struct {
 
 type ItemInfo struct {
 	Create_user string `json:"create_user,omitempty"`
+	Optime      string `json:"optime, omitempty"`
 }
 
 type ItemStatus struct {
@@ -109,15 +121,85 @@ type Repository struct {
 }
 
 type PubPara struct {
-	Datapool   string `json:"datapool, omitempty"`
-	Detail     string `json:"detail, omitempty"`
-	Accesstype string `json:"itemaccesstype, omitempty"`
-	Comment    string `json:"comment, omitempty"`
-	ItemDesc   string `json:"itemdesc, omitempty"`
+	Datapool    string `json:"datapool, omitempty"`
+	Detail      string `json:"detail, omitempty"`
+	Accesstype  string `json:"itemaccesstype, omitempty"`
+	Comment     string `json:"comment, omitempty"`
+	ItemDesc    string `json:"itemdesc, omitempty"`
+	SupplyStyle string `json:"supplystyle, omitempty"`
+}
+
+type DpOtherData struct {
+	Dir     string `json:"dir, omitempty"`
+	FileNum int    `json:"filenum,  omitempty"`
 }
 
 type Ds struct {
-	Db *sql.DB
+	Db     *sql.DB
+	DbType string
+}
+
+type RepoInfo struct {
+	RepositoryName string `json:"repositoryname, omitempty"`
+	ItemCount      int    `json:"itemcount, omitempty"`
+}
+
+type PublishedRepoInfo struct {
+	RepositoryName     string              `json:"repositoryname, omitempty"`
+	PublishedDataItems []PublishedItemInfo `json:"publisheddataitems, omitempty"`
+}
+
+type PublishedItemInfo struct {
+	ItemName   string    `json:"itemname, omitempty"`
+	CreateTime time.Time `json:"createtime, omitempty"`
+	Location   string    `json:"location, omitempty"`
+}
+
+type PulledRepoInfo struct {
+	RepositoryName  string           `json:"repositoryname, omitempty"`
+	PulledDataItems []PulledItemInfo `json:"pulleddataitems, omitempty"`
+}
+
+type PulledItemInfo struct {
+	ItemName string     `json:"itemname, omitempty"`
+	SignTime *time.Time `json:"signtime, omitempty"`
+	Location string     `json:"location, omitempty"`
+}
+
+type OrderInfo struct {
+	Signtime time.Time `json:"signtime, omitempty"`
+}
+
+type PulledTagsOfItem struct {
+	TagName      string     `json:"tagname, omitempty"`
+	DownloadTime *time.Time `json:"downloadtime, omitempty"`
+	Content      string     `json:"content, omitempty"`
+}
+
+type PublishedTagsOfItem struct {
+	FileName    string     `json:"filename, omitempty"`
+	TagName     string     `json:"tagname, omitempty"`
+	PublishTime *time.Time `json:"publishtime, omitempty"`
+	Location    string     `json:"location, omitempty"`
+	Status      string     `json:"status, omitempty"`
+}
+
+type DpParas struct {
+	Dpname string `json:"dpname, omitempty"`
+	Dptype string `json:"dptype, omitempty"`
+	Dpconn string `json:"dpconn, omitempty"`
+	Host   string `json:"host, omitempty"`
+	Port   string `json:"port, omitempty"`
+}
+
+type PubTagParas struct {
+	Dpname     string `json:"dpname"`
+	Repository string `json:"repository"`
+	Dataitem   string `json:"dataitem"`
+	ItemDesc   string `json:"itemdesc"`
+	Tagname    string `json:"tagname"`
+	Detail     string `json:"detail"`
+	Comment    string `json:"comment, omitempty"`
 }
 
 const SQLIsExistRpdmTagMap string = `select sql from sqlite_master where tbl_name='DH_RPDM_TAG_MAP' and type='table';`
@@ -138,7 +220,7 @@ const Create_dh_dp_repo_ditem_map string = `CREATE TABLE IF NOT EXISTS
     DH_DP_RPDM_MAP ( 
     	RPDMID       INTEGER PRIMARY KEY AUTOINCREMENT, 
         REPOSITORY   VARCHAR(128), 
-        DATAITEM     VARCHAR(128), 
+		DATAITEM     VARCHAR(128),
         DPID         INTEGER, 
         ITEMDESC     VARCHAR(256),
         PUBLISH      CHAR(2), 
@@ -192,8 +274,7 @@ const CreateMsgTagAdded string = `CREATE TABLE IF NOT EXISTS
 		CREATE_TIME DATETIME,
 		STATUS_TIME DATETIME
 
-	);
-	`
+	);`
 
 type Executer interface {
 	Insert(cmd string) (interface{}, error)

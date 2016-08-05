@@ -161,8 +161,8 @@ func sayhello(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 }
 
 func checkAccessToken(tokenUrl string) (bool, string) {
-	log.Println("daemon: connecting to", DefaultServer+tokenUrl)
-	req, err := http.NewRequest("GET", DefaultServer+tokenUrl, nil)
+	log.Println("daemon: connecting to", DefaultServerAPI+tokenUrl)
+	req, err := http.NewRequest("GET", DefaultServerAPI+tokenUrl, nil)
 	if len(loginAuthStr) > 0 {
 		req.Header.Set("Authorization", loginAuthStr)
 	}

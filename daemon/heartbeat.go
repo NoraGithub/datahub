@@ -15,11 +15,12 @@ import (
 )
 
 type Beatbody struct {
-	Daemonid   string   `json:"daemonid"`
-	Entrypoint []string `json:"entrypoint"`
-	Log        []string `json:"log,omitempty"`
-	Role       int      `json:"role"` //0 puller, 1 publisher
-	Errortag   []string `json:"abnormaltags,omitempty"`
+	Daemonid      string   `json:"daemonid"`
+	Entrypoint    []string `json:"entrypoint"`
+	Log           []string `json:"log,omitempty"`
+	Role          int      `json:"role"` //0 puller, 1 publisher
+	Errortag      []string `json:"abnormaltags,omitempty"`
+	CliEntrypoint string   `json:"clientrypoint, omitempty"`
 }
 
 type MessageData struct {
@@ -34,6 +35,17 @@ type Messages struct {
 	Messageid int         `json:"messageid,omitempty"`
 	Type      string      `json:"type,omitempty"`
 	Data      MessageData `json:"data,omitempty"`
+}
+
+type Event struct {
+	Type string      `json:"type"`
+	Time time.Time   `json:"time"`
+	Data interface{} `json:"data, omitempty"`
+}
+
+type ItemDel struct {
+	Repname  string `json:"repname"`
+	Itemname string `json:"itemname"`
 }
 
 var (
@@ -56,6 +68,8 @@ const (
 
 	PUBLISHER = 1
 	PULLER    = 0
+
+	TYPE_ITEM_DEL = "0x00020002"
 )
 
 func HeartBeat() {
@@ -88,12 +102,14 @@ func HeartBeat() {
 			heartbeatbody.Errortag = errortags
 		}
 
+		heartbeatbody.CliEntrypoint = CLIEntrypoint + "?daemonauth=" + DaemonAuthrization
+
 		jsondata, err := json.Marshal(heartbeatbody)
 		if err != nil {
 			l := log.Error(err)
 			logq.LogPutqueue(l)
 		}
-		url := DefaultServer + "/heartbeat"
+		url := DefaultServerAPI + "/heartbeat"
 		log.Trace("connecting to", url, string(jsondata))
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsondata))
 		/*
@@ -115,6 +131,7 @@ func HeartBeat() {
 		log.Tracef("HeartBeat http statuscode:%v,  http body:%s", resp.StatusCode, body)
 
 		result := ds.Result{}
+		result.Data = &Event{}
 		if err := json.Unmarshal(body, &result); err == nil {
 			if result.Code == 0 {
 				EntryPointStatus = "available"
@@ -122,8 +139,41 @@ func HeartBeat() {
 				EntryPointStatus = "not available"
 			}
 		}
+		if result.Data != nil && result.Data.(*Event).Type == TYPE_ITEM_DEL {
+			deleteItemsAccordingToHeartbeat(body)
+		}
 
 		time.Sleep(heartbeatTimeout)
+	}
+}
+
+func deleteItemsAccordingToHeartbeat(body []byte) {
+	log.Debug("deleteItemsAccordingToHeartbeat() BEGIN:", string(body))
+	result := ds.Result{}
+	itemEvent := &Event{}
+	result.Data = itemEvent
+	itemsdelete := []ItemDel{}
+	itemEvent.Data = &itemsdelete
+
+	if err := json.Unmarshal(body, &result); err == nil {
+		log.Debug("items delete:", itemsdelete)
+		for _, v := range itemsdelete {
+			log.Debugf("delete item according to heartbeat: %v/%v\n", v.Repname, v.Itemname)
+			err := delTagsForDelItem(v.Repname, v.Itemname)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			err = delItem(v.Repname, v.Itemname)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			log.Infof("Delete data item %v/%v according to heartbeat successfully.\n", v.Repname, v.Itemname)
+		}
+	} else {
+		log.Warn("Unmarshal error:", err)
 	}
 }
 
@@ -132,7 +182,7 @@ func GetMessages() {
 	var sleepInterval int
 	var srtInterval string
 	var e error
-	url := DefaultServer + "/notifications?forclient=1&type=item_event&status=0"
+	url := DefaultServerAPI + "/notifications?forclient=1&type=item_event&status=0"
 	for AutoPull == true {
 
 		if srtInterval = os.Getenv("DATAHUB_MSG_INTERVAL"); len(srtInterval) > 0 {
@@ -191,7 +241,7 @@ func GetMessages() {
 
 		} else if resp.StatusCode == http.StatusUnauthorized {
 			log.Debug("not login", http.StatusUnauthorized)
-			urllogin := DefaultServer + "/"
+			urllogin := DefaultServerAPI + "/"
 			reql, err := http.NewRequest("GET", urllogin, nil)
 			if len(loginBasicAuthStr) > 0 {
 				reql.Header.Set("Authorization", loginBasicAuthStr)
@@ -337,11 +387,11 @@ func ScanLocalFile(path string) []string {
 	return localfiles
 }
 
-func RemoveDuplicatesAndEmpty(a []string) (ret []string){
+func RemoveDuplicatesAndEmpty(a []string) (ret []string) {
 	a_len := len(a)
-	for i:=0; i < a_len; i++{
-		if (i > 0 && a[i-1] == a[i]) || len(a[i])==0{
-			continue;
+	for i := 0; i < a_len; i++ {
+		if (i > 0 && a[i-1] == a[i]) || len(a[i]) == 0 {
+			continue
 		}
 		ret = append(ret, a[i])
 	}

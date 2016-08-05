@@ -238,6 +238,10 @@ func getItemStatus(reponame, itemname string) (string, error) {
 }
 
 func subsUsage() {
-	fmt.Printf("Usage: %s subs [URL]/[REPO]/[ITEM]\n", os.Args[0])
-	fmt.Println("\nList the repositories and dataitems which have been subscribed")
+	fmt.Printf("Usage:\n%s subs\n", os.Args[0])
+	fmt.Println("\nList the repositories and dataitems which have been subscribed.")
+	fmt.Printf("\n%s subs [REPO]\n", os.Args[0])
+	fmt.Println("\nList the dataitems which have been subscribed of the repository.")
+	fmt.Printf("\n%s subs [REPO]/[ITEM]\n", os.Args[0])
+	fmt.Println("\nList the detail of the dataitem which have been subscribed.")
 }

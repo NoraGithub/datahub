@@ -27,11 +27,11 @@ type Loginerr struct {
 }
 
 func Login(login bool, args []string) (err error) {
-	fmt.Printf("login as: ")
+
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
 	if err := f.Parse(args); err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
 		return err
 	}
 	if len(args) >= 1 {
@@ -39,7 +39,7 @@ func Login(login bool, args []string) (err error) {
 		loginUsage()
 		return errors.New(ErrMsgArgument)
 	}
-
+	fmt.Printf("login as: ")
 	reader := bufio.NewReader(os.Stdin)
 	//loginName, _ := reader.ReadString('\n')
 	loginName, _ := reader.ReadBytes('\n')
@@ -146,9 +146,9 @@ func Logout(login bool, args []string) error {
 }
 
 func loginUsage() {
-	fmt.Printf("Usage: %s login\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
+	fmt.Printf("Usage:\n%s login\n\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
 }
 
 func logoutUsage() {
-	fmt.Printf("Usage: %s logout\nSend a logout request to the datahub.\n", os.Args[0])
+	fmt.Printf("Usage:\n%s logout\n\nSend a logout request to the datahub.\n", os.Args[0])
 }

@@ -4,21 +4,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
+	"github.com/asiainfoLDP/datahub/daemon/dpdriver"
 	"github.com/asiainfoLDP/datahub/ds"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
 	"github.com/asiainfoLDP/datahub/utils/logq"
+	dfs "github.com/colinmarc/hdfs"
+	"github.com/colinmarc/hdfs/protocol/hadoop_hdfs"
 	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 var DPTYPES []string = cmd.DataPoolTypes
 
+const (
+	MsgOfNoDatapool = "There isn't any datapool."
+)
+
 func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// if false == authDaemon(rw, r) {
+	// 	return
+	// }
 	r.ParseForm()
-	rw.WriteHeader(http.StatusOK)
 
 	result, _ := ioutil.ReadAll(r.Body)
 	struDp := cmd.FormatDpCreate{}
@@ -26,7 +36,7 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		l := log.Error("Invalid argument. json.Unmarshal error", err)
 		logq.LogPutqueue(l)
-		rw.Write([]byte(`{"msg":"Invalid argument."}`))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara, "Invalid argument.", nil)
 		return
 	}
 
@@ -38,17 +48,18 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 	if !allowtype {
 		log.Println("DataHub : Datapool type need to be:", DPTYPES)
-		rw.Write([]byte(fmt.Sprintf(`{"msg":"Datapool type need to be:%s"}`, DPTYPES)))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara,
+			fmt.Sprintf("Datapool type need to be:%v", DPTYPES), nil)
 		return
 	}
 
 	if len(struDp.Name) == 0 || strings.Contains(struDp.Name, "/") == true {
 		log.Println("Invalid argument")
-		rw.Write([]byte(`{"msg":"Invalid argument"}`))
+		JsonResult(rw, http.StatusBadRequest, cmd.ErrorInvalidPara, "Invalid argument.", nil)
 		return
 	} else {
 		log.Println("Creating datapool with name:", struDp.Name)
-		msg := &ds.MsgResp{}
+
 		var sdpDirName string
 		if len(struDp.Conn) == 0 {
 			struDp.Conn = g_strDpPath
@@ -64,9 +75,8 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		dpexist := CheckDataPoolExist(struDp.Name)
 		if dpexist {
-			msg.Msg = fmt.Sprintf("'%s' already exists, please change another name.", struDp.Name)
-			resp, _ := json.Marshal(msg)
-			rw.Write(resp)
+			JsonResult(rw, http.StatusConflict, cmd.ErrorDatapoolAlreadyExits,
+				fmt.Sprintf("'%s' already exists, please change another name.", struDp.Name), nil)
 			return
 		}
 
@@ -77,59 +87,125 @@ func dpPostOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Par
 			err = nil
 		} else if struDp.Type == DPFILE {
 			err = os.MkdirAll(sdpDirName, 0777)
+		} else {
+			connstr := struDp.Host + ":" + struDp.Port
+
+			client, err := dfs.New(connstr)
+			if err != nil {
+				logq.LogPutqueue(log.Error("New err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs new client failed.", nil)
+				return
+			}
+
+			info, err := client.Stat("/")
+			if err != nil {
+				logq.LogPutqueue(log.Error("Stat err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs get hadoop user failed.", nil)
+				return
+			}
+			hadoopUser := *info.Sys().(*hadoop_hdfs.HdfsFileStatusProto).Owner
+
+			client, err = dfs.NewForUser(connstr, hadoopUser)
+			if err != nil {
+				logq.LogPutqueue(log.Error("NewForUser err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs new client for user failed.", nil)
+				return
+			}
+
+			err = client.MkdirAll(struDp.Conn, 0777)
+			if err != nil {
+				logq.LogPutqueue(log.Error("MkdirAll err:", err))
+				JsonResult(rw, http.StatusBadRequest, cmd.InternalError, "hdfs make dir failed.", nil)
+				return
+			}
 		}
 
 		if err != nil {
-			l := log.Error(err, sdpDirName)
-			logq.LogPutqueue(l)
-			msg.Msg = err.Error()
+			logq.LogPutqueue(log.Error(err, sdpDirName))
+			JsonResult(rw, http.StatusBadRequest, cmd.InternalError, err.Error(), nil)
+			return
 		} else {
-			msg.Msg = fmt.Sprintf("Datapool has been created successfully. Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName)
 			struDp.Conn = strings.TrimRight(struDp.Conn, "/")
 			sql_dp_insert := fmt.Sprintf(`insert into DH_DP (DPID, DPNAME, DPTYPE, DPCONN, STATUS)
 					values (null, '%s', '%s', '%s', 'A')`, struDp.Name, struDp.Type, struDp.Conn)
 			if _, e := g_ds.Insert(sql_dp_insert); err != nil {
 				//os.Remove(sdpDirName)  //don't delete it. It is maybe used by others
-				l := log.Error(e)
-				logq.LogPutqueue(l)
-				msg.Msg = e.Error()
+				logq.LogPutqueue(log.Error(e))
+				JsonResult(rw, http.StatusBadRequest, cmd.ErrorSqlExec, e.Error(), nil)
+				return
 			}
-		}
-		resp, _ := json.Marshal(msg)
-		rw.Write(resp)
-	}
 
+			JsonResult(rw, http.StatusOK, cmd.ResultOK,
+				fmt.Sprintf("Datapool has been created successfully. Name:%s Type:%s Path:%s.", struDp.Name, struDp.Type, sdpDirName), nil)
+			return
+		}
+	}
+}
+
+const sqlSelectDpCount = "SELECT COUNT(*) FROM DH_DP WHERE STATUS='A'"
+
+func getDatapoolCount() (count int64, err error) {
+	row, err := g_ds.QueryRow(sqlSelectDpCount)
+	if err != nil {
+		return
+	}
+	row.Scan(&count)
+	return
+}
+
+func getDatapools(count int64, sqlstr string) (err error, existflag bool, dps []cmd.FormatDp) {
+	rows, err := g_ds.QueryRows(sqlstr)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer rows.Close()
+
+	dps = []cmd.FormatDp{}
+	onedp := cmd.FormatDp{}
+	existflag = false
+	for rows.Next() {
+		existflag = true
+		rows.Scan(&onedp.Name, &onedp.Type, &onedp.Conn)
+		dps = append(dps, onedp)
+	}
+	return
 }
 
 func dpGetAllHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	r.ParseForm()
-	rw.WriteHeader(http.StatusOK)
 
-	dps := []cmd.FormatDp{}
-	result := &ds.Result{Code: cmd.ResultOK, Data: &dps} //must use a pointer dps to initial Data
-	onedp := cmd.FormatDp{}
-	sqlDp := fmt.Sprintf(`SELECT DPNAME, DPTYPE FROM DH_DP WHERE STATUS = 'A'`)
-	rows, err := g_ds.QueryRows(sqlDp)
+	count, err := getDatapoolCount()
 	if err != nil {
-		log.Error(err)
-		SqlExecError(rw, result, err.Error())
+		logq.LogPutqueue(log.Error(err))
+		JsonResult(rw, http.StatusInternalServerError, cmd.ErrorSqlExec, err.Error(), nil)
 		return
 	}
-	defer rows.Close()
-	bresultflag := false
-	for rows.Next() {
-		bresultflag = true
-		rows.Scan(&onedp.Name, &onedp.Type)
-		dps = append(dps, onedp)
-	}
-	if bresultflag == false {
-		result.Code = cmd.ErrorNoRecord
-		result.Msg = "There isn't any datapool."
-		log.Info(result.Msg)
+
+	sqlstr := ""
+	if size, _ := strconv.Atoi(r.Form.Get("size")); size == -1 {
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE, DPCONN FROM DH_DP WHERE STATUS = 'A'`)
+	} else {
+		offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
+		validateOffsetAndLimit(int64(count), &offset, &limit)
+
+		sqlstr = fmt.Sprintf(`SELECT DPNAME, DPTYPE, DPCONN FROM DH_DP 
+			WHERE STATUS = 'A' ORDER BY DPID 
+			LIMIT %v OFFSET %v`, limit, offset)
 	}
 
-	resp, _ := json.Marshal(result)
-	rw.Write(resp)
+	err, existflag, dps := getDatapools(count, sqlstr)
+	if err != nil {
+		log.Error(err)
+		JsonResult(rw, http.StatusInternalServerError, cmd.ErrorSqlExec, "", nil)
+		return
+	}
+	if existflag == false {
+		log.Info(MsgOfNoDatapool)
+		JsonResult(rw, http.StatusOK, cmd.ErrorNoRecord, MsgOfNoDatapool, nil)
+	} else {
+		JsonResult(rw, http.StatusOK, cmd.ResultOK, "OK", newQueryListResult(count, dps))
+	}
 }
 
 func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -175,8 +251,8 @@ func dpGetOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if dpid > 0 {
 		//Use "left out join" to get repository/dataitem records, whether it has tags or not.
 		//B.STATUS='A'
-		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH ,strftime(A.CREATE_TIME), 
-				B.TAGNAME, B.DETAIL,strftime(B.CREATE_TIME), B.COMMENT 
+		sqlTag := fmt.Sprintf(`SELECT A.REPOSITORY, A.DATAITEM, A.ITEMDESC, A.PUBLISH, A.CREATE_TIME,
+				B.TAGNAME, B.DETAIL, B.CREATE_TIME, B.COMMENT
 				FROM DH_DP_RPDM_MAP A LEFT JOIN DH_RPDM_TAG_MAP B
 				ON (A.RPDMID = B.RPDMID)
 				WHERE A.DPID = %v AND A.STATUS='A' `, dpid)
@@ -273,4 +349,78 @@ func dpDeleteOneHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.P
 		rw.Write(resp)
 	}
 
+}
+
+func dpGetOtherDataHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	dpname := ps.ByName("dpname")
+	dpid, dptype, dpconn := GetDataPoolInfo(dpname)
+	if len(dpconn) == 0 || dpid == 0 || len(dptype) == 0 {
+		log.Info("Datapool:", dpname, "does not exist.")
+		JsonResult(w, http.StatusOK, cmd.ErrorDatapoolNotExits, "The datapool does not exist.", nil)
+		return
+	}
+
+	itemslocation := make(map[string]string)
+	err := GetItemslocationInDatapool(itemslocation, dpname, dpid, dpconn)
+	if err != nil {
+		log.Error("The datapool does not exist.", err)
+		JsonResult(w, http.StatusOK, cmd.ErrorItemNotExist, "Get dataitem location error.", nil)
+		return
+	}
+
+	datapool, err := dpdriver.New(dptype)
+	if err != nil {
+		l := log.Error(err.Error())
+		logq.LogPutqueue(l)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorDatapoolNotExits, err.Error())
+		return
+	}
+
+	allotherdata := make([]ds.DpOtherData, 0, 4)
+
+	err = datapool.GetDpOtherData(&allotherdata, itemslocation, dpconn)
+	if err != nil {
+		JsonResult(w, http.StatusInternalServerError, cmd.ResultOK, err.Error(), allotherdata)
+		return
+	}
+
+	log.Info("allotherdata", allotherdata)
+
+	JsonResult(w, http.StatusOK, cmd.ResultOK, "OK", allotherdata)
+}
+
+func checkDpConnectHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	reqbody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var paras ds.DpParas
+	err = json.Unmarshal(reqbody, &paras)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var connstr string
+	if paras.Dptype == "hdfs" {
+		connstr = paras.Host + ":" + paras.Port
+	}
+
+	datapool, err := dpdriver.New(paras.Dptype)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	isNormal, err := datapool.CheckDpConnect(paras.Dpconn, connstr)
+
+	if err == nil && isNormal == true {
+		JsonResult(w, http.StatusOK, cmd.ResultOK, "datapool连接正常", nil)
+	} else {
+		JsonResult(w, http.StatusOK, cmd.ErrorDpConnect, "datapool连接不正常", nil)
+	}
 }
