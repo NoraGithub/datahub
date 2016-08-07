@@ -1,0 +1,96 @@
+﻿/published/{dpname}:
+  uriParameters:
+    dpname:
+      description: datapool名称
+      example: mydp
+      required: true
+  get:
+    description: 查询datapool内发布的repository
+    queryParameters:
+      size:
+        description: (可选, 默认为10)每页最多返回多少条数据,最小值为1,最大值为100
+        required: false
+      page:
+        description: (可选, 默认为1) 第几页,最小值为1
+        required: false
+    responses:
+      200:
+        description:
+          repositoryname        repository名称
+          itemcount             dataitem数量
+        body:
+          application/json:
+            example: |
+              {
+                 "code": 0,
+                 "msg": "Dataitems have been published into mydp.",
+                 "data": {
+                            "total": 4,
+                            "results": [
+                               {
+                                  "itemcount": 2,
+                                  "repositoryname": "yyrepo"
+                               },
+                               {
+                                  "itemcount": 2,
+                                  "repositoryname": "test4"
+                               },
+                               {
+                                  "itemcount": 1,
+                                  "repositoryname": "test5"
+                               },
+                               {
+                                  "itemcount": 2,
+                                  "repositoryname": "repoyuan"
+                               }
+                            ]
+                         }
+              }
+
+/published/{dpname}/{reponame}:
+  uriParameters:
+    dpname:
+      description: datapool名称
+      example: mydp
+      required: true
+    reponame:
+      description: repositoryname
+      example: repoyuan
+      required: true
+  get:
+    description: 查询datapool内发布的repository的详情
+    queryParameters:
+      size:
+        description: (可选, 默认为10)每页最多返回多少条数据,最小值为1,最大值为100
+        required: false
+      page:
+        description: (可选, 默认为1) 第几页,最小值为1
+        required: false
+    responses:
+      200:
+        description:
+          itemname                 dataitem名称
+          createtime               发布时间
+          location                 在datapool中的子目录名称
+        body:
+          application/json:
+            example: |
+              {
+                 "code": 0,
+                 "msg": "All DataItem had been published of repoyuan.",
+                 "data": {
+                            "total": 2,
+                            "results": [
+                                {
+                                   "createtime": "2016-04-22T07:33:14Z",
+                                   "itemname": "itemyuan",
+                                   "location": "yyitem"
+                                },
+                                {
+                                   "createtime": "0001-01-01T00:00:00Z",
+                                   "itemname": "item_mmm_book",
+                                   "location": "item_mmm"
+                                }
+                            ]   
+                         }
+              }

@@ -1,0 +1,55 @@
+/id:
+  get:
+    description: check user's 3 infomation
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "daemonid":"0aef69daefb06d0afbe6c"
+              }
+/ep/{user}:
+  uriParameters:
+    user:
+      description: 用户帐户
+      example: shendf@asiainfo.com
+      required: true
+  get:
+    description: 返回作为数据提供方user的入口地址。
+    responses:
+      200:
+        body:
+          application/json:
+           example: |
+              {
+                  "entrypoint":[
+                      "http://211.10.23.23:35800",
+                      "http://211.10.23.24:35800"
+                  ]
+              }
+/log/{index}:
+  uriParameters:
+    index:
+      description: 日志索引
+      example: shendf@asiainfo.com
+      required: true
+  get:
+    description: 返回以index为起始索引的用户daemon日志，索引范围为[index, index+9]。
+    responses:
+      200:
+        body:
+          application/json:
+           example: |
+               {
+                   "log":[
+                   "2015/12/01 14:58:29 testlog7",
+                   "2015/12/01 14:56:21 testlog6",
+                   "2015/12/01 14:52:54 testlog5"
+                   ]
+               }
+    queryParameters:
+      range:
+        description: 可选参数，指定索引范围，若不指定则以index开始索引，返回10条。
+        example: shendf@asiainfo.com
+        required: false
