@@ -1333,7 +1333,7 @@ func getPulledTagCount(datapool, repo, item string) (int64, error) {
 	return count, err
 }
 
-func GetPublishedTagsOfItemInfo(dpname, repo, item string) ([]ds.PublishedTagsOfItem, error) {
+func GetPublishedTagsOfItemInfo(dpname, repo, item string, offset int64, limit int) ([]ds.PublishedTagsOfItem, error) {
 
 	publishedTagOfItem := ds.PublishedTagsOfItem{}
 	publishedTagsOfItem := make([]ds.PublishedTagsOfItem, 0)
@@ -1381,10 +1381,73 @@ func GetPublishedTagsOfItemInfo(dpname, repo, item string) ([]ds.PublishedTagsOf
 
 	for rows.Next() {
 		rows.Scan(&publishedTagOfItem.FileName, &publishedTagOfItem.TagName, &publishedTagOfItem.PublishTime)
-		publishedTagOfItem.Location = dpconn + "/" + itemdesc
+		publishedTagOfItem.Location = dpconn + "/" + itemdesc + "/" + publishedTagOfItem.FileName
 		publishedTagOfItem.Status = "已发布"
 		publishedTagsOfItem = append(publishedTagsOfItem, publishedTagOfItem)
 	}
 
-	return publishedTagsOfItem, err
+	publishedTagOfItem = ds.PublishedTagsOfItem{}
+	localfiles := ScanLocalFile(dpconn + "/" + itemdesc)
+	var i int
+	for j := 0; j <  len(localfiles); j++ {
+		for i = 0; i < len(publishedTagsOfItem); i++ {
+			if publishedTagsOfItem[i].Location == localfiles[j] {
+				break
+			}
+		}
+		if i >= len(publishedTagsOfItem) {
+			dirs := strings.Split(localfiles[j], "/")
+			publishedTagOfItem.Location = localfiles[j]
+			publishedTagOfItem.FileName = dirs[len(dirs) - 1]
+			publishedTagOfItem.Status = "未发布"
+			publishedTagsOfItem = append(publishedTagsOfItem, publishedTagOfItem)
+		}
+	}
+
+	if offset+int64(limit) < int64(len(publishedTagsOfItem)) {
+		return publishedTagsOfItem[offset:offset+int64(limit)], err
+	} else {
+		if offset < int64(limit) {
+			return publishedTagsOfItem[(int64(len(publishedTagsOfItem)) - offset):], err
+		} else {
+			return publishedTagsOfItem[(len(publishedTagsOfItem) - limit):], err
+		}
+	}
+}
+
+func getPublishedTagCount(datapool, repo, item string) (int64, error) {
+
+	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, datapool)
+	row, err := g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	var dpid int
+	var dpconn string
+	row.Scan(&dpid, &dpconn)
+
+	sql = fmt.Sprintf(`SELECT RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
+				WHERE REPOSITORY  = '%s'
+				AND DATAITEM = '%s'
+				AND DPID = %d
+				AND PUBLISH = 'Y'
+				AND STATUS = 'A';`, repo, item, dpid)
+
+	row, err = g_ds.QueryRow(sql)
+	if err != nil {
+		l := log.Error(err)
+		logq.LogPutqueue(l)
+		return 0, err
+	}
+
+	var rpdmid int
+	var itemdesc string
+	row.Scan(&rpdmid, &itemdesc)
+
+	path := dpconn + "/" + itemdesc
+
+	return 	int64(len(ScanLocalFile(path))), err
 }
