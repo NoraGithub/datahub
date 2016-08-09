@@ -1396,10 +1396,14 @@ func GetPublishedTagsOfItemInfo(dpname, repo, item string, offset int64, limit i
 	if offset+int64(limit) < int64(len(publishedTagsOfItem)) {
 		return publishedTagsOfItem[offset:offset+int64(limit)], err
 	} else {
-		if offset < int64(limit) {
-			return publishedTagsOfItem[(int64(len(publishedTagsOfItem)) - offset):], err
+		if limit == len(publishedTagsOfItem) {
+			return publishedTagsOfItem, err
 		} else {
-			return publishedTagsOfItem[(len(publishedTagsOfItem) - limit):], err
+			if offset < int64(limit) {
+				return publishedTagsOfItem[(int64(len(publishedTagsOfItem)) - offset):], err
+			} else {
+				return publishedTagsOfItem[(len(publishedTagsOfItem) - limit):], err
+			}
 		}
 	}
 }

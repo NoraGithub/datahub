@@ -362,11 +362,6 @@ func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	log.Debug("offset, limit", offset, limit)
 	validateOffsetAndLimit(count, &offset, &limit)
 
-	//count := getRepoCountByDp(datapool, status)
-	//offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
-	//log.Debug("offset, limit", offset, limit)
-	//validateOffsetAndLimit(count, &offset, &limit)
-
 	publishedTagsOfItem, err := GetPublishedTagsOfItemInfo(dpname, repo, item, offset, limit)
 	if err != nil {
 		log.Debug(err)
@@ -379,7 +374,6 @@ func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	} else {
 		msg := fmt.Sprintf("All tags had been published of %s/%s", repo, item)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &publishedTagsOfItem))
-		//JsonResult(w, http.StatusOK, cmd.ResultOK, msg, publishedTagsOfItem)
 	}
 }
 
