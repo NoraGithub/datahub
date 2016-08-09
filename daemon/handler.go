@@ -223,6 +223,7 @@ func publishedOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httpr
 
 	if err != nil {
 		log.Error(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -249,6 +250,7 @@ func pulledOfDatapoolHandler(w http.ResponseWriter, r *http.Request, ps httprout
 
 	if err != nil {
 		log.Error(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -275,6 +277,7 @@ func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httproute
 	publishedRepoItems, err := GetPublishedRepoInfo(dpName, repoName, offset, limit)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -282,7 +285,7 @@ func publishedOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httproute
 		msg := fmt.Sprintf("Pushlied DataItem of %s is empty.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All DataItem had been published of %s.", repoName)
+		msg := fmt.Sprintf("All DataItems have been published of %s.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, publishedRepoItems))
 	}
 }
@@ -301,6 +304,7 @@ func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	pulledRepoItems, err := GetPulledRepoInfo(dpName, repoName, offset, limit)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -308,7 +312,7 @@ func pulledOfRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		msg := fmt.Sprintf("Pulled DataItem of %s is empty.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ErrorPublishedItemEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All DataItem had been pulled of %s.", repoName)
+		msg := fmt.Sprintf("All DataItems have been pulled of %s.", repoName)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, pulledRepoItems))
 	}
 }
@@ -324,6 +328,7 @@ func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httproute
 	count, err := getPulledTagCount(dpname, repo, item)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
@@ -333,6 +338,7 @@ func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httproute
 	pulledTagsOfItem, err := GetPulledTagsOfItemInfo(dpname, repo, item, offset, limit)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -340,7 +346,7 @@ func pulledTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httproute
 		msg := fmt.Sprintf("Pulled tags of %s/%s is empty.", repo, item)
 		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All tags had been pulled of %s/%s", repo, item)
+		msg := fmt.Sprintf("All tags have been pulled of %s/%s", repo, item)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &pulledTagsOfItem))
 	}
 }
@@ -356,6 +362,7 @@ func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	count, err := getPublishedTagCount(dpname, repo, item)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 	offset, limit := optionalOffsetAndSize(r, 10, 1, 100)
@@ -365,6 +372,7 @@ func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	publishedTagsOfItem, err := GetPublishedTagsOfItemInfo(dpname, repo, item, offset, limit)
 	if err != nil {
 		log.Debug(err)
+		JsonResult(w, http.StatusInternalServerError, cmd.InternalError, err.Error(), nil)
 		return
 	}
 
@@ -372,7 +380,7 @@ func publishedTagOfItemHandler(w http.ResponseWriter, r *http.Request, ps httpro
 		msg := fmt.Sprintf("Published tags of %s/%s is empty.", repo, item)
 		JsonResult(w, http.StatusOK, cmd.ErrorPulledTagEmpty, msg, nil)
 	} else {
-		msg := fmt.Sprintf("All tags had been published of %s/%s", repo, item)
+		msg := fmt.Sprintf("All tags have been published of %s/%s", repo, item)
 		JsonResult(w, http.StatusOK, cmd.ResultOK, msg, newQueryListResult(count, &publishedTagsOfItem))
 	}
 }

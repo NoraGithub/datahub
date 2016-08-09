@@ -1068,6 +1068,9 @@ func GetRepoInfo(dpName, status string, offset int64, limit int) ([]ds.RepoInfo,
 
 	var dpid int
 	row.Scan(&dpid)
+	if dpid == 0 {
+		return nil, errors.New(fmt.Sprintf("No datapool named %s.", dpName))
+	}
 
 	sql = fmt.Sprintf(`SELECT DISTINCT REPOSITORY 
 		FROM DH_DP_RPDM_MAP 
@@ -1133,7 +1136,7 @@ func GetPublishedRepoInfo(dpName, repoName string, offset int64, limit int) ([]d
 	var publishedItemInfo ds.PublishedItemInfo
 	publishedItemInfos := make([]ds.PublishedItemInfo, 0)
 
-	sql := fmt.Sprintf(`SELECT DPID, DPCONN FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
+	sql := fmt.Sprintf(`SELECT DPID FROM DH_DP WHERE DPNAME = '%s' AND STATUS = 'A';`, dpName)
 
 	row, err := g_ds.QueryRow(sql)
 	if err != nil {
@@ -1142,9 +1145,11 @@ func GetPublishedRepoInfo(dpName, repoName string, offset int64, limit int) ([]d
 		return nil, err
 	}
 
-	var dpconn string
 	var dpid int
-	row.Scan(&dpid, &dpconn)
+	row.Scan(&dpid)
+	if dpid == 0 {
+		return publishedItemInfos, errors.New(fmt.Sprintf("No datapool named %s.", dpName))
+	}
 
 	sql = fmt.Sprintf(`SELECT DATAITEM, CREATE_TIME, ITEMDESC 
 		FROM DH_DP_RPDM_MAP 
@@ -1194,7 +1199,6 @@ func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.P
 		return nil, err
 	}
 
-	var dataitem string
 	result := ds.Result{}
 	pages := ds.ResultPages{}
 	orderInfoSlice := []ds.OrderInfo{}
@@ -1204,7 +1208,7 @@ func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.P
 	for rows.Next() {
 		rows.Scan(&pulledItemInfo.ItemName, &pulledItemInfo.Location)
 
-		path := "/api/subscriptions/pull/" + repoName + "/" + dataitem
+		path := "/api/subscriptions/pull/" + repoName + "/" + pulledItemInfo.ItemName
 		resp, err := commToServerGetRsp("get", path, nil)
 		if err != nil {
 			l := log.Error(err)
@@ -1235,9 +1239,10 @@ func GetPulledRepoInfo(dpName, repoName string, offset int64, limit int) ([]ds.P
 					logq.LogPutqueue(l)
 					return nil, err
 				}
-				for _, v := range orderInfoSlice {
-					pulledItemInfo.SignTime = &v.Signtime
 
+				if len(orderInfoSlice) > 0 {
+					//Already order by signtime desc. Get the first member.
+					pulledItemInfo.SignTime = &orderInfoSlice[0].Signtime
 					log.Debug("pulledItemInfo.SignTime:", pulledItemInfo.SignTime)
 				}
 			}
@@ -1265,6 +1270,9 @@ func GetPulledTagsOfItemInfo(dpname, repo, item string, offset int64, limit int)
 
 	var dpid int
 	row.Scan(&dpid)
+	if dpid == 0 {
+		return pulledTagsOfItem, errors.New(fmt.Sprintf("No datapool named %s.", dpname))
+	}
 
 	sql = fmt.Sprintf(`SELECT RPDMID FROM DH_DP_RPDM_MAP
 				WHERE REPOSITORY  = '%s'
@@ -1341,6 +1349,9 @@ func GetPublishedTagsOfItemInfo(dpname, repo, item string, offset int64, limit i
 	var dpid int
 	var dpconn string
 	row.Scan(&dpid, &dpconn)
+	if dpid == 0 {
+		return publishedTagsOfItem, errors.New(fmt.Sprintf("No datapool named %s.", dpname))
+	}
 
 	sql = fmt.Sprintf(`SELECT RPDMID, ITEMDESC FROM DH_DP_RPDM_MAP
 				WHERE REPOSITORY  = '%s'
