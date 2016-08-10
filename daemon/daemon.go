@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
-	"github.com/asiainfoLDP/datahub/daemon/daemonigo"
+	//"github.com/asiainfoLDP/datahub/daemon/daemonigo"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -438,7 +438,7 @@ func RunDaemon() {
 		wg.Wait()
 	}
 
-	daemonigo.UnlockPidFile()
+	//daemonigo.UnlockPidFile()
 	g_ds.Db.Close()
 
 	log.Info("daemon exit....")
