@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asiainfoLDP/datahub/cmd"
-	"github.com/asiainfoLDP/datahub/daemon/daemonigo"
+	//"github.com/asiainfoLDP/datahub/daemon/daemonigo"
 	"github.com/asiainfoLDP/datahub/ds"
 	"github.com/asiainfoLDP/datahub/utils"
 	log "github.com/asiainfoLDP/datahub/utils/clog"
@@ -35,8 +35,6 @@ var (
 	g_strDpPath string = cmd.GstrDpPath
 	g_dbfile    string = g_strDpPath + "\\DB\\datahub.db"
 	logfile            = g_strDpPath + "\\LOG\\datahub.log"
-
-
 
 	DaemonCliServer string = "127.0.0.1:35600"
 
@@ -438,7 +436,7 @@ func RunDaemon() {
 		wg.Wait()
 	}
 
-	daemonigo.UnlockPidFile()
+	//daemonigo.UnlockPidFile()
 	g_ds.Db.Close()
 
 	log.Info("daemon exit....")
