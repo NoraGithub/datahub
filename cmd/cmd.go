@@ -143,13 +143,13 @@ var Cmd = []Command{
 	{
 		Name:      "login",
 		Handler:   Login,
-		Desc:      "Login to hub.dataos.io",
+		Desc:      "Login to the server",
 		NeedLogin: true,
 	},
 	{
 		Name:      "logout",
 		Handler:   Logout,
-		Desc:      "Logout from hub.dataos.io",
+		Desc:      "Logout from the server",
 		NeedLogin: true,
 	},
 
