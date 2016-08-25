@@ -149,7 +149,7 @@ func CompareTagSlice(a []string, b []string) {
 func AlterItemStatus(c []string) (err error) {
 	sqlItem := fmt.Sprintf(`UPDATE DH_DP_RPDM_MAP SET STATUS = 'N'
 			WHERE STATUS='A' AND DATAITEM=%v`, c)
-	Items, e := g_ds.Update(sqlItem)
+	_, e := g_ds.Update(sqlItem)
 	if e != nil {
 		l := log.Error(err)
 		logq.LogPutqueue(l)
@@ -161,7 +161,7 @@ func AlterItemStatus(c []string) (err error) {
 func AlterTagStatus(d []string) (err error) {
 	sqlTag := fmt.Sprintf(`UPDATE DH_RPDM_TAG_MAP SET STATUS = 'N'
 				WHERE STATUS='A' AND TAGNAME=%v`, d)
-	Tags, e := g_ds.Update(sqlTag)
+	_, e := g_ds.Update(sqlTag)
 	if e != nil {
 		l := log.Error(err)
 		logq.LogPutqueue(l)
