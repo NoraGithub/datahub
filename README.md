@@ -33,7 +33,7 @@ Datahub CLI是datahub的命令行客户端，用来输入datahub相关命令。
 - subs
     - Subscrption管理
 - login
-    - 登录到dataos.io
+    - 登录到hub.dataos.io
 - pull
     - 下载数据
 - pub
@@ -242,7 +242,7 @@ $
 ##### 4.1. 登录到hub.dataos.io
 
 ```shell
-datahub login [--user=user]
+datahub login URL
 ```
 输出
 ```
@@ -250,8 +250,8 @@ datahub login [--user=user]
 ```
 例子
 ```
-$ datahub login
-login as: datahub
+$ datahub login https://hub.dataos.io
+login as: datahub@gmail.com
 password: *******
 Error : login failed.
 $
