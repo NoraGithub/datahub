@@ -127,6 +127,7 @@ type PubPara struct {
 	Comment     string `json:"comment, omitempty"`
 	ItemDesc    string `json:"itemdesc, omitempty"`
 	SupplyStyle string `json:"supplystyle, omitempty"`
+	Ch_itemname string `json:"ch_itemname, omitempty"`
 }
 
 type DpOtherData struct {
