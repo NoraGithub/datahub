@@ -52,7 +52,7 @@ func Login(login bool, args []string) (err error) {
 		return err
 	}
 	if len(args) == 0 {
-		fmt.Println(ErrMsgArgument)
+		fmt.Println("Please login")
 		loginUsage()
 		return errors.New(ErrMsgArgument)
 	}

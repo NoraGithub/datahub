@@ -628,7 +628,7 @@ func GetSampleData(itempath string) (sample string) {
 			break
 		}
 	}
-	log.Println("sample data:", sample)
+	log.Debug("sample data:", sample)
 	//need lenth check
 	return sample
 }
