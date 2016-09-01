@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -113,11 +114,12 @@ func p2p_pull(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	retmsg := ""
 	token := r.Form.Get("token")
 	username := r.Form.Get("username")
+	log.Debug(r.URL, "----", r.FormValue("username"), "----", r.Form.Get("username"))
 	if len(token) > 0 && len(username) > 0 {
 		log.Println(r.URL.Path, "token:", token, "username:", username)
-		url := "/transaction/" + sRepoName + "/" + sDataItem + "/" + sTag +
-			"?cypt_accesstoken=" + token + "&username=" + username
-		tokenValid, retmsg = checkAccessToken(url)
+		uri := "/transaction/" + sRepoName + "/" + sDataItem + "/" + sTag +
+			"?cypt_accesstoken=" + token + "&username=" + url.QueryEscape(username)
+		tokenValid, retmsg = checkAccessToken(uri)
 	}
 
 	if !tokenValid {

@@ -103,7 +103,7 @@ func pubItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		Comment:     pub.Comment,
 		Meta:        meta,
 		Sample:      sample,
-		Ch_itemname: item}
+		Ch_itemname: pub.Ch_itemname}
 	//{"itemaccesstype":"private","comment":"","meta":"  ","label":{"sys":{"supply_style":"batch"}}}
 	isys := Sys{Supplystyle: pub.SupplyStyle}
 	icpub.Slabel = Label{Ssys: isys}
@@ -628,7 +628,7 @@ func GetSampleData(itempath string) (sample string) {
 			break
 		}
 	}
-	log.Println("sample data:", sample)
+	log.Debug("sample data:", sample)
 	//need lenth check
 	return sample
 }
