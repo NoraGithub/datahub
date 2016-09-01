@@ -281,7 +281,6 @@ func pubUsage() {
 	fmt.Println("--accesstype,-t   Specify the access type of the dataitem:public or private, default private")
 	fmt.Println("--comment,-m      Comments about the dataitem")
 	fmt.Println("--supplystyle,-s  Specify the supplystyle of the dataitem:batch , flow or api, default batch\n")
-	fmt.Println("--chinese,-ch     Dataitem's Chinese name")
 	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL [OPTION]\n", os.Args[0])
 	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL DPNAME://ITEMDESC [OPTION]   if you have already published the item on the web page \n", os.Args[0])
 	fmt.Println("\nPublish a tag.\n")
