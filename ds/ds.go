@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	DATAHUB_VERSION = "v2.0.0"
+	DATAHUB_VERSION = "v2.1.0"
 )
 
 type DsPull struct {
@@ -127,6 +127,7 @@ type PubPara struct {
 	Comment     string `json:"comment, omitempty"`
 	ItemDesc    string `json:"itemdesc, omitempty"`
 	SupplyStyle string `json:"supplystyle, omitempty"`
+	Ch_itemname string `json:"ch_itemname, omitempty"`
 }
 
 type DpOtherData struct {

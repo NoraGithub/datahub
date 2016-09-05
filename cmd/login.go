@@ -17,6 +17,23 @@ import (
 	"strconv"
 )
 
+var (
+	WHHTTPSERVER      = "http://www.cjbigdata.com"
+	WHSERVER          = "www.cjbigdata.com"
+	HEBHTTPSERVER     = "http://www.hrbdataex.com"
+	HEBSERVER         = "www.hrbdataex.com"
+	GZHTTPSERVER      = "http://www.gzbdex.com"
+	GZSERVER          = "www.gzbdex.com"
+	DATAHTTPHUBSERVER = "https://hub.dataos.io"
+	DATAHUBSERVER     = "hub.dataos.io"
+	WHprefix          = "WH+"
+	HEBprefix         = "HEB+"
+	GZprefix          = "GZ+"
+	datahubprefix     = "datahub+"
+)
+
+var ServerPrefix = make(map[string]string)
+
 type UserForJson struct {
 	Username string `json:"username", omitempty`
 }
@@ -34,17 +51,28 @@ func Login(login bool, args []string) (err error) {
 		//fmt.Println(err)
 		return err
 	}
-	if len(args) >= 1 {
+	if len(args) == 0 {
+		fmt.Println("Please login")
+		loginUsage()
+		return errors.New(ErrMsgArgument)
+	}
+
+	var prefix string
+	if p, ok := ServerPrefix[args[0]]; ok {
+		prefix = p
+	} else {
 		fmt.Println(ErrMsgArgument)
 		loginUsage()
 		return errors.New(ErrMsgArgument)
 	}
+
 	fmt.Printf("login as: ")
 	reader := bufio.NewReader(os.Stdin)
 	//loginName, _ := reader.ReadString('\n')
 	loginName, _ := reader.ReadBytes('\n')
 
-	loginName = bytes.TrimRight(loginName, "\r\n")
+	loginName = append([]byte(prefix), bytes.TrimRight(loginName, "\r\n")...)
+
 	fmt.Printf("password: ")
 	pass := utils.GetPasswd(true) // Silent, for *'s use gopass.GetPasswdMasked()
 	//fmt.Printf("[%s]:[%s]\n", string(loginName), string(pass))
@@ -146,9 +174,20 @@ func Logout(login bool, args []string) error {
 }
 
 func loginUsage() {
-	fmt.Printf("Usage:\n%s login\n\nSend a login request to the datahub server using your user name and password.\n", os.Args[0])
+	fmt.Printf("Usage:\n%s login URL\n\nSend a login request to the server using your user name and password.\n", os.Args[0])
 }
 
 func logoutUsage() {
 	fmt.Printf("Usage:\n%s logout\n\nSend a logout request to the datahub.\n", os.Args[0])
+}
+
+func init() {
+	ServerPrefix[WHHTTPSERVER] = WHprefix
+	ServerPrefix[WHSERVER] = WHprefix
+	ServerPrefix[HEBHTTPSERVER] = HEBprefix
+	ServerPrefix[HEBSERVER] = HEBprefix
+	ServerPrefix[GZHTTPSERVER] = GZprefix
+	ServerPrefix[GZSERVER] = GZprefix
+	ServerPrefix[DATAHTTPHUBSERVER] = datahubprefix
+	ServerPrefix[DATAHUBSERVER] = datahubprefix
 }

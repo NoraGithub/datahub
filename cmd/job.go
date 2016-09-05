@@ -19,7 +19,7 @@ func Job(needLogin bool, args []string) (err error) {
 	if len(args) > 0 {
 		if args[0][0] != '-' {
 			path := "/job"
-			if len(args) > 0 && len(args[0]) > 0 {
+			if len(args[0]) > 0 {
 				path += "/" + args[0]
 			} else {
 				if err := f.Parse(args); err != nil {

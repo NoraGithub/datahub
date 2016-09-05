@@ -25,6 +25,9 @@ const (
 
 func Pub(needlogin bool, args []string) (err error) {
 
+	//fmt.Println(args)
+	//return
+
 	if len(args) < 2 {
 		//fmt.Println(ErrMsgArgument)
 		pubUsage()
@@ -39,6 +42,7 @@ func Pub(needlogin bool, args []string) (err error) {
 	f.StringVar(&pub.Comment, []string{"-comment", "m"}, "", "comments")
 	//f.StringVar(&pub.Detail, []string{"-detail", "d"}, "", "tag detail ,for example file name")
 	f.StringVar(&pub.SupplyStyle, []string{"-supplystyle", "s"}, "batch", "dataitem supplystyle: batch , flow or api")
+	f.StringVar(&pub.Ch_itemname, []string{"-chinese", "ch"}, "", "dataitem's Chinese name")
 	f.Usage = pubUsage
 
 	if len(args) > 2 {
@@ -47,6 +51,12 @@ func Pub(needlogin bool, args []string) (err error) {
 			return err
 		}
 	}
+
+	//if pub.Ch_itemname == "" {
+	//	fmt.Println("DataHub: Dataitem's Chinese name cannot be empty.")
+	//	pubUsage()
+	//	return
+	//}
 
 	if len(args[0]) == 0 || len(args[1]) == 0 {
 		fmt.Println(ErrMsgArgument)
@@ -114,6 +124,10 @@ func Pub(needlogin bool, args []string) (err error) {
 }
 
 func PubItem(repo, item string, p ds.PubPara, args []string) (err error) {
+
+	if p.Ch_itemname == "" {
+		p.Ch_itemname = item
+	}
 
 	url := repo + "/" + item
 	if len(p.Accesstype) == 0 {
@@ -263,9 +277,10 @@ func pubUsage() {
 	fmt.Printf("Usage: \n%s pub REPO/DATAITEM  DPNAME://ITEMDESC [OPTION]\n", os.Args[0])
 	fmt.Println("\nPublish a dataitem.\n")
 	fmt.Println("Options:\n")
+	fmt.Println("--chinese,-ch     Dataitem's Chinese name")
 	fmt.Println("--accesstype,-t   Specify the access type of the dataitem:public or private, default private")
 	fmt.Println("--comment,-m      Comments about the dataitem")
-	fmt.Println("--supplystyle,-s   Specify the supplystyle of the dataitem:batch , flow or api, default batch\n")
+	fmt.Println("--supplystyle,-s  Specify the supplystyle of the dataitem:batch , flow or api, default batch\n")
 	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL [OPTION]\n", os.Args[0])
 	fmt.Printf("%s pub REPO/DATAITEM:TAG TAGDETAIL DPNAME://ITEMDESC [OPTION]   if you have already published the item on the web page \n", os.Args[0])
 	fmt.Println("\nPublish a tag.\n")

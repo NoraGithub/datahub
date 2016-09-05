@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -117,7 +118,7 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if true == AutomaticPullRmqueue(p) {
 			strret = "Cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem + " successfully."
 		} else {
-			strret = "you have already cancel the automatical pulling of " + p.Repository + "/" + p.Dataitem
+			strret = "you have already cancelled the automatical pulling of " + p.Repository + "/" + p.Dataitem
 		}
 		msgret := ds.MsgResp{Msg: strret}
 		resp, _ := json.Marshal(msgret)
@@ -126,19 +127,19 @@ func pullHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	url := "/transaction/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag
+	uri := "/transaction/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag
 
-	token, entrypoint, err := getAccessToken(url, w)
+	token, entrypoint, err := getAccessToken(uri, w)
 	if err != nil {
 		log.Println(err)
 		strret = err.Error()
 		return
 	} else {
-		url = "/pull/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag +
-			"?token=" + token + "&username=" + gstrUsername
+		uri = "/pull/" + ps.ByName("repo") + "/" + ps.ByName("item") + "/" + p.Tag +
+			"?token=" + token + "&username=" + url.QueryEscape(gstrUsername)
 
 		chn := make(chan int)
-		go dl(url, entrypoint, p, w, chn)
+		go dl(uri, entrypoint, p, w, chn)
 		<-chn
 		if len(GetMetaData(p.ItemDesc)) > 0 && len(GetSampleData(p.ItemDesc)) > 0 {
 			log.Println("Metafile and Samplefile is already exist")
@@ -202,8 +203,8 @@ func dl(uri, ip string, p ds.DsPull, w http.ResponseWriter, c chan int) error {
 }
 
 /*download routine, supports resuming broken downloads.*/
-func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64, error) {
-	log.Printf("we are going to download %s, save to dp=%s,name=%s\n", url, p.Datapool, p.DestName)
+func download(uri string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64, error) {
+	log.Printf("we are going to download %s, save to dp=%s,name=%s\n", uri, p.Datapool, p.DestName)
 
 	var out *os.File
 	var err error
@@ -236,7 +237,8 @@ func download(url string, p ds.DsPull, w http.ResponseWriter, c chan int) (int64
 		return ErrLogAndResp(c, w, http.StatusInternalServerError, cmd.ErrorStatFile, err)
 	}
 	out.Seek(stat.Size(), 0)
-	req, err := http.NewRequest("GET", url, nil)
+
+	req, err := http.NewRequest("GET", uri, nil)
 	req.Header.Set("User-Agent", "go-downloader")
 	/* Set download starting position with 'Range' in HTTP header*/
 	req.Header.Set("Range", "bytes="+strconv.FormatInt(stat.Size(), 10)+"-")
@@ -504,18 +506,18 @@ func PullItemAutomatic(Tags map[int]string, v ds.DsPull) {
 func PullOneTagAutomatic(p ds.DsPull, c chan int) {
 	var ret string
 	var w *httptest.ResponseRecorder = httptest.NewRecorder()
-	url := "/transaction/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag
+	uri := "/transaction/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag
 
-	token, entrypoint, err := getAccessToken(url, w)
+	token, entrypoint, err := getAccessToken(uri, w)
 	if err != nil {
 		log.Println(err)
 		ret = err.Error()
 		return
 	} else {
-		url = "/pull/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag +
-			"?token=" + token + "&username=" + gstrUsername
+		uri = "/pull/" + p.Repository + "/" + p.Dataitem + "/" + p.Tag +
+			"?token=" + token + "&username=" + url.QueryEscape(gstrUsername)
 
-		go dl(url, entrypoint, p, w, c)
+		go dl(uri, entrypoint, p, w, c)
 	}
 
 	log.Println(ret)
