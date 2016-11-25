@@ -249,7 +249,6 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			return
 		}
 		defer resp.Body.Close()
-
 		result := ds.Response{}
 
 		respbody, err := ioutil.ReadAll(resp.Body)
@@ -271,6 +270,80 @@ func repoDelTagHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
 			log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
 		}
+	}
+}
+
+func renameRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
+	repository := ps.ByName("repo")
+	name := ps.ByName("newname")
+	
+	path := "/api/repositories/" + repository
+	type RepoCNname struct {
+		Ch_repname string `json:"ch_repname"`
+	}
+	
+	reqBody := &RepoCNname{name}
+	jsondata,err := json.Marshal(reqBody)
+	if err!=nil {
+		return 
+	}
+	resp, err := commToServerGetRsp("put", path, jsondata)
+	if err != nil {
+		log.Error(err)
+		HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+		return
+	}
+	defer resp.Body.Close()
+	showResult(resp,w)
+}
+
+func renameItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) == 0 {
+		HttpNoData(w, http.StatusUnauthorized, cmd.ErrorServiceUnavailable, " ")
+		return
+	}
+	repository := ps.ByName("repo")
+	dataitem := ps.ByName("item")
+	name := ps.ByName("newname")
+	path := "/api/repositories/" + repository + "/" + dataitem
+	type ItemCNname struct {
+		Ch_itemname string `json:"ch_itemname"`
+	}
+	
+	reqBody := &ItemCNname{name}
+	jsondata,err := json.Marshal(reqBody)
+	if err!=nil {
+		return
+	}
+	resp, err := commToServerGetRsp("put", path, jsondata)
+	if err != nil {
+		log.Error(err)
+		HttpNoData(w, resp.StatusCode, cmd.ErrorServiceUnavailable, "commToServer error")
+		return
+	}
+	defer resp.Body.Close()
+	showResult(resp,w)
+}
+
+func showResult(resp *http.Response,w http.ResponseWriter){
+	result := ds.Response{}
+	respbody,_ := ioutil.ReadAll(resp.Body)
+	unmarshalerr := json.Unmarshal(respbody, &result)
+	if unmarshalerr != nil {
+		log.Error(unmarshalerr)
+		HttpNoData(w, http.StatusInternalServerError, cmd.ErrorUnmarshal, "error while unmarshal respBody")
+		return
+	}
+	if resp.StatusCode == http.StatusOK && result.Code == 0 {
+		HttpNoData(w, http.StatusOK, cmd.ResultOK, result.Msg)
+		log.Info("Msg :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
+	} else {
+		HttpNoData(w, resp.StatusCode, result.Code, result.Msg)
+		log.Info("Error :", result.Msg, "ResultCode:", result.Code, "HttpCode :", resp.StatusCode)
 	}
 }
 
@@ -344,7 +417,7 @@ func judgeRepoOrItemExist(repository, dataitem string) (exist bool, msg string, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
-		err = errors.New("unkown error")
+		err = errors.New("unknown error")
 		return
 	}
 	result := ds.Response{}
@@ -384,7 +457,7 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
-		err = errors.New("unkown error")
+		err = errors.New("unknown error")
 		return
 	}
 

@@ -59,7 +59,7 @@ func Dp(needLogin bool, args []string) (err error) {
 		if resp.StatusCode == http.StatusOK {
 			dpResp(false, body)
 		} else {
-			fmt.Println(resp.StatusCode, string(body))
+			showError(resp)
 			err = errors.New(string(resp.StatusCode))
 		}
 

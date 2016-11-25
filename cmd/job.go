@@ -92,7 +92,6 @@ func Job(needLogin bool, args []string) (err error) {
 			//fmt.Println(string(body))
 			jobResp(resp)
 		}
-
 	}
 	return err
 }

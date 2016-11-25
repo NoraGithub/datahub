@@ -19,7 +19,6 @@ type FormatDpCreate struct {
 }
 
 var DataPoolTypes = []string{"file", "db", "hdfs", "jdbc", "s3", "api", "storm"}
-
 func DpCreate(needLogin bool, args []string) (err error) {
 	f := mflag.NewFlagSet("datahub dp create", mflag.ContinueOnError)
 	d := FormatDpCreate{}
@@ -29,6 +28,7 @@ func DpCreate(needLogin bool, args []string) (err error) {
 	if err = f.Parse(args); err != nil {
 		return err
 	}
+	
 	if len(args) == 1 {
 		if strings.Contains(args[0], "/") == true {
 			fmt.Println("DataHub : The name of datapool can't contain '/'.")
@@ -54,7 +54,6 @@ func DpCreate(needLogin bool, args []string) (err error) {
 		}
 		d.Name = args[0]
 		sp := strings.Split(args[1], "://")
-
 		if len(sp) > 1 && len(sp[1]) > 0 {
 			d.Type = strings.ToLower(sp[0])
 			if sp[1][0] != '/' && d.Type == "file" {
@@ -113,7 +112,6 @@ func DpCreate(needLogin bool, args []string) (err error) {
 	} else {
 		showError(resp)
 	}
-
 	return err
 }
 
@@ -148,7 +146,6 @@ func validateDpconn(dpconn, dptype string) bool {
 				return false
 			}
 		}
-
 		if strings.Contains(entrypoint, ":") == false || strings.Count(entrypoint, ":") != 1 {
 			fmt.Println("DataHub : Invalid PORT.\nSee 'datahub dp create --help'.")
 			return false
@@ -165,18 +162,15 @@ func validateDpconn(dpconn, dptype string) bool {
 				}
 			}
 		}
-
 	}
-
 	return true
 }
 
 func dpcUseage() {
 	fmt.Println("Usage of datahub dp create:")
 	fmt.Println("datahub dp create DATAPOOL [[file://][ABSOLUTE_PATH]] [[s3://][BUCKET##ID##KEY##REGION]] [[hdfs://][USERNAME:PASSWORD@HOST:PORT]]")
-	fmt.Println("e.g. datahub dp create dptest file:///home/user/test")
-	fmt.Println("     datahub dp create s3dp s3://mybucket##ABCDEFGHIGKLMNSSSLSS##lC4SBSSBx5HC/bSfniihhlnH3qpCJjgkLKDDSWAf##cn-north-1")
-	fmt.Println("     datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
-	fmt.Println("Create a datapool.\n")
-
+    fmt.Println("e.g. datahub dp create dptest file:///home/user/test")
+    fmt.Println("     datahub dp create s3dp s3://mybucket##ABCDEFGHIGKLMNSSSLSS##lC4SBSSBx5HC/bSfniihhlnH3qpCJjgkLKDDSWAf##cn-north-1")
+    fmt.Println("     datahub dp create hdfsdp hdfs://root:123@127.0.0.1:9000")
+    fmt.Println("Create a datapool.\n")
 }

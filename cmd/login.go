@@ -34,6 +34,17 @@ var (
 
 var ServerPrefix = make(map[string]string)
 
+func init() {
+	ServerPrefix[WHHTTPSERVER] = WHprefix
+	ServerPrefix[WHSERVER] = WHprefix
+	ServerPrefix[HEBHTTPSERVER] = HEBprefix
+	ServerPrefix[HEBSERVER] = HEBprefix
+	ServerPrefix[GZHTTPSERVER] = GZprefix
+	ServerPrefix[GZSERVER] = GZprefix
+	ServerPrefix[DATAHTTPHUBSERVER] = datahubprefix
+	ServerPrefix[DATAHUBSERVER] = datahubprefix
+}
+
 type UserForJson struct {
 	Username string `json:"username", omitempty`
 }
@@ -179,15 +190,4 @@ func loginUsage() {
 
 func logoutUsage() {
 	fmt.Printf("Usage:\n%s logout\n\nSend a logout request to the datahub.\n", os.Args[0])
-}
-
-func init() {
-	ServerPrefix[WHHTTPSERVER] = WHprefix
-	ServerPrefix[WHSERVER] = WHprefix
-	ServerPrefix[HEBHTTPSERVER] = HEBprefix
-	ServerPrefix[HEBSERVER] = HEBprefix
-	ServerPrefix[GZHTTPSERVER] = GZprefix
-	ServerPrefix[GZSERVER] = GZprefix
-	ServerPrefix[DATAHTTPHUBSERVER] = datahubprefix
-	ServerPrefix[DATAHUBSERVER] = datahubprefix
 }

@@ -339,6 +339,9 @@ func RunDaemon() {
 	router.GET("/api/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
 	router.DELETE("/api/repositories/:repo/:item", repoDelOneItemHandler)
 	router.DELETE("/api/repositories/:repo/:item/:tag", repoDelTagHandler)
+	router.PUT("/api/repositories/:repo/:newname/:item", renameItemHandler)
+	router.PUT("/api/repositories/:repo/:newname", renameRepoHandler)
+
 
 	router.GET("/api/subscriptions/dataitems", subsHandler)
 	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
