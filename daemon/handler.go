@@ -26,6 +26,7 @@ var (
 
 type UserForJson struct {
 	Username string `json:"username", omitempty`
+	ServerUrl string `json:"serverurl", omitempty`
 }
 
 type tk struct {
@@ -67,6 +68,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gstrUsername = userforjson.Username
+	if len(userforjson.ServerUrl) != 0 {
+		url = userforjson.ServerUrl + "/api"
+	}
 	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", r.Header.Get("Authorization"))

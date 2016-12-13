@@ -13,6 +13,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -47,6 +48,7 @@ func init() {
 
 type UserForJson struct {
 	Username string `json:"username", omitempty`
+	ServerUrl string `json:"serverurl", omitempty`
 }
 
 type Loginerr struct {
@@ -55,7 +57,6 @@ type Loginerr struct {
 }
 
 func Login(login bool, args []string) (err error) {
-
 	f := mflag.NewFlagSet("datahub login", mflag.ContinueOnError)
 	f.Usage = loginUsage
 	if err := f.Parse(args); err != nil {
@@ -69,34 +70,32 @@ func Login(login bool, args []string) (err error) {
 	}
 
 	var prefix string
+	var serverUrl string
 	if p, ok := ServerPrefix[args[0]]; ok {
 		prefix = p
+	} else if _,err := url.Parse(args[0]); err == nil {
+		prefix = datahubprefix
+		serverUrl = args[0]
 	} else {
 		fmt.Println(ErrMsgArgument)
 		loginUsage()
 		return errors.New(ErrMsgArgument)
 	}
-
 	fmt.Printf("login as: ")
 	reader := bufio.NewReader(os.Stdin)
 	//loginName, _ := reader.ReadString('\n')
 	loginName, _ := reader.ReadBytes('\n')
-
 	loginName = append([]byte(prefix), bytes.TrimRight(loginName, "\r\n")...)
-
 	fmt.Printf("password: ")
 	pass := utils.GetPasswd(true) // Silent, for *'s use gopass.GetPasswdMasked()
 	//fmt.Printf("[%s]:[%s]\n", string(loginName), string(pass))
-
 	User.userName = string(loginName)
 	//User.password = string(pass)
 	User.password = fmt.Sprintf("%x", md5.Sum(pass))
-
 	User.b64 = base64.StdEncoding.EncodeToString([]byte(User.userName + ":" + User.password))
 	//fmt.Printf("%s\n%s:%s\n", User.b64, User.userName, User.password)
-
 	//req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
-	userJson := UserForJson{Username: User.userName}
+	userJson := UserForJson{Username: User.userName,ServerUrl: serverUrl}
 	jsondata, _ := json.Marshal(userJson)
 
 	resp, err := commToDaemon("get", "/users/auth", jsondata) //users/auth
