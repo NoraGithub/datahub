@@ -69,7 +69,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	gstrUsername = userforjson.Username
 	if len(userforjson.ServerUrl) != 0 {
-		url = userforjson.ServerUrl + "/api"
+		DefaultServer = userforjson.ServerUrl
+		url = DefaultServer + "/api"
 	}
 	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
 	req, err := http.NewRequest("GET", url, nil)
