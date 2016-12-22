@@ -323,61 +323,61 @@ func RunDaemon() {
 
 	router := httprouter.New()
 	router.GET("/", serverFileHandler)
-	router.POST("/api/datapools", dpPostOneHandler)
-	router.GET("/api/datapools", dpGetAllHandler)
-	router.GET("/api/datapools/:dpname", dpGetOneHandler)
-	router.DELETE("/api/datapools/:dpname", dpDeleteOneHandler)
+	router.POST("/datapools", dpPostOneHandler)
+	router.GET("/datapools", dpGetAllHandler)
+	router.GET("/datapools/:dpname", dpGetOneHandler)
+	router.DELETE("/datapools/:dpname", dpDeleteOneHandler)
 
-	router.GET("/api/ep", epGetHandler)
-	router.POST("/api/ep", epPostHandler)
-	router.DELETE("/api/ep", epDeleteHandler)
+	router.GET("/ep", epGetHandler)
+	router.POST("/ep", epPostHandler)
+	router.DELETE("/ep", epDeleteHandler)
 
-	router.GET("/api/repositories/:repo/:item/:tag", repoTagHandler)
-	router.GET("/api/repositories/:repo/:item", repoItemHandler)
-	router.GET("/api/repositories/:repo", repoRepoNameHandler)
-	router.GET("/api/repositories", repoHandler)
-	router.GET("/api/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
-	router.DELETE("/api/repositories/:repo/:item", repoDelOneItemHandler)
-	router.DELETE("/api/repositories/:repo/:item/:tag", repoDelTagHandler)
-	router.PUT("/api/repositories/:repo/:newname/:item", renameItemHandler)
-	router.PUT("/api/repositories/:repo/:newname", renameRepoHandler)
+	router.GET("/repositories/:repo/:item/:tag", repoTagHandler)
+	router.GET("/repositories/:repo/:item", repoItemHandler)
+	router.GET("/repositories/:repo", repoRepoNameHandler)
+	router.GET("/repositories", repoHandler)
+	router.GET("/repositories/:repo/:item/:tag/judge", judgeTagExistHandler)
+	router.DELETE("/repositories/:repo/:item", repoDelOneItemHandler)
+	router.DELETE("/repositories/:repo/:item/:tag", repoDelTagHandler)
+	router.PUT("/repositories/:repo/:newname/:item", renameItemHandler)
+	router.PUT("/repositories/:repo/:newname", renameRepoHandler)
 
 
-	router.GET("/api/subscriptions/dataitems", subsHandler)
-	router.GET("/api/subscriptions/pull/:repo/:item", subsHandler)
+	router.GET("/subscriptions/dataitems", subsHandler)
+	router.GET("/subscriptions/pull/:repo/:item", subsHandler)
 
-	router.POST("/api/repositories/:repo/:item", pubItemHandler)
-	router.POST("/api/repositories/:repo/:item/:tag", newPubTagHandler)
+	router.POST("/repositories/:repo/:item", pubItemHandler)
+	router.POST("/repositories/:repo/:item/:tag", newPubTagHandler)
 
-	router.POST("/api/subscriptions/:repo/:item/pull", pullHandler)
+	router.POST("/subscriptions/:repo/:item/pull", pullHandler)
 
-	router.GET("/api/job", jobHandler)
-	router.GET("/api/job/:id", jobDetailHandler)
-	router.DELETE("/api/job/:id", jobRmHandler)
-	router.DELETE("/api/job", jobRmAllHandler)
+	router.GET("/job", jobHandler)
+	router.GET("/job/:id", jobDetailHandler)
+	router.DELETE("/job/:id", jobRmHandler)
+	router.DELETE("/job", jobRmAllHandler)
 
-	router.GET("/api/daemon/:repo/:item/:tag", tagStatusHandler)
-	router.GET("/api/daemon/:repo/:item", tagOfItemStatusHandler)
+	router.GET("/daemon/:repo/:item/:tag", tagStatusHandler)
+	router.GET("/daemon/:repo/:item", tagOfItemStatusHandler)
 
-	router.GET("/api/heartbeat/status/:user", userStatusHandler)
+	router.GET("/heartbeat/status/:user", userStatusHandler)
 
 	http.Handle("/", router)
-	http.HandleFunc("/api/stop", stopHttp)
-	http.HandleFunc("/api/users/auth", loginHandler)
-	http.HandleFunc("/api/users/logout", logoutHandler)
+	http.HandleFunc("/stop", stopHttp)
+	http.HandleFunc("/users/auth", loginHandler)
+	http.HandleFunc("/users/logout", logoutHandler)
 
-	router.GET("/api/users/whoami", whoamiHandler)
-	router.GET("/api/pulled/:repo/:item", itemPulledHandler)
+	router.GET("/users/whoami", whoamiHandler)
+	router.GET("/pulled/:repo/:item", itemPulledHandler)
 
-	router.GET("/api/datapool/published/:dpname", publishedOfDatapoolHandler)
-	router.GET("/api/datapool/pulled/:dpname", pulledOfDatapoolHandler)
-	router.GET("/api/datapool/published/:dpname/:repo", publishedOfRepoHandler)
-	router.GET("/api/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
-	router.POST("/api/datapool/check", checkDpConnectHandler)
-	router.GET("/api/datapool/other/:dpname", dpGetOtherDataHandler)
-	router.GET("/api/datapool/pulled/:dpname/:repo/:item", pulledTagOfItemHandler)
-	router.GET("/api/datapool/published/:dpname/:repo/:item", publishedTagOfItemHandler)
-	//router.POST("/api/datapool/newpublishtag", newPublishTagHandler)
+	router.GET("/datapool/published/:dpname", publishedOfDatapoolHandler)
+	router.GET("/datapool/pulled/:dpname", pulledOfDatapoolHandler)
+	router.GET("/datapool/published/:dpname/:repo", publishedOfRepoHandler)
+	router.GET("/datapool/pulled/:dpname/:repo", pulledOfRepoHandler)
+	router.POST("/datapool/check", checkDpConnectHandler)
+	router.GET("/datapool/other/:dpname", dpGetOtherDataHandler)
+	router.GET("/datapool/pulled/:dpname/:repo/:item", pulledTagOfItemHandler)
+	router.GET("/datapool/published/:dpname/:repo/:item", publishedTagOfItemHandler)
+	//router.POST("/datapool/newpublishtag", newPublishTagHandler)
 
 	router.NotFound = &mux{}
 
@@ -459,7 +459,7 @@ func serverFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 func init() {
 	if srv := os.Getenv("DATAHUB_SERVER"); len(srv) > 0 {
 		DefaultServer = srv
-		DefaultServerAPI = DefaultServer + "/api"
+		DefaultServerAPI = DefaultServer
 	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}

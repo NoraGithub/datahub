@@ -20,8 +20,8 @@ var (
 	loginAuthStr      string
 	loginBasicAuthStr string
 	gstrUsername      string
-	DefaultServer     = "https://hub.dataos.io"
-	DefaultServerAPI  = DefaultServer + "/api"
+	DefaultServer     = "http://disc8080.datahub-develop.app.dataos.io"
+	DefaultServerAPI  = DefaultServer
 )
 
 type UserForJson struct {
