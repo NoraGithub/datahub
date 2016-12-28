@@ -39,7 +39,7 @@ func DpRm(needLogin bool, args []string) (err error) {
 }
 
 func dprUseage() {
-	fmt.Println("Usage of datahub dp rm:")
-	fmt.Println("datahub dp rm DATAPOOL")
+	fmt.Println("Usage of datahub dp rm:\n")
+	fmt.Println("	datahub dp rm DATAPOOL\n")
 	fmt.Println("Remove a datapool.")
 }

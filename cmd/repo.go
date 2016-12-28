@@ -137,7 +137,9 @@ func repoUsage() {
 	fmt.Printf("%s repo [REPO]/[ITEM]:[TAG]\n", os.Args[0])
 	fmt.Println("\nShow the detail of tag.\n")
 	fmt.Printf("%s repo rm [REPO]/[ITEM]:[TAG]\n", os.Args[0])
-	fmt.Println("\nDelete the dataitem and tag.")
+	fmt.Println("\nDelete the dataitem and tag.\n")
+	fmt.Printf("%s repo rename [REPO]/[ITEM] [NEWNAME]\n", os.Args[0])
+	fmt.Println("\nRename the repository or dataitem.")
 }
 
 func repoResp(icmd int, respbody []byte, repo, item, tag string) {
