@@ -62,9 +62,9 @@ func Login(login bool, args []string) (err error) {
 	if p, ok := ServerPrefix[args[0]]; ok {
 		prefix = p
 		urlAddress = args[0]
-	} else if address, err := url.Parse(args[0]); err == nil {
+	} else if _, err := url.Parse(args[0]); err == nil {
 		prefix = datahubprefix
-		urlAddress = *address
+		urlAddress = args[0]
 	} else {
 		fmt.Println(ErrMsgArgument)
 		loginUsage()
