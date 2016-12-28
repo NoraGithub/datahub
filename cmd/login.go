@@ -13,6 +13,7 @@ import (
 	"github.com/asiainfoLDP/datahub/utils/mflag"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -33,8 +34,10 @@ var (
 )
 
 var ServerPrefix = make(map[string]string)
+
 type UserForJson struct {
-	Username string `json:"username", omitempty`
+	Username  string `json:"username", omitempty`
+	UrlServer string `json:"urlserver", omitempty`
 }
 
 type Loginerr struct {
@@ -55,8 +58,13 @@ func Login(login bool, args []string) (err error) {
 		return errors.New(ErrMsgArgument)
 	}
 	var prefix string
+	var urlAddress string
 	if p, ok := ServerPrefix[args[0]]; ok {
 		prefix = p
+		urlAddress = args[0]
+	} else if address, err := url.Parse(args[0]); err == nil {
+		prefix = datahubprefix
+		urlAddress = *address
 	} else {
 		fmt.Println(ErrMsgArgument)
 		loginUsage()
@@ -81,7 +89,7 @@ func Login(login bool, args []string) (err error) {
 	//fmt.Printf("%s\n%s:%s\n", User.b64, User.userName, User.password)
 
 	//req.Header.Set("Authorization", "Basic "+os.Getenv("DAEMON_USER_AUTH_INFO"))
-	userJson := UserForJson{Username: User.userName}
+	userJson := UserForJson{Username: User.userName, UrlServer: urlAddress}
 	jsondata, _ := json.Marshal(userJson)
 
 	resp, err := commToDaemon("get", "/users/auth", jsondata) //users/auth

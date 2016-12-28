@@ -25,7 +25,8 @@ var (
 )
 
 type UserForJson struct {
-	Username string `json:"username", omitempty`
+	Username  string `json:"username", omitempty`
+	UrlServer string `json:"urlserver", omitempty`
 }
 
 type tk struct {
@@ -49,8 +50,12 @@ func authDaemon(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	url := DefaultServerAPI + "/" //r.URL.Path
-	//r.ParseForm()
+	userjsonbody, _ := ioutil.ReadAll(r.Body)
+	userforjson := UserForJson{}
+	if err := json.Unmarshal(userjsonbody, &userforjson); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	if _, ok := r.Header["Authorization"]; !ok {
 
@@ -59,12 +64,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	userjsonbody, _ := ioutil.ReadAll(r.Body)
-	userforjson := UserForJson{}
-	if err := json.Unmarshal(userjsonbody, &userforjson); err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
+	DefaultServer = userforjson.UrlServer
+	DefaultServerAPI = DefaultServer + "/api"
+
+	url = DefaultServerAPI + "/"
 
 	gstrUsername = userforjson.Username
 	log.Println("login to", url, "Authorization:", r.Header.Get("Authorization"), gstrUsername)
