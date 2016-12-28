@@ -203,7 +203,7 @@ func login(interactive bool) {
 
 func commToDaemon(method, path string, jsonData []byte) (resp *http.Response, err error) {
 	//fmt.Println(method, "/api"+path, string(jsonData))
-
+	fmt.Println("toDaemon--------------")
 	req, err := http.NewRequest(strings.ToUpper(method), "/api"+path, bytes.NewBuffer(jsonData))
 
 	if len(User.userName) > 0 {
