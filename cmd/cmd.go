@@ -97,11 +97,11 @@ const (
 )
 
 var (
-	ErrMsgArgument 					string = "DataHub : Invalid argument."
-	ValidateErrMsgArgument 			string = "DataHub : The parameter after rm is in wrong format."
-	ValidateErrMsgArgument_rename 	string = "DataHub : The parameter after rename is in wrong format."
-	ErrLoginFailed         			string = "Error : login failed."
-	ErrneedLogin		   			string = "Error : Please login"
+	ErrMsgArgument                string = "DataHub : Invalid argument."
+	ValidateErrMsgArgument        string = "DataHub : The parameter after rm is in wrong format."
+	ValidateErrMsgArgument_rename string = "DataHub : The parameter after rename is in wrong format."
+	ErrLoginFailed                string = "Error : login failed."
+	ErrneedLogin                  string = "Error : Please login"
 )
 
 var Cmd = []Command{
@@ -177,7 +177,7 @@ var Cmd = []Command{
 				Handler: ItemOrTagRm,
 			},
 			{
-				Name:	 "rename",
+				Name:    "rename",
 				Handler: RepoAndItemRename,
 			},
 		},
@@ -188,6 +188,12 @@ var Cmd = []Command{
 		Name:      "subs",
 		Handler:   Subs,
 		Desc:      "Subscription of the dataitem",
+		NeedLogin: true,
+	},
+	{
+		Name:      "whoami",
+		Handler:   Whoami,
+		Desc:      "The user description information",
 		NeedLogin: true,
 	},
 	{

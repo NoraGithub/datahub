@@ -280,16 +280,16 @@ func renameRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 	repository := ps.ByName("repo")
 	name := ps.ByName("newname")
-	
+
 	path := "/api/repositories/" + repository
 	type RepoCNname struct {
 		Ch_repname string `json:"ch_repname"`
 	}
-	
+
 	reqBody := &RepoCNname{name}
-	jsondata,err := json.Marshal(reqBody)
-	if err!=nil {
-		return 
+	jsondata, err := json.Marshal(reqBody)
+	if err != nil {
+		return
 	}
 	resp, err := commToServerGetRsp("put", path, jsondata)
 	if err != nil {
@@ -298,7 +298,7 @@ func renameRepoHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 	defer resp.Body.Close()
-	showResult(resp,w)
+	showResult(resp, w)
 }
 
 func renameItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -313,10 +313,10 @@ func renameItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	type ItemCNname struct {
 		Ch_itemname string `json:"ch_itemname"`
 	}
-	
+
 	reqBody := &ItemCNname{name}
-	jsondata,err := json.Marshal(reqBody)
-	if err!=nil {
+	jsondata, err := json.Marshal(reqBody)
+	if err != nil {
 		return
 	}
 	resp, err := commToServerGetRsp("put", path, jsondata)
@@ -326,12 +326,12 @@ func renameItemHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 	defer resp.Body.Close()
-	showResult(resp,w)
+	showResult(resp, w)
 }
 
-func showResult(resp *http.Response,w http.ResponseWriter){
+func showResult(resp *http.Response, w http.ResponseWriter) {
 	result := ds.Response{}
-	respbody,_ := ioutil.ReadAll(resp.Body)
+	respbody, _ := ioutil.ReadAll(resp.Body)
 	unmarshalerr := json.Unmarshal(respbody, &result)
 	if unmarshalerr != nil {
 		log.Error(unmarshalerr)
@@ -480,4 +480,14 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 	}
 
 	return
+}
+
+func getTokenHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) > 0 {
+		authToken, _ := json.Marshal(loginAuthStr)
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(authToken)
+	} else {
+		rw.WriteHeader(http.StatusNonAuthoritativeInfo)
+	}
 }
