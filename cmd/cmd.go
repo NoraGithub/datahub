@@ -145,7 +145,7 @@ var Cmd = []Command{
 	{
 		Name:      "login",
 		Handler:   Login,
-		Desc:      "Login to hub.dataos.io",
+		Desc:      "Login to url",
 		NeedLogin: true,
 	},
 	{
@@ -188,6 +188,12 @@ var Cmd = []Command{
 		Name:      "subs",
 		Handler:   Subs,
 		Desc:      "Subscription of the dataitem",
+		NeedLogin: true,
+	},
+	{
+		Name:      "whoami",
+		Handler:   Whoami,
+		Desc:      "The user description information",
 		NeedLogin: true,
 	},
 	{

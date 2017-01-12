@@ -482,3 +482,13 @@ func judgeTagExist(repository, dataitem, tag string) (exist bool, msg string, er
 
 	return
 }
+
+func getTokenHandler(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if len(loginAuthStr) > 0 {
+		authToken, _ := json.Marshal(loginAuthStr)
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(authToken)
+	} else {
+		rw.WriteHeader(http.StatusNonAuthoritativeInfo)
+	}
+}

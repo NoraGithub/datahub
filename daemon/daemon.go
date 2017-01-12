@@ -346,6 +346,9 @@ func RunDaemon() {
 	router.POST("/api/ep", epPostHandler)
 	router.DELETE("/api/ep", epDeleteHandler)
 
+	router.GET("/api/whoami/token", getTokenHandler)
+	router.GET("/api/whoami", whoamiHandler)
+
 	router.GET("/api/repositories/:repo/:item/:tag", repoTagHandler)
 	router.GET("/api/repositories/:repo/:item", repoItemHandler)
 	router.GET("/api/repositories/:repo", repoRepoNameHandler)
