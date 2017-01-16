@@ -78,7 +78,10 @@ func ami() error {
 	json.Unmarshal(body, &data)
 
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println((data.Data).(map[string]interface{})["username"])
+		username := (data.Data).(map[string]interface{})["username"].(string)
+		index := strings.Index(username, "+")
+		name := username[index+1:]
+		fmt.Println(name)
 	} else {
 		fmt.Println("Please login !")
 	}
